@@ -1,0 +1,60 @@
+# Claude Code Project Guidelines
+
+This directory contains consistent guidance for all my projects with Claude Code.
+
+## Overview
+
+These guidelines help maintain consistency across projects and capture best practices learned through experience. Reference these when starting new projects or when you need specific technical guidance.
+
+## Active Guidelines
+
+- [Shell Script Best Practices](./guidelines/shell-scripts.md) - Directory management, error handling, and portability
+- [Python Code Standards](./guidelines/python.md) - *Coming soon*
+- [JavaScript/TypeScript Guidelines](./guidelines/javascript.md) - *Coming soon*
+- [Testing Strategies](./guidelines/testing.md) - *Coming soon*
+
+## How to Use These Guidelines
+
+### Starting a New Project
+
+Include relevant guidelines in your initial Claude Code prompt:
+
+```
+Please follow the guidelines in ~/.claude/guidelines/shell-scripts.md for all bash scripts in this project.
+```
+
+### Multiple Guidelines
+
+For projects using multiple technologies:
+
+```
+Please follow these guidelines:
+- ~/.claude/guidelines/shell-scripts.md for bash scripts
+- ~/.claude/guidelines/python.md for Python code
+```
+
+### Project-Specific Overrides
+
+If a project needs exceptions to these guidelines, create a local override file:
+
+```
+project/.claude/overrides.md
+```
+
+## Contributing to Guidelines
+
+1. Update guidelines when you discover new patterns or best practices
+2. Include both positive examples (do this) and negative examples (avoid this)
+3. Explain the reasoning behind each guideline
+4. Keep guidelines concise but comprehensive
+
+## Quick Reference
+
+List all available guidelines:
+```bash
+find ~/.claude/guidelines -name "*.md" -type f | sort
+```
+
+## Version History
+
+- 2025-01-31: Initial setup with shell script guidelines
