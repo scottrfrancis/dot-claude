@@ -1,0 +1,77 @@
+name: "Extract ADR from Session Log"
+description: "Extract architectural decisions from session logs into ADR format"
+aliases: ["adr"]
+
+args:
+  - name: "logfile"
+    description: "Path to session log file (or searches recent logs if not specified)"
+    type: "string"
+    required: false
+
+steps:
+  - name: "Find log file"
+    run: |
+      if [ -z "$logfile" ]; then
+        # Find most recent log with ADR markers
+        LOGFILE=$(grep -l "ADR-worthy" .claude/session-logs/*.md 2>/dev/null | tail -1)
+        if [ -z "$LOGFILE" ]; then
+          echo "No session logs found with ADR markers"
+          exit 1
+        fi
+      else
+        LOGFILE="$logfile"
+      fi
+      
+      cat "$LOGFILE"
+
+  - name: "Extract and format ADR"
+    ask_claude: |
+      From the session log above, extract the architectural decisions and format them as proper ADRs.
+      
+      For each significant decision, create an ADR following this template:
+      
+      # ADR-XXX: [Title]
+      
+      ## Status
+      Proposed
+      
+      ## Context
+      What is the issue that we're seeing that is motivating this decision?
+      
+      ## Decision
+      What is the change that we're proposing and/or doing?
+      
+      ## Consequences
+      What becomes easier or more difficult to do because of this change?
+      
+      ### Positive
+      - List positive consequences
+      
+      ### Negative  
+      - List negative consequences
+      
+      ### Neutral
+      - List neutral consequences
+      
+      ## Alternatives Considered
+      - What other options were evaluated?
+      
+      ---
+      
+      Generate one or more ADRs based on the key decisions found in the log.
+      Use concrete, specific language and focus on architectural significance.
+    save_to_var: "adr_content"
+
+  - name: "Save ADR"
+    run: |
+      mkdir -p docs/adr
+      TIMESTAMP=$(date +"%Y%m%d")
+      FILENAME="docs/adr/adr-${TIMESTAMP}-draft.md"
+      
+      echo "$adr_content" > "$FILENAME"
+      echo "✅ ADR draft saved to $FILENAME"
+      echo ""
+      echo "Next steps:"
+      echo "1. Review and edit the ADR"
+      echo "2. Assign a proper number"
+      echo "3. Update status when approved"

@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+# Mine session logs for patterns, decisions, and insights
+
+set -euo pipefail
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+LOG_DIR=".claude/session-logs"
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+usage() {
+    echo "Usage: mine-sessions [options]"
+    echo ""
+    echo "Options:"
+    echo "  -d, --days N     Look back N days (default: 30)"
+    echo "  -p, --pattern X  Search for pattern X"
+    echo "  -a, --adr        Show only ADR-worthy sessions"
+    echo "  -t, --tech       Extract technical patterns"
+    echo "  -h, --help       Show this help"
+}
+
+DAYS=30
+PATTERN=""
+ADR_ONLY=false
+TECH_PATTERNS=false
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -d|--days)
+            DAYS="$2"
+            shift 2
+            ;;
+        -p|--pattern)
+            PATTERN="$2"
+            shift 2
+            ;;
+        -a|--adr)
+            ADR_ONLY=true
+            shift
+            ;;
+        -t|--tech)
+            TECH_PATTERNS=true
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+if [ ! -d "$LOG_DIR" ]; then
+    echo "No session logs found at $LOG_DIR"
+    exit 1
+fi
+
+echo -e "${BLUE}Mining session logs from the last $DAYS days...${NC}"
+echo ""
+
+# Find relevant files
+FILES=$(find "$LOG_DIR" -name "*.md" -type f -mtime -"$DAYS" | sort)
+
+if [ -z "$FILES" ]; then
+    echo "No session logs found in the last $DAYS days"
+    exit 0
+fi
+
+# Extract insights
+if [ "$TECH_PATTERNS" = true ]; then
+    echo -e "${GREEN}Technical Patterns:${NC}"
+    grep -h "^- " $FILES | grep -i -E "(pattern|approach|technique|solution)" | sort | uniq -c | sort -nr | head -20
+    echo ""
+fi
+
+if [ "$ADR_ONLY" = true ]; then
+    echo -e "${GREEN}Sessions with ADR-worthy decisions:${NC}"
+    grep -l "ADR-worthy" $FILES | while read -r file; do
+        basename "$file"
+        grep -A 5 "Potential ADRs" "$file" | grep "^- " | sed 's/^/  /'
+    done
+    echo ""
+fi
+
+if [ -n "$PATTERN" ]; then
+    echo -e "${GREEN}Sessions matching '$PATTERN':${NC}"
+    grep -l "$PATTERN" $FILES | while read -r file; do
+        echo -e "${YELLOW}$(basename "$file"):${NC}"
+        grep -B 2 -A 2 "$PATTERN" "$file" | sed 's/^/  /'
+        echo ""
+    done
+fi
+
+# Summary stats
+echo -e "${BLUE}Summary:${NC}"
+echo "- Total sessions: $(echo "$FILES" | wc -l)"
+echo "- Sessions with ADRs: $(grep -l "ADR-worthy" $FILES 2>/dev/null | wc -l)"
+echo "- Unique topics: $(grep "^## \[" $FILES | cut -d'-' -f2- | sort | uniq | wc -l)"
