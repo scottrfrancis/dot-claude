@@ -1,0 +1,76 @@
+name: "Git Commit with Conventional Commits"
+description: "Auto-generate and commit with Conventional Commits style message using Claude"
+aliases: ["ac"]
+
+args:
+  - name: "skip_confirmation"
+    short: "y"
+    description: "Skip confirmation prompt and commit automatically"
+    type: "flag"
+  - name: "type"
+    short: "t"
+    description: "Suggest a specific commit type to Claude"
+    type: "string"
+    required: false
+
+steps:
+  - name: "Check git status"
+    run: |
+      git status --porcelain
+
+  - name: "Generate conventional commit message"
+    ask_claude: |
+      Based on the git status output above, please analyze the changes and generate a commit message following the Conventional Commits specification.
+      
+      ${type:+The commit type should be: $type}
+
+      The format should be:
+      <type>[optional scope]: <description>
+
+      [optional body]
+
+      [optional footer(s)]
+
+      Common types:
+      - feat: A new feature
+      - fix: A bug fix
+      - docs: Documentation only changes
+      - style: Changes that do not affect the meaning of the code
+      - refactor: A code change that neither fixes a bug nor adds a feature
+      - perf: A code change that improves performance
+      - test: Adding missing tests or correcting existing tests
+      - build: Changes that affect the build system or external dependencies
+      - ci: Changes to our CI configuration files and scripts
+      - chore: Other changes that don't modify src or test files
+      - revert: Reverts a previous commit
+
+      Keep the subject line under 72 characters.
+      Use present tense and imperative mood.
+      
+      Please provide just the commit message, nothing else.
+    save_to_var: "commit_message"
+
+  - name: "Show proposed commit message"
+    run: |
+      echo "Proposed commit message:"
+      echo "======================="
+      echo "$commit_message"
+      echo "======================="
+
+  - name: "Confirm and commit"
+    run: |
+      if [ "$skip_confirmation" = "true" ]; then
+        echo "Auto-committing with -y flag..."
+        git add .
+        git commit -m "$commit_message"
+        echo "✅ Committed successfully!"
+      else
+        read -p "Do you want to proceed with this commit message? (y/n): " confirm
+        if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+          git add .
+          git commit -m "$commit_message"
+          echo "✅ Committed successfully!"
+        else
+          echo "❌ Commit cancelled."
+        fi
+      fi

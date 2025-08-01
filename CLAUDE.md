@@ -9,9 +9,14 @@ These guidelines help maintain consistency across projects and capture best prac
 ## Active Guidelines
 
 - [Shell Script Best Practices](./guidelines/shell-scripts.md) - Directory management, error handling, and portability
+- [Conventional Commits](./guidelines/conventional-commits.md) - Standardized commit message format
 - [Python Code Standards](./guidelines/python.md) - *Coming soon*
 - [JavaScript/TypeScript Guidelines](./guidelines/javascript.md) - *Coming soon*
 - [Testing Strategies](./guidelines/testing.md) - *Coming soon*
+
+## Custom Commands
+
+- `~/.claude/commands/commit` - Helper for creating conventional commits
 
 ## How to Use These Guidelines
 
@@ -20,7 +25,9 @@ These guidelines help maintain consistency across projects and capture best prac
 Include relevant guidelines in your initial Claude Code prompt:
 
 ```
-Please follow the guidelines in ~/.claude/guidelines/shell-scripts.md for all bash scripts in this project.
+Please follow these guidelines:
+- ~/.claude/guidelines/shell-scripts.md for all bash scripts
+- ~/.claude/guidelines/conventional-commits.md for git commits
 ```
 
 ### Multiple Guidelines
