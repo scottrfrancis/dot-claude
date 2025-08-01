@@ -25,6 +25,6 @@ Reusable guidelines and commands for consistent development practices across Cla
 |---------|---------|
 | `commit` | Manual conventional commit helper |
 | `autocommit` | AI-powered commit message generator |
-| `log-session` | Capture session insights and decisions |
+| `log` | Capture session insights and decisions |
 | `extract-adr` | Convert logged decisions to ADRs |
 | `mine-sessions` | Search and analyze session history |

@@ -1,0 +1,70 @@
+name: "Enhanced Session Logger"
+description: "Wrapper for /log-session that organizes output in .claude/session-logs/"
+aliases: ["lg", "sessionlog"]
+
+args:
+  - name: "topic"
+    short: "t"
+    description: "Optional topic/tag for this session"
+    type: "string"
+    required: false
+
+steps:
+  - name: "Create log directory"
+    run: |
+      mkdir -p .claude/session-logs
+
+  - name: "Call built-in log-session"
+    run: |
+      echo "Calling built-in /log-session..."
+      echo "After it completes, I'll organize the output."
+      echo ""
+      echo "Please run: /log-session"
+      echo ""
+      echo "Then press Enter when complete..."
+      read
+
+  - name: "Find and move the log"
+    run: |
+      # Find the most recent .md file in project root (likely the session log)
+      LATEST_LOG=$(find . -maxdepth 1 -name "*.md" -type f -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2)
+      
+      if [ -z "$LATEST_LOG" ]; then
+        echo "❌ No session log found. Make sure you ran /log-session"
+        exit 1
+      fi
+      
+      # Check if this looks like a session log
+      if grep -q -E "(Session Summary|Discussion Summary|Key Decisions)" "$LATEST_LOG" 2>/dev/null; then
+        TIMESTAMP=$(date +"%Y-%m-%d-%H%M")
+        FILENAME=".claude/session-logs/${TIMESTAMP}${topic:+-$topic}.md"
+        
+        mv "$LATEST_LOG" "$FILENAME"
+        echo "✅ Session log moved to: $FILENAME"
+        
+        # Optionally, create a condensed version
+        echo ""
+        echo "Creating condensed summary..."
+      else
+        echo "⚠️  File doesn't appear to be a session log: $LATEST_LOG"
+        echo "   You may need to move it manually"
+      fi
+
+  - name: "Create condensed summary"
+    ask_claude: |
+      The session log has been saved. Would you like me to create a more concise version focusing on:
+      - Key technical decisions
+      - Reusable patterns discovered  
+      - Action items or follow-ups
+      
+      This would be saved alongside the full log. Reply 'yes' to create it, or 'no' to skip.
+    save_to_var: "create_summary"
+
+  - name: "Generate condensed version if requested"
+    run: |
+      if [[ "$create_summary" == *"yes"* ]]; then
+        echo "Creating condensed summary..."
+        # This would need to read the moved file and process it
+        # For now, just note that it's been requested
+        echo "TODO: Implement condensed summary generation"
+      fi
