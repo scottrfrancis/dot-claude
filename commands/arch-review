@@ -31,6 +31,7 @@ usage() {
     echo ""
     echo "Performs a Principal Architect review of the current project considering:"
     echo "  • AWS Well-Architected Framework"
+    echo "  • Azure Well-Architected Framework"
     echo "  • CNCF Cloud Native principles"
     echo "  • Design Patterns"
     echo "  • SOLID Design principles"
@@ -80,9 +81,24 @@ detect_project_root() {
 # Function to ensure docs directory exists
 ensure_docs_dir() {
     DOCS_DIR="${PROJECT_ROOT}/docs"
+    echo -e "${BLUE}Target docs directory: ${DOCS_DIR}${NC}"
+    
     if [[ ! -d "$DOCS_DIR" ]]; then
         echo -e "${YELLOW}Creating docs directory: ${DOCS_DIR}${NC}"
-        mkdir -p "$DOCS_DIR"
+        if ! mkdir -p "$DOCS_DIR" 2>/dev/null; then
+            echo -e "${RED}Error: Failed to create docs directory at ${DOCS_DIR}${NC}" >&2
+            echo -e "${RED}Please check write permissions for: $(dirname "$DOCS_DIR")${NC}" >&2
+            exit 1
+        fi
+        echo -e "${GREEN}Successfully created docs directory${NC}"
+    else
+        echo -e "${GREEN}Docs directory already exists${NC}"
+    fi
+    
+    # Verify we can write to the docs directory
+    if [[ ! -w "$DOCS_DIR" ]]; then
+        echo -e "${RED}Error: No write permission for docs directory: ${DOCS_DIR}${NC}" >&2
+        exit 1
     fi
 }
 
@@ -165,7 +181,9 @@ generate_report() {
     local tech_stack=$(analyze_project_structure)
     local project_docs=$(find_project_docs)
     
-    cat > "$REPORT_FILE" << EOF
+    echo -e "${BLUE}Writing report to: ${REPORT_FILE}${NC}"
+    
+    if ! cat > "$REPORT_FILE" << EOF
 # Principal Architect Review
 
 **Project:** $(basename "$PROJECT_ROOT")  
@@ -457,6 +475,25 @@ This review was conducted using automated analysis of the codebase structure, co
 ---
 *This review was generated automatically and should be supplemented with manual code review and stakeholder input.*
 EOF
+    then
+        echo -e "${RED}Error: Failed to write report file: ${REPORT_FILE}${NC}" >&2
+        echo -e "${RED}Please check write permissions for: ${DOCS_DIR}${NC}" >&2
+        exit 1
+    fi
+    
+    # Verify the file was actually created and has content
+    if [[ ! -f "$REPORT_FILE" ]]; then
+        echo -e "${RED}Error: Report file was not created: ${REPORT_FILE}${NC}" >&2
+        exit 1
+    fi
+    
+    local file_size=$(wc -l < "$REPORT_FILE" 2>/dev/null || echo "0")
+    if [[ "$file_size" -lt 10 ]]; then
+        echo -e "${RED}Error: Report file appears to be incomplete (${file_size} lines)${NC}" >&2
+        exit 1
+    fi
+    
+    echo -e "${GREEN}Report successfully written (${file_size} lines)${NC}"
 }
 
 # Main function
