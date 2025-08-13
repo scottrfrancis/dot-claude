@@ -269,6 +269,48 @@ evaluate_spec_implementation() {
     echo -e "$implementation_analysis"
 }
 
+# Function to read prompt from markdown file
+read_prompt_from_md() {
+    local md_file="${SCRIPT_DIR}/arch-review.md"
+    if [[ ! -f "$md_file" ]]; then
+        echo -e "${RED}Error: arch-review.md not found at ${md_file}${NC}" >&2
+        exit 1
+    fi
+    
+    # Extract content after the frontmatter
+    awk '/^---$/{if(++c==2) next} c==2' "$md_file"
+}
+
+# Function to invoke Claude with the prompt
+invoke_claude() {
+    local prompt_content="$1"
+    local context_info="$2"
+    
+    echo -e "${BLUE}Invoking Claude for architectural review...${NC}"
+    
+    # Create a comprehensive prompt including project context
+    local full_prompt=$(cat << EOF
+$prompt_content
+
+## Project Context
+
+**Project Root:** $PROJECT_ROOT
+**Technology Stack:** ${context_info}
+**Target Report File:** $REPORT_FILE
+
+Please analyze this project and generate a comprehensive architectural review report. Save the report to the file path specified above.
+EOF
+)
+    
+    # Use Claude Code CLI to generate the review
+    if command -v claude >/dev/null 2>&1; then
+        echo "$full_prompt" | claude > "$REPORT_FILE"
+    else
+        echo -e "${RED}Error: Claude CLI not found. Falling back to template generation.${NC}" >&2
+        return 1
+    fi
+}
+
 # Function to generate the review report
 generate_report() {
     local tech_stack=$(analyze_project_structure)
@@ -276,7 +318,28 @@ generate_report() {
     local spec_analysis=$(analyze_specifications)
     local implementation_eval=$(evaluate_spec_implementation)
     
-    echo -e "${BLUE}Writing report to: ${REPORT_FILE}${NC}"
+    local context_info="${tech_stack:-"Not detected"} | Docs: ${project_docs:-"Limited"} | Specs: ${spec_analysis:-"None found"}"
+    
+    echo -e "${BLUE}Reading prompt from markdown file...${NC}"
+    local prompt_content=$(read_prompt_from_md)
+    
+    echo -e "${BLUE}Generating AI-powered architectural review...${NC}"
+    
+    # Try to invoke Claude, fall back to template if not available
+    if ! invoke_claude "$prompt_content" "$context_info"; then
+        echo -e "${YELLOW}Falling back to template generation...${NC}"
+        generate_template_report "$tech_stack" "$project_docs" "$spec_analysis" "$implementation_eval"
+    fi
+}
+
+# Function to generate template report (fallback)
+generate_template_report() {
+    local tech_stack="$1"
+    local project_docs="$2" 
+    local spec_analysis="$3"
+    local implementation_eval="$4"
+    
+    echo -e "${BLUE}Writing template report to: ${REPORT_FILE}${NC}"
     
     if ! cat > "$REPORT_FILE" << EOF
 # Principal Architect Review
@@ -606,12 +669,28 @@ ${implementation_eval}
 *This review was generated automatically and should be supplemented with manual code review and stakeholder input.*
 EOF
     then
-        echo -e "${RED}Error: Failed to write report file: ${REPORT_FILE}${NC}" >&2
+        echo -e "${RED}Error: Failed to write template report file: ${REPORT_FILE}${NC}" >&2
         echo -e "${RED}Please check write permissions for: ${DOCS_DIR}${NC}" >&2
         exit 1
     fi
     
     # Verify the file was actually created and has content
+    if [[ ! -f "$REPORT_FILE" ]]; then
+        echo -e "${RED}Error: Template report file was not created: ${REPORT_FILE}${NC}" >&2
+        exit 1
+    fi
+    
+    local file_size=$(wc -l < "$REPORT_FILE" 2>/dev/null || echo "0")
+    if [[ "$file_size" -lt 10 ]]; then
+        echo -e "${RED}Error: Template report file appears to be incomplete (${file_size} lines)${NC}" >&2
+        exit 1
+    fi
+    
+    echo -e "${GREEN}Template report successfully written (${file_size} lines)${NC}"
+}
+
+# Function to verify report completion
+verify_report() {
     if [[ ! -f "$REPORT_FILE" ]]; then
         echo -e "${RED}Error: Report file was not created: ${REPORT_FILE}${NC}" >&2
         exit 1
@@ -623,7 +702,7 @@ EOF
         exit 1
     fi
     
-    echo -e "${GREEN}Report successfully written (${file_size} lines)${NC}"
+    echo -e "${GREEN}Report successfully completed (${file_size} lines)${NC}"
 }
 
 # Main function
@@ -677,6 +756,9 @@ main() {
     # Generate the review report
     echo -e "${BLUE}Generating architectural review report...${NC}"
     generate_report
+    
+    # Verify the report was created successfully
+    verify_report
     
     echo -e "${GREEN}✅ Architectural review completed!${NC}"
     echo -e "${GREEN}Report saved to: $REPORT_FILE${NC}"
