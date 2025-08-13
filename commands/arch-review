@@ -155,6 +155,11 @@ find_project_docs() {
         docs_found="${docs_found}ADRs found, "
     fi
     
+    # Look for specifications
+    if find "${PROJECT_ROOT}" -name "*.md" -path "*/spec*" -o -name "*spec*.md" -o -name "*requirement*.md" 2>/dev/null | grep -q .; then
+        docs_found="${docs_found}specifications found, "
+    fi
+    
     # Look for README files
     if find "${PROJECT_ROOT}" -name "README*" -type f 2>/dev/null | grep -q .; then
         docs_found="${docs_found}README files, "
@@ -176,10 +181,100 @@ find_project_docs() {
     echo "$docs_found"
 }
 
+# Function to analyze specifications and requirements
+analyze_specifications() {
+    local spec_files=()
+    local spec_summary=""
+    local spec_count=0
+    
+    # Find specification files
+    while IFS= read -r -d '' file; do
+        spec_files+=("$file")
+        ((spec_count++))
+    done < <(find "${PROJECT_ROOT}" -name "*.md" \( -path "*/spec*" -o -name "*spec*.md" -o -name "*requirement*.md" -o -name "*feature*.md" \) -print0 2>/dev/null)
+    
+    if [[ $spec_count -eq 0 ]]; then
+        echo "No specifications found"
+        return
+    fi
+    
+    spec_summary="Found $spec_count specification file(s):\\n"
+    
+    for spec_file in "${spec_files[@]}"; do
+        local rel_path="${spec_file#$PROJECT_ROOT/}"
+        spec_summary="${spec_summary}- $rel_path\\n"
+        
+        # Extract key information from specs
+        if grep -q -i "gherkin\|scenario\|feature" "$spec_file" 2>/dev/null; then
+            spec_summary="${spec_summary}  (Contains Gherkin scenarios)\\n"
+        fi
+        if grep -q -i "api\|endpoint\|rest" "$spec_file" 2>/dev/null; then
+            spec_summary="${spec_summary}  (Contains API specifications)\\n"
+        fi
+        if grep -q -i "database\|schema\|model" "$spec_file" 2>/dev/null; then
+            spec_summary="${spec_summary}  (Contains data specifications)\\n"
+        fi
+    done
+    
+    echo -e "$spec_summary"
+}
+
+# Function to evaluate specification implementation
+evaluate_spec_implementation() {
+    local implementation_analysis=""
+    local spec_files=()
+    
+    # Find specification files
+    while IFS= read -r -d '' file; do
+        spec_files+=("$file")
+    done < <(find "${PROJECT_ROOT}" -name "*.md" \( -path "*/spec*" -o -name "*spec*.md" -o -name "*requirement*.md" -o -name "*feature*.md" \) -print0 2>/dev/null)
+    
+    if [[ ${#spec_files[@]} -eq 0 ]]; then
+        echo "⚠️ No specifications found for implementation analysis"
+        return
+    fi
+    
+    # Look for implementation patterns based on common spec keywords
+    local has_api_impl=false
+    local has_db_impl=false
+    local has_auth_impl=false
+    local has_tests=false
+    
+    # Check for API implementation
+    if find "${PROJECT_ROOT}" -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.java" -o -name "*.cs" -o -name "*.go" 2>/dev/null | xargs grep -l -i "api\|endpoint\|route" 2>/dev/null | head -1 >/dev/null; then
+        has_api_impl=true
+    fi
+    
+    # Check for database implementation
+    if find "${PROJECT_ROOT}" -name "*.sql" -o -name "*migration*" -o -name "*schema*" 2>/dev/null | head -1 >/dev/null; then
+        has_db_impl=true
+    fi
+    
+    # Check for authentication implementation
+    if find "${PROJECT_ROOT}" -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.java" -o -name "*.cs" -o -name "*.go" 2>/dev/null | xargs grep -l -i "auth\|login\|token\|jwt" 2>/dev/null | head -1 >/dev/null; then
+        has_auth_impl=true
+    fi
+    
+    # Check for tests
+    if find "${PROJECT_ROOT}" -name "*test*" -o -name "*spec*" -path "*/test*" 2>/dev/null | grep -v "\.md$" | head -1 >/dev/null; then
+        has_tests=true
+    fi
+    
+    implementation_analysis="Implementation Coverage Analysis:\\n"
+    implementation_analysis="${implementation_analysis}- API Implementation: $([ "$has_api_impl" = true ] && echo "✅ Found" || echo "❌ Not detected")\\n"
+    implementation_analysis="${implementation_analysis}- Database Implementation: $([ "$has_db_impl" = true ] && echo "✅ Found" || echo "❌ Not detected")\\n"
+    implementation_analysis="${implementation_analysis}- Authentication Implementation: $([ "$has_auth_impl" = true ] && echo "✅ Found" || echo "❌ Not detected")\\n"
+    implementation_analysis="${implementation_analysis}- Test Implementation: $([ "$has_tests" = true ] && echo "✅ Found" || echo "❌ Not detected")\\n"
+    
+    echo -e "$implementation_analysis"
+}
+
 # Function to generate the review report
 generate_report() {
     local tech_stack=$(analyze_project_structure)
     local project_docs=$(find_project_docs)
+    local spec_analysis=$(analyze_specifications)
+    local implementation_eval=$(evaluate_spec_implementation)
     
     echo -e "${BLUE}Writing report to: ${REPORT_FILE}${NC}"
     
@@ -189,15 +284,49 @@ generate_report() {
 **Project:** $(basename "$PROJECT_ROOT")  
 **Review Date:** $(date +"%Y-%m-%d %H:%M:%S")  
 **Technology Stack:** ${tech_stack:-"Not detected"}  
-**Documentation Found:** ${project_docs:-"Limited documentation"}
+**Documentation Found:** ${project_docs:-"Limited documentation"}  
+**Specifications:** ${spec_analysis:-"No specifications found"}
 
 ## Executive Summary
 
-This architectural review evaluates the project against industry best practices and architectural principles. The review covers six key areas: AWS Well-Architected Framework, CNCF Cloud Native principles, Design Patterns, SOLID Design principles, Clean Code practices, and CAP Theorem considerations.
+This architectural review evaluates the project against industry best practices and architectural principles. The review covers six key areas: AWS Well-Architected Framework, CNCF Cloud Native principles, Design Patterns, SOLID Design principles, Clean Code practices, and CAP Theorem considerations. Additionally, this review analyzes how well the current architecture implements specified requirements and functionality.
 
 ## Review Methodology
 
-This review was conducted using automated analysis of the codebase structure, configuration files, and available documentation. Manual code review and stakeholder interviews may be required for a comprehensive assessment.
+This review was conducted using automated analysis of the codebase structure, configuration files, available documentation, and project specifications. The analysis includes evaluation of specification-to-implementation alignment. Manual code review and stakeholder interviews may be required for a comprehensive assessment.
+
+## Specification Analysis
+
+${spec_analysis}
+
+### Implementation Alignment
+
+${implementation_eval}
+
+### Specification Coverage Assessment
+
+- **Status:** ⚠️ Manual Review Required
+- **Findings:**
+  - [ ] All specified features have corresponding implementation
+  - [ ] Business logic aligns with specification requirements
+  - [ ] API contracts match specification definitions
+  - [ ] Data models reflect specified schema requirements
+  - [ ] User workflows follow specified behavior patterns
+  - [ ] Error handling addresses specified edge cases
+  - [ ] Performance requirements are met as specified
+  - [ ] Security requirements are implemented as specified
+
+### Specification Quality Assessment
+
+- **Status:** ⚠️ Manual Review Required
+- **Evaluation Criteria:**
+  - [ ] Specifications are complete and unambiguous
+  - [ ] Acceptance criteria are clearly defined
+  - [ ] Non-functional requirements are specified
+  - [ ] Dependencies and integrations are documented
+  - [ ] User personas and use cases are defined
+  - [ ] Data flow and business logic are specified
+  - [ ] Error scenarios and edge cases are covered
 
 ## 1. AWS Well-Architected Framework
 
@@ -413,10 +542,11 @@ This review was conducted using automated analysis of the codebase structure, co
 ## Key Findings and Recommendations
 
 ### Critical Issues
-1. **Documentation Gap:** Limited architectural documentation found
-2. **Security Review:** Comprehensive security assessment needed
-3. **Observability:** Monitoring and logging strategy requires definition
-4. **Testing Strategy:** Test coverage and quality assessment needed
+1. **Specification-Implementation Gap:** Review needed to ensure all specified functionality is implemented
+2. **Documentation Gap:** Limited architectural documentation found
+3. **Security Review:** Comprehensive security assessment needed
+4. **Observability:** Monitoring and logging strategy requires definition
+5. **Testing Strategy:** Test coverage and quality assessment needed
 
 ### High Priority Recommendations
 1. **Create Architecture Decision Records (ADRs)** for major design decisions
