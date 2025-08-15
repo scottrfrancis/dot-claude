@@ -24,9 +24,10 @@ These guidelines help maintain consistency across projects and capture best prac
 
 Include relevant guidelines in your initial Claude Code prompt:
 
-```
+```yaml
 Please follow these guidelines:
 - ~/.claude/guidelines/shell-scripts.md for all bash scripts
+- ~/.claude/guidelines/shell-escaping.md for shell escaping
 - ~/.claude/guidelines/conventional-commits.md for git commits
 ```
 
@@ -34,7 +35,7 @@ Please follow these guidelines:
 
 For projects using multiple technologies:
 
-```
+```yaml
 Please follow these guidelines:
 - ~/.claude/guidelines/shell-scripts.md for bash scripts
 - ~/.claude/guidelines/python.md for Python code
@@ -44,7 +45,7 @@ Please follow these guidelines:
 
 If a project needs exceptions to these guidelines, create a local override file:
 
-```
+```sh
 project/.claude/overrides.md
 ```
 
@@ -58,6 +59,7 @@ project/.claude/overrides.md
 ## Quick Reference
 
 List all available guidelines:
+
 ```bash
 find ~/.claude/guidelines -name "*.md" -type f | sort
 ```
