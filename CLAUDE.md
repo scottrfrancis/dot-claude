@@ -67,3 +67,4 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 ## Version History
 
 - 2025-01-31: Initial setup with shell script guidelines
+- create temporary test scripts and programs in /tmp
