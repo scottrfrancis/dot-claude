@@ -6,6 +6,14 @@ This directory contains consistent guidance for all my projects with Claude Code
 
 These guidelines help maintain consistency across projects and capture best practices learned through experience. Reference these when starting new projects or when you need specific technical guidance.
 
+## Branch Policy and Strategy
+
+The user works on multiple projects that have different repositories, policies and strategies.  The user is also forgetful to update the local repository when staring sessions.
+
+REMIND the user to consider the appropriate branching strategy when starting a session or a series of tasks.  This reminder should include 
+- current branch and status 
+- suggestions to pull, push, create or delete branches
+
 ## Active Guidelines
 
 - [Shell Script Best Practices](./guidelines/shell-scripts.md) - Directory management, error handling, and portability
