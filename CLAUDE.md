@@ -8,7 +8,7 @@ These guidelines help maintain consistency across projects and capture best prac
 
 ## Branch Policy and Strategy
 
-The user works on multiple projects that have different repositories, policies and strategies.  The user is also forgetful to update the local repository when staring sessions.
+The user works on multiple projects that have different repositories, policies and strategies.  The user is also forgetful to update the local repository when starting sessions.
 
 REMIND the user to consider the appropriate branching strategy when starting a session or a series of tasks.  This reminder should include 
 - current branch and status 
