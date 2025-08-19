@@ -76,3 +76,4 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 
 - 2025-01-31: Initial setup with shell script guidelines
 - create temporary test scripts and programs in /tmp
+- when i tell you a pr has been merged, you should prompt me to update the local appropriately
