@@ -18,6 +18,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 
 - [Shell Script Best Practices](./guidelines/shell-scripts.md) - Directory management, error handling, and portability
 - [Conventional Commits](./guidelines/conventional-commits.md) - Standardized commit message format
+- [README Documentation](./guidelines/readme-documentation.md) - Organizing project documentation with README as central hub
 - [Python Code Standards](./guidelines/python.md) - *Coming soon*
 - [JavaScript/TypeScript Guidelines](./guidelines/javascript.md) - *Coming soon*
 - [Testing Strategies](./guidelines/testing.md) - *Coming soon*
@@ -37,6 +38,7 @@ Please follow these guidelines:
 - ~/.claude/guidelines/shell-scripts.md for all bash scripts
 - ~/.claude/guidelines/shell-escaping.md for shell escaping
 - ~/.claude/guidelines/conventional-commits.md for git commits
+- ~/.claude/guidelines/readme-documentation.md for documentation organization
 ```
 
 ### Multiple Guidelines
@@ -77,3 +79,4 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - 2025-01-31: Initial setup with shell script guidelines
 - create temporary test scripts and programs in /tmp
 - when i tell you a pr has been merged, you should prompt me to update the local appropriately
+- when you are asked to push to a repo, suggest a new branch if current branch is the default
