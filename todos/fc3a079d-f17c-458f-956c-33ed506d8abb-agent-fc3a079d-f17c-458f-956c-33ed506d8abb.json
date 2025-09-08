@@ -1,0 +1,38 @@
+[
+  {
+    "content": "Analyze current main.cpp to understand video capture implementation",
+    "status": "completed",
+    "priority": "high",
+    "id": "1"
+  },
+  {
+    "content": "Modify main.cpp to accept command line argument for device/file",
+    "status": "completed",
+    "priority": "high",
+    "id": "2"
+  },
+  {
+    "content": "Add file detection logic to distinguish between device and file paths",
+    "status": "completed",
+    "priority": "high",
+    "id": "3"
+  },
+  {
+    "content": "Implement single-shot inference mode for file input",
+    "status": "completed",
+    "priority": "high",
+    "id": "4"
+  },
+  {
+    "content": "Update CMakeLists.txt if needed for new functionality",
+    "status": "completed",
+    "priority": "medium",
+    "id": "5"
+  },
+  {
+    "content": "Test the refactored application",
+    "status": "completed",
+    "priority": "medium",
+    "id": "6"
+  }
+]

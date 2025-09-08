@@ -1,0 +1,50 @@
+[
+  {
+    "content": "Create MappedMessageFormatter abstract base class with optional class name mapping",
+    "status": "completed",
+    "priority": "high",
+    "id": "14"
+  },
+  {
+    "content": "Implement extractSelectedClasses helper function",
+    "status": "completed",
+    "priority": "high",
+    "id": "15"
+  },
+  {
+    "content": "Refactor SelectiveJsonMessageFormatter to extract only selected classes",
+    "status": "completed",
+    "priority": "high",
+    "id": "16"
+  },
+  {
+    "content": "Refactor SelectiveBSMessageFormatter to extract only selected classes",
+    "status": "completed",
+    "priority": "high",
+    "id": "17"
+  },
+  {
+    "content": "Update FacesJsonMessageFormatter to use generic mapping system",
+    "status": "completed",
+    "priority": "medium",
+    "id": "18"
+  },
+  {
+    "content": "Update FacesBSMessageFormatter to use generic mapping system",
+    "status": "completed",
+    "priority": "medium",
+    "id": "19"
+  },
+  {
+    "content": "Create comprehensive tests for refactored implementation",
+    "status": "completed",
+    "priority": "medium",
+    "id": "20"
+  },
+  {
+    "content": "Validate that frame writer correctly filters selected classes only",
+    "status": "completed",
+    "priority": "low",
+    "id": "21"
+  }
+]
