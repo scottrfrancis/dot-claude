@@ -1,0 +1,9 @@
+.credentials*
+ide
+local
+projects
+settings.json
+shell-snapshots
+statsig
+todos
+tmp

@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Conventional commit helper for Claude Code projects
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Commit types
+TYPES=(
+    "feat:A new feature"
+    "fix:A bug fix"
+    "docs:Documentation only changes"
+    "style:Changes that do not affect the meaning of the code"
+    "refactor:A code change that neither fixes a bug nor adds a feature"
+    "perf:A code change that improves performance"
+    "test:Adding missing tests or correcting existing tests"
+    "build:Changes that affect the build system or external dependencies"
+    "ci:Changes to our CI configuration files and scripts"
+    "chore:Other changes that don't modify src or test files"
+    "revert:Reverts a previous commit"
+)
+
+# Function to display usage
+usage() {
+    echo "Usage: commit <type> <scope> <description>"
+    echo "       commit <type> <description>  (without scope)"
+    echo "       commit -h | --help"
+    echo ""
+    echo "Examples:"
+    echo "  commit feat auth \"add login endpoint\""
+    echo "  commit fix \"resolve null pointer exception\""
+    echo "  commit docs readme \"update installation instructions\""
+    echo ""
+    echo "Available types:"
+    for type_desc in "${TYPES[@]}"; do
+        IFS=':' read -r type desc <<< "$type_desc"
+        printf "  ${GREEN}%-10s${NC} %s\n" "$type" "$desc"
+    done
+}
+
+# Validate commit type
+validate_type() {
+    local type="$1"
+    for type_desc in "${TYPES[@]}"; do
+        IFS=':' read -r valid_type desc <<< "$type_desc"
+        if [[ "$type" == "$valid_type" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Parse arguments
+if [[ $# -eq 0 ]] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    usage
+    exit 0
+fi
+
+TYPE="$1"
+SCOPE=""
+DESCRIPTION=""
+
+# Validate type
+if ! validate_type "$TYPE"; then
+    echo -e "${RED}Error: Invalid commit type '${TYPE}'${NC}" >&2
+    echo ""
+    usage
+    exit 1
+fi
+
+# Parse scope and description
+if [[ $# -eq 2 ]]; then
+    # No scope provided
+    DESCRIPTION="$2"
+elif [[ $# -eq 3 ]]; then
+    # Scope provided
+    SCOPE="$2"
+    DESCRIPTION="$3"
+else
+    echo -e "${RED}Error: Invalid number of arguments${NC}" >&2
+    usage
+    exit 1
+fi
+
+# Build commit message
+if [[ -n "$SCOPE" ]]; then
+    COMMIT_MSG="${TYPE}(${SCOPE}): ${DESCRIPTION}"
+else
+    COMMIT_MSG="${TYPE}: ${DESCRIPTION}"
+fi
+
+# Validate message length (conventional commits recommend < 100 chars for header)
+if [[ ${#COMMIT_MSG} -gt 100 ]]; then
+    echo -e "${YELLOW}Warning: Commit message is ${#COMMIT_MSG} characters long (recommended < 100)${NC}" >&2
+fi
+
+# Output the commit message
+echo "$COMMIT_MSG"
+
+# If we're in a git repository, offer to create the commit
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    echo ""
+    echo -e "${GREEN}Ready to commit with message:${NC}"
+    echo "  $COMMIT_MSG"
+    echo ""
+    read -p "Create commit? (y/N) " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        git commit -m "$COMMIT_MSG"
+    fi
+fi
