@@ -1,0 +1,20 @@
+[
+  {
+    "content": "Remove unnecessary #include <memory> from inference.h",
+    "status": "completed",
+    "priority": "medium",
+    "id": "1"
+  },
+  {
+    "content": "Remove debug printf statements from constructor and operator",
+    "status": "completed",
+    "priority": "medium",
+    "id": "2"
+  },
+  {
+    "content": "Remove debug printf statements from main.cpp",
+    "status": "completed",
+    "priority": "medium",
+    "id": "3"
+  }
+]

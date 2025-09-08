@@ -1,0 +1,20 @@
+[
+  {
+    "content": "Scan codebase for YOLOv8 references",
+    "status": "completed",
+    "priority": "high",
+    "id": "1"
+  },
+  {
+    "content": "Update references to use YOLO Simplified terminology",
+    "status": "completed",
+    "priority": "high",
+    "id": "2"
+  },
+  {
+    "content": "Verify all changes are consistent",
+    "status": "completed",
+    "priority": "high",
+    "id": "3"
+  }
+]
