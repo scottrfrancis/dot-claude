@@ -1,0 +1,62 @@
+#!/bin/bash
+# Claude Code Session Cleanup
+# Run before every Claude session to prevent hangs and context loss
+
+set -e
+
+echo "=== Claude Session Cleanup ==="
+
+# Kill zombie Claude processes
+echo "Terminating zombie Claude processes..."
+pkill -f claude 2>/dev/null || true
+sleep 2
+pkill -9 -f claude 2>/dev/null || true
+
+# Verify cleanup
+REMAINING=$(ps aux | grep claude | grep -v grep | wc -l)
+if [ "$REMAINING" -gt 1 ]; then
+    echo "WARNING: $REMAINING Claude processes still running"
+    ps aux | grep claude | grep -v grep
+else
+    echo "✓ Claude processes cleaned up"
+fi
+
+# Check device access
+echo "Checking NPU/GPU device access..."
+if lsof /dev/dri/card0 2>/dev/null; then
+    echo "WARNING: /dev/dri/card0 still in use:"
+    lsof /dev/dri/card0
+else
+    echo "✓ NPU/GPU device available"
+fi
+
+# Clean Docker resources
+echo "Cleaning Docker environment..."
+docker container prune -f >/dev/null 2>&1 || true
+docker system prune -f >/dev/null 2>&1 || true
+echo "✓ Docker resources cleaned"
+
+# Clear shared memory artifacts
+echo "Clearing shared memory artifacts..."
+rm -rf /dev/shm/rknn* 2>/dev/null || true
+rm -rf /dev/shm/npu* 2>/dev/null || true
+echo "✓ Shared memory cleaned"
+
+# Clear temp files
+echo "Clearing temporary files..."
+find /tmp -name "*claude*" -mtime +1 -delete 2>/dev/null || true
+echo "✓ Temporary files cleaned"
+
+# System resource check
+echo "System resource status:"
+echo "  Memory: $(free -h | grep Mem | awk '{print $3 "/" $2 " (" $7 " available)"}')"
+echo "  Load: $(uptime | awk -F'load average:' '{print $2}')"
+
+# Docker daemon check
+if timeout 5s docker version >/dev/null 2>&1; then
+    echo "✓ Docker daemon responsive"
+else
+    echo "WARNING: Docker daemon not responding"
+fi
+
+echo "=== Cleanup Complete - Safe to start session ==="

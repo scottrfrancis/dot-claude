@@ -10,15 +10,22 @@ These guidelines help maintain consistency across projects and capture best prac
 
 The user works on multiple projects that have different repositories, policies and strategies.  The user is also forgetful to update the local repository when starting sessions.
 
-REMIND the user to consider the appropriate branching strategy when starting a session or a series of tasks.  This reminder should include 
-- current branch and status 
+REMIND the user to consider the appropriate branching strategy when starting a session or a series of tasks.  This reminder should include
+- current branch and status
 - suggestions to pull, push, create or delete branches
+
+## Session Safety (CRITICAL)
+
+**ALWAYS follow ~/.claude/guidelines/session-safety.md** when working on hardware development systems. Multiple Claude sessions accessing NPU/GPU devices simultaneously causes device contention, resource leakage, and complete context loss requiring system restart.
+
+**Before every session**: Run session cleanup, verify device availability, and ensure exclusive hardware access.
 
 ## Active Guidelines
 
 - [Shell Script Best Practices](./guidelines/shell-scripts.md) - Directory management, error handling, and portability
 - [Conventional Commits](./guidelines/conventional-commits.md) - Standardized commit message format
 - [README Documentation](./guidelines/readme-documentation.md) - Organizing project documentation with README as central hub
+- [Session Safety](./guidelines/session-safety.md) - **CRITICAL** - Prevent session hangs and context loss on hardware systems
 - [Python Code Standards](./guidelines/python.md) - *Coming soon*
 - [JavaScript/TypeScript Guidelines](./guidelines/javascript.md) - *Coming soon*
 - [Testing Strategies](./guidelines/testing.md) - *Coming soon*
