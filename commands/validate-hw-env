@@ -1,0 +1,88 @@
+#!/bin/bash
+# Hardware Environment Validation
+# Verify exclusive device access before hardware testing
+
+set -e
+
+echo "=== Hardware Environment Validation ==="
+
+# Check for competing Claude sessions
+CLAUDE_COUNT=$(ps aux | grep claude | grep -v grep | wc -l)
+if [ "$CLAUDE_COUNT" -gt 1 ]; then
+    echo "❌ FAIL: $CLAUDE_COUNT Claude sessions detected"
+    echo "Run ~/.claude/commands/session-cleanup first"
+    ps aux | grep claude | grep -v grep
+    exit 1
+else
+    echo "✓ Single Claude session"
+fi
+
+# Check NPU/GPU device exclusivity
+if lsof /dev/dri/card0 2>/dev/null | grep -v "$(whoami)"; then
+    echo "❌ FAIL: /dev/dri/card0 in use by other processes"
+    lsof /dev/dri/card0
+    exit 1
+else
+    echo "✓ NPU/GPU device available"
+fi
+
+# Check system resources
+AVAILABLE_MEM=$(free -m | grep Mem | awk '{print $7}')
+if [ "$AVAILABLE_MEM" -lt 2048 ]; then
+    echo "⚠️  WARNING: Only ${AVAILABLE_MEM}MB memory available (recommend 2GB+)"
+else
+    echo "✓ Sufficient memory: ${AVAILABLE_MEM}MB available"
+fi
+
+# Check load average
+LOAD=$(uptime | awk -F'load average:' '{print $2}' | cut -d',' -f1 | xargs)
+LOAD_INT=${LOAD%.*}
+if [ "$LOAD_INT" -gt 4 ]; then
+    echo "⚠️  WARNING: High system load: $LOAD"
+else
+    echo "✓ Normal system load: $LOAD"
+fi
+
+# Check Docker daemon
+if ! timeout 5s docker version >/dev/null 2>&1; then
+    echo "❌ FAIL: Docker daemon not responding"
+    exit 1
+else
+    echo "✓ Docker daemon responsive"
+fi
+
+# Check for container artifacts
+CONTAINER_COUNT=$(docker ps -a | grep -v CONTAINER | wc -l)
+if [ "$CONTAINER_COUNT" -gt 5 ]; then
+    echo "⚠️  WARNING: $CONTAINER_COUNT containers present (consider cleanup)"
+else
+    echo "✓ Container environment clean"
+fi
+
+# Check for background processes that might interfere
+if pgrep -f "rknn|npu" >/dev/null 2>&1; then
+    echo "⚠️  WARNING: NPU-related processes detected"
+    pgrep -f "rknn|npu" | head -5
+else
+    echo "✓ No competing NPU processes"
+fi
+
+# Validate critical device files
+for dev in /dev/dri/card0 /dev/dri/renderD128; do
+    if [ -c "$dev" ]; then
+        echo "✓ Device $dev present"
+    else
+        echo "⚠️  WARNING: Device $dev missing"
+    fi
+done
+
+echo "=== Validation Complete ==="
+
+# Return appropriate exit code
+if [ "$AVAILABLE_MEM" -lt 1024 ] || [ "$LOAD_INT" -gt 8 ]; then
+    echo "❌ Environment not ready for hardware testing"
+    exit 1
+else
+    echo "✅ Environment ready for hardware testing"
+    exit 0
+fi

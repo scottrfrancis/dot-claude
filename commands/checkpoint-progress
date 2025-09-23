@@ -1,0 +1,102 @@
+#!/bin/bash
+# Progress Checkpointing System
+# Automatically save work state to prevent context loss
+
+set -e
+
+PROJECT_ROOT="${1:-$(pwd)}"
+CHECKPOINT_MSG="${2:-"WIP: checkpoint $(date '+%Y-%m-%d %H:%M:%S')"}"
+
+cd "$PROJECT_ROOT"
+
+echo "=== Progress Checkpoint ==="
+echo "Project: $PROJECT_ROOT"
+echo "Message: $CHECKPOINT_MSG"
+
+# Verify we're in a git repository
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    echo "❌ Not a git repository: $PROJECT_ROOT"
+    exit 1
+fi
+
+# Check if there are any changes to save
+if git diff --quiet && git diff --cached --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
+    echo "✓ No changes to checkpoint"
+    exit 0
+fi
+
+# Show what we're about to save
+echo "Changes to checkpoint:"
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "  Modified files:"
+    git diff --name-only HEAD
+    git diff --cached --name-only
+fi
+
+UNTRACKED=$(git ls-files --others --exclude-standard)
+if [ -n "$UNTRACKED" ]; then
+    echo "  Untracked files:"
+    echo "$UNTRACKED" | head -10
+    if [ "$(echo "$UNTRACKED" | wc -l)" -gt 10 ]; then
+        echo "  ... and $(( $(echo "$UNTRACKED" | wc -l) - 10 )) more"
+    fi
+fi
+
+# Add all changes (including untracked files)
+git add .
+
+# Create checkpoint commit
+if git commit -m "$CHECKPOINT_MSG" >/dev/null 2>&1; then
+    COMMIT_HASH=$(git rev-parse --short HEAD)
+    echo "✓ Checkpoint created: $COMMIT_HASH"
+
+    # Log checkpoint
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $PROJECT_ROOT - $COMMIT_HASH - $CHECKPOINT_MSG" >> ~/.claude/checkpoint-log
+
+    # Optional: Push to remote if configured
+    if git remote get-url origin >/dev/null 2>&1; then
+        BRANCH=$(git branch --show-current)
+        if git push origin "$BRANCH" >/dev/null 2>&1; then
+            echo "✓ Pushed to remote: $BRANCH"
+        else
+            echo "⚠️  Could not push to remote (continuing anyway)"
+        fi
+    fi
+else
+    echo "❌ Failed to create checkpoint commit"
+    exit 1
+fi
+
+# Save current session state
+SESSION_STATE="$HOME/.claude/session-state-$(basename "$PROJECT_ROOT").md"
+cat > "$SESSION_STATE" << EOF
+# Session State: $(basename "$PROJECT_ROOT")
+Updated: $(date)
+Commit: $COMMIT_HASH
+
+## Current Working Directory
+\`\`\`
+$PROJECT_ROOT
+\`\`\`
+
+## Git Status
+\`\`\`
+$(git status --porcelain)
+\`\`\`
+
+## Recent Commits
+\`\`\`
+$(git log --oneline -5)
+\`\`\`
+
+## System Environment
+- Memory: $(free -h | grep Mem | awk '{print $3 "/" $2}')
+- Load: $(uptime | awk -F'load average:' '{print $2}')
+- Docker: $(docker --version 2>/dev/null || echo "Not available")
+
+## Last Checkpoint
+$CHECKPOINT_MSG
+EOF
+
+echo "✓ Session state saved: $SESSION_STATE"
+echo "=== Checkpoint Complete ==="
