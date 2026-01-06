@@ -8,8 +8,9 @@ allowed-tools: ["Bash", "Read", "Write", "Glob", "Grep", "LS", "WebFetch", "Todo
 Perform a comprehensive architectural review of the current project considering:
 
 • **AWS Well-Architected Framework** - Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, Sustainability
-• **Azure Well-Architected Framework** - Cost Optimization, Operational Excellence, Performance Efficiency, Reliability, Security  
+• **Azure Well-Architected Framework** - Cost Optimization, Operational Excellence, Performance Efficiency, Reliability, Security
 • **CNCF Cloud Native principles** - Containerization, orchestration, microservices, observability
+• **AI Systems Engineering Patterns** - See `~/.claude/guidelines/ai-patterns.md` for LLM integration patterns
 • **Design Patterns** - Architectural, creational, and behavioral patterns
 • **SOLID Design principles** - Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
 • **Clean Code practices** - Code quality, naming conventions, function design, documentation
@@ -37,7 +38,8 @@ Please analyze the current project by:
 9. **Technical Debt Assessment**: Identify forbidden file patterns, directory structure cleanliness, and debt prevention strategies
 10. **Progress Tracking Review**: Evaluate metrics collection, sprint tracking, and quality gate integration
 11. **Emergency Preparedness**: Assess production incident response, hotfix procedures, and retrospective practices
-12. **Documentation Generation**: Create a comprehensive markdown report in `docs/arch-review-YYYY-MM-DD-HHMMSS.md`
+12. **AI/LLM Integration Assessment** (if applicable): Evaluate against AI Systems Engineering Patterns - input handling, caching strategies, routing, guardrails, resilience
+13. **Documentation Generation**: Create a comprehensive markdown report in `docs/arch-review-YYYY-MM-DD-HHMMSS.md`
 
 Focus on providing actionable recommendations prioritized by impact and effort required.
 
@@ -101,17 +103,30 @@ Focus on providing actionable recommendations prioritized by impact and effort r
     - Evaluate monitoring and alerting systems
     - Review retrospective and learning practices
 
-11. **Documentation Standards Review**
+11. **AI/LLM Integration Assessment** (if applicable)
+    - Reference: `~/.claude/guidelines/ai-patterns.md`
+    - Evaluate input handling (Structured JSON Prompting, Prompt Templates)
+    - Review output validation (Structured Outputs, sanitization)
+    - Assess caching strategies (Semantic Caching with tenant isolation, Context Caching)
+    - Check routing patterns (Model Router, Skills/Lazy Loading)
+    - Verify security measures (Guardrails, Prompt Injection Defense, PII Protection)
+    - Review resilience (LLM Gateway, fallback strategies)
+    - Evaluate RAG implementation (retrieval quality, chunking strategy)
+    - Assess cost optimization (appropriate model selection, caching)
+    - Check observability (logging, metrics, evaluation loops)
+
+12. **Documentation Standards Review**
     - Assess API documentation (OpenAPI/Swagger specs)
     - Review code documentation (JSDoc/TSDoc coverage)
     - Evaluate Architecture Decision Records (ADRs)
     - Check setup, deployment, and operational guides
 
-12. **Comprehensive Report Generation**
+13. **Comprehensive Report Generation**
     - Create detailed architectural review report
     - Include all Well-Architected frameworks assessment
     - Provide SOLID principles and Clean Code evaluation
     - Include CAP theorem trade-off analysis
+    - Include AI Systems Engineering Patterns assessment (if applicable)
     - Generate prioritized recommendations with impact/effort matrix
 
 The report should provide actionable recommendations categorized by priority (Critical, High, Medium, Low) with clear implementation guidance and success metrics.
