@@ -26,6 +26,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [Conventional Commits](./guidelines/conventional-commits.md) - Standardized commit message format
 - [README Documentation](./guidelines/readme-documentation.md) - Organizing project documentation with README as central hub
 - [Session Safety](./guidelines/session-safety.md) - **CRITICAL** - Prevent session hangs and context loss on hardware systems
+- [AI Systems Engineering Patterns](./guidelines/ai-patterns.md) - LLM integration patterns: caching, routing, guardrails, RAG
 - [Python Code Standards](./guidelines/python.md) - *Coming soon*
 - [JavaScript/TypeScript Guidelines](./guidelines/javascript.md) - *Coming soon*
 - [Testing Strategies](./guidelines/testing.md) - *Coming soon*
