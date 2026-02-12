@@ -1,9 +1,16 @@
 .credentials*
+cache
+debug
+file-history
+history.jsonl
 ide
 local
+plans
 projects
 settings.json
 shell-snapshots
+stats-cache.json
 statsig
+telemetry
 todos
 tmp.credentials.json
