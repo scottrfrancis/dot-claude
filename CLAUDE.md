@@ -27,6 +27,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [README Documentation](./guidelines/readme-documentation.md) - Organizing project documentation with README as central hub
 - [Session Safety](./guidelines/session-safety.md) - **CRITICAL** - Prevent session hangs and context loss on hardware systems
 - [AI Systems Engineering Patterns](./guidelines/ai-patterns.md) - LLM integration patterns: caching, routing, guardrails, RAG
+- [Project Setup](./guidelines/project-setup.md) - Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling
 - [Python Code Standards](./guidelines/python.md) - *Coming soon*
 - [JavaScript/TypeScript Guidelines](./guidelines/javascript.md) - *Coming soon*
 - [Testing Strategies](./guidelines/testing.md) - *Coming soon*
@@ -34,6 +35,19 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 ## Custom Commands
 
 - `~/.claude/commands/commit` - Helper for creating conventional commits
+- `~/.claude/commands/lets-go.md` - Session initialization with git sync protocol
+- `~/.claude/commands/session-logger.md` - Session summary with cross-linking and effectiveness assessment
+- `~/.claude/commands/handoff.md` - Generate continuation prompt for seamless session handoff
+- `~/.claude/commands/mine-sessions.md` - Analyze session logs for patterns, metrics, and process improvements
+
+## Global Hooks
+
+Registered in `~/.claude/settings.json`, these fire for every project automatically:
+
+- **SessionStart** → `~/.claude/hooks/load-handoff-context.sh` — Auto-injects the most recent `handoff-*.md` as context on new session startup (skips files >7 days old)
+- **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run
+
+Project-local hooks in `.claude/settings.local.json` layer on top of these.
 
 ## How to Use These Guidelines
 
@@ -82,9 +96,13 @@ List all available guidelines:
 find ~/.claude/guidelines -name "*.md" -type f | sort
 ```
 
+## Global Behavioral Rules
+
+- Create temporary test scripts and programs in `/tmp`, not in the project directory
+- When the user reports a PR has been merged, prompt them to update the local repository (pull, delete merged branch)
+- When asked to push to a repo, suggest a new branch if the current branch is the default (main/master)
+
 ## Version History
 
 - 2025-01-31: Initial setup with shell script guidelines
-- create temporary test scripts and programs in /tmp
-- when i tell you a pr has been merged, you should prompt me to update the local appropriately
-- when you are asked to push to a repo, suggest a new branch if current branch is the default
+- 2026-02-17: Establish as pure base class — remove project-specific content, document extension pattern
