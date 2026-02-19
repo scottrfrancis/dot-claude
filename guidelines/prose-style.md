@@ -14,6 +14,8 @@ When drafting or editing narrative prose (blog posts, articles, essays), follow 
 - **Vary length.** Alternate between short declarative sentences and longer compound ones. A paragraph of uniformly mid-length sentences reads as generated.
 - **Avoid symmetrical constructions.** Phrases like "deliberately X, and deliberately Y" or "not only A but also B" are AI-favored patterns. Break the symmetry. Use a period instead: "Deliberately X. Also Y."
 - **Limit tricolons.** Three-item parallel lists (A, B, and C) are fine occasionally. More than two per piece starts sounding formulaic.
+- **Use active verbs, imperative mood.** "Decompose problems" not "Decomposing problems." "Pick the right model" not "Selecting the right model." Gerund-heavy sentences read as generated outlines, not prose.
+- **Be economical.** If a sentence works without a word, cut the word. Prefer short punches over compound clauses joined by commas. "API budgets are a rounding error against salaries" not "making API budgets a rounding error compared to fully-loaded engineering salaries."
 
 ## Transitions and Connective Tissue
 
@@ -28,6 +30,13 @@ When drafting or editing narrative prose (blog posts, articles, essays), follow 
 - **Avoid AI-favored adverbs.** "Fundamentally," "essentially," "ultimately," "importantly," "significantly" — cut these unless they carry genuine meaning. They rarely do.
 - **Watch for hollow intensifiers.** "Incredibly," "extremely," "absolutely," "truly" — if the noun or verb needs propping up, choose a stronger noun or verb.
 - **Limit "landscape/ecosystem/paradigm" language.** These words have become AI markers. Use them only when the technical meaning is precise (e.g., "threat landscape" in security writing).
+- **Cut fluff phrases.** "It's worth noting that," "in terms of," "the fact that," "a technology organization can make" — these pad word count without adding meaning. Find the verb. Say it.
+
+## Voice and Ownership
+
+- **Take ownership.** "My title" not "the title." "I'll qualify" not "the title needs qualifying." First person signals the author stands behind the argument.
+- **Write as the author, not a commentator.** AI defaults to observational distance ("one might argue," "it could be said"). The author is in the arena. State positions directly.
+- **Avoid distancing constructions.** "What this means depends on where you sit" hedges. "Engineering leadership already knows this" takes a position.
 
 ## Structural Tells
 

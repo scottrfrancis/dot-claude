@@ -39,15 +39,28 @@ Read the target file and perform the following audit. Track findings as you go.
 - Count tricolons (three-item parallel lists). Flag if more than 2.
 - Flag AI-favored adverbs: fundamentally, essentially, ultimately, importantly, significantly, incredibly.
 - Flag hollow landscape/ecosystem/paradigm language.
+- Flag gerund-heavy constructions ("Decomposing...Writing...Selecting") that should be imperative ("Decompose...Write...Pick").
+- Flag fluff phrases: "it's worth noting that," "in terms of," "the fact that," and other padding that adds words without meaning.
 
-### 2. Structural Patterns
+### 2. Economy and Verb Strength
+- Flag passive constructions that can be active.
+- Flag compound clauses that work better as short separate sentences.
+- Flag wordy phrases and suggest tighter alternatives (e.g., "making API budgets a rounding error compared to fully-loaded engineering salaries" → "API budgets are a rounding error against salaries").
+- Flag sentences where cutting 3+ words changes nothing about the meaning.
+
+### 3. Voice and Ownership
+- Flag third-person distancing where first person is appropriate ("the title" → "my title", "the title needs qualifying" → "I'll qualify my own title").
+- Flag observational hedging ("one might argue," "it could be said," "what this means depends on where you sit") — the author should take positions.
+- Flag sentences written as commentary about the argument rather than the argument itself.
+
+### 4. Structural Patterns
 - Flag throat-clearing openers ("This should not surprise anyone", "It's worth noting").
 - Flag hedging formulas ("regardless of which X you prefer", "the broader point stands").
 - Flag question-then-answer patterns ("What does this mean? It means...").
 - Flag "to be sure" sandwiches (counterpoint raised only to be immediately dismissed without engagement).
 - Check whether the conclusion restates the introduction or advances beyond it.
 
-### 3. Voice Alignment
+### 5. Voice Alignment (target style)
 - Compare the draft's tone against the target voice/style.
 - Flag passages that deviate from the target (too formal for a cheeky piece, too casual for Scientific American, etc.).
 - Note where sentence rhythm doesn't match the target voice's characteristic patterns.
