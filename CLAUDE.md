@@ -28,6 +28,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [Session Safety](./guidelines/session-safety.md) - **CRITICAL** - Prevent session hangs and context loss on hardware systems
 - [AI Systems Engineering Patterns](./guidelines/ai-patterns.md) - LLM integration patterns: caching, routing, guardrails, RAG
 - [Project Setup](./guidelines/project-setup.md) - Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling
+- [Prose Style](./guidelines/prose-style.md) - Anti-AI-smell rules for narrative writing: punctuation, sentence variation, transitions, word choice
 - [Python Code Standards](./guidelines/python.md) - *Coming soon*
 - [JavaScript/TypeScript Guidelines](./guidelines/javascript.md) - *Coming soon*
 - [Testing Strategies](./guidelines/testing.md) - *Coming soon*
@@ -39,6 +40,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - `~/.claude/commands/session-logger.md` - Session summary with cross-linking and effectiveness assessment
 - `~/.claude/commands/handoff.md` - Generate continuation prompt for seamless session handoff
 - `~/.claude/commands/mine-sessions.md` - Analyze session logs for patterns, metrics, and process improvements
+- `~/.claude/commands/editorial-review.md` - Audit prose for AI tells; accepts optional voice/style parameter (author name, publication, URL, or adjective)
 
 ## Global Hooks
 
