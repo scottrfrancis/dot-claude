@@ -42,6 +42,7 @@ fi
 # Read the handoff content and emit as additionalContext
 CONTEXT=$(cat "$HANDOFF_FILE")
 FILENAME=$(basename "$HANDOFF_FILE")
+PARENT_DIR=$(dirname "$HANDOFF_FILE")
 
 jq -n \
   --arg ctx "Previous session handoff (from ${FILENAME}):"$'\n\n'"${CONTEXT}" \
@@ -51,5 +52,10 @@ jq -n \
       additionalContext: $ctx
     }
   }'
+
+# Consume: move to archive so subsequent sessions don't reload stale context
+ARCHIVE_DIR="${PARENT_DIR}/archive"
+mkdir -p "$ARCHIVE_DIR"
+mv "$HANDOFF_FILE" "$ARCHIVE_DIR/" 2>/dev/null || true
 
 exit 0
