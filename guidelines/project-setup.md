@@ -81,6 +81,22 @@ project/
 }
 ```
 
+## Security Baseline (Tier 2+ Web Applications)
+
+For any Tier 2+ project that serves a web application or API with authentication:
+
+- [ ] Run `/security-audit` before first production deployment — produces a findings report with breach-pattern analysis
+- [ ] Create `.claude/guidelines/security-posture.md` with project-specific security context (auth mechanism, data sensitivity, threat model)
+- [ ] Ensure auth tests cover: password hashing, rate limiting, auth logging, role enforcement
+- [ ] Ensure input validation tests cover: path traversal, upload safety, tenant isolation
+- [ ] Reference `~/.claude/guidelines/security-hardening.md` in `CLAUDE.md` for ongoing development
+
+**When to run `/security-audit` again:**
+
+- After adding new auth mechanisms or endpoints
+- After a security incident in your domain (same industry, same client, same data category)
+- Before each production deployment milestone
+
 ## Tier 3: Domain-Specific Lifecycle
 
 Everything from Tier 2, plus these as needed:

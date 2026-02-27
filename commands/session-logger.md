@@ -74,6 +74,6 @@ Include a `## Session Effectiveness` section:
 
 - Only include sections that have content — do not generate empty sections
 - File paths must be relative to the project root
-- Keep the summary compact (~100 lines). The verbose 250+ line format is deprecated.
+- Keep the summary compact (~150 lines). Scale depth to match session complexity; the verbose 250+ line format is deprecated.
 - The "Reusable Insights" section should contain genuinely novel observations
 - The effectiveness assessment should be honest — partial completion or blockers are valuable data
