@@ -29,6 +29,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [AI Systems Engineering Patterns](./guidelines/ai-patterns.md) - LLM integration patterns: caching, routing, guardrails, RAG
 - [Project Setup](./guidelines/project-setup.md) - Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling
 - [Prose Style](./guidelines/prose-style.md) - Anti-AI-smell rules for narrative writing: punctuation, sentence variation, transitions, word choice
+- [Prototype Hygiene](./guidelines/prototype-hygiene.md) - Ship clean from day one: config over code, stable docs over stale state, PRs over branches
 - [Python Code Standards](./guidelines/python.md) - *Coming soon*
 - [JavaScript/TypeScript Guidelines](./guidelines/javascript.md) - *Coming soon*
 - [Testing Strategies](./guidelines/testing.md) - *Coming soon*
