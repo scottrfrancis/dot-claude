@@ -19,6 +19,34 @@ I'll review the project documentation including:
 
 Arguments provided: $ARGUMENTS
 
+## Hook Health Check
+
+Run this before anything else. Check that all three global safety hooks are installed and executable:
+
+```bash
+for f in load-handoff-context.sh pre-tool-safety.sh session-end-reminder.sh; do
+  test -x ~/.claude/hooks/$f && echo "OK: $f" || echo "MISSING/NOT-EXECUTABLE: $f"
+done
+grep -q '"SessionStart"' ~/.claude/settings.json && echo "OK: SessionStart" || echo "MISSING: SessionStart in settings.json"
+grep -q '"PreToolUse"' ~/.claude/settings.json && echo "OK: PreToolUse" || echo "MISSING: PreToolUse in settings.json"
+grep -q '"Stop"' ~/.claude/settings.json && echo "OK: Stop" || echo "MISSING: Stop in settings.json"
+```
+
+- **All OK** → include `Hooks: ✓ all installed` in the Ready Output.
+- **Any missing** → display a prominent warning block before proceeding:
+
+```
+⚠️  HOOK SETUP NEEDED
+[list each missing item]
+
+To fix:
+- Re-clone dotfiles or copy hook scripts to ~/.claude/hooks/
+- chmod +x ~/.claude/hooks/*.sh
+- Ensure ~/.claude/settings.json registers SessionStart, PreToolUse, and Stop hooks
+```
+
+This is advisory only — continue the session regardless.
+
 ## Git Sync Protocol
 
 ### ~/.claude config repo
