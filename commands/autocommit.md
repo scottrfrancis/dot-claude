@@ -1,26 +1,62 @@
 ---
-description: Generate a conventional commit message from staged changes and commit
-argument-hint: [-y to skip confirmation] [-t <type> to suggest commit type]
+description: Stage changed files and commit with an AI-generated conventional commit message
+argument-hint: [-y to skip confirmation] [-t type to suggest commit type] [-all to include untracked files]
 allowed-tools: Bash, Read, Glob
 ---
 
-Generate and apply a conventional commit message for the current staged changes.
+Stage tracked changes and commit with a generated conventional commit message.
 
 Arguments: $ARGUMENTS
 
 ## Step 1 — Check what's staged
 
 ```bash
-git diff --cached --stat
 git diff --cached --name-only
 ```
 
-If nothing is staged, report it and stop:
-> "Nothing is staged. Stage specific files with `git add <file>` before running /autocommit."
+**If files are already staged:** skip Step 2 and go directly to Step 3.
 
-Do NOT run `git add .` or stage anything automatically. The user is responsible for staging.
+**If nothing is staged:** check for unstaged changes:
 
-## Step 2 — Read the diff for context
+```bash
+git status --porcelain
+```
+
+If nothing is staged AND the working tree is clean, report:
+> "Nothing to commit. Working tree is clean."
+and stop.
+
+## Step 2 — Stage changes (only when nothing was pre-staged)
+
+Show the user a summary of what will be staged:
+
+```
+Files to be staged (tracked changes):
+  M  src/foo.ts
+  M  src/bar.ts
+```
+
+If `-all` was passed, also include untracked files in the summary and stage them too:
+
+```
+New files to be staged (-all):
+  ?? new-file.ts
+```
+
+If `-all` was NOT passed and there are untracked files, list them separately as skipped:
+
+```
+Untracked files (skipped — use -all to include them):
+  ?? new-file.ts
+```
+
+Then stage. Without `-all` use `git add -u` (tracked modifications and deletions only). With `-all` use `git add -A` (everything, including untracked files).
+
+- If `-y` was passed: stage without prompting
+- Otherwise: ask "Stage these files and generate commit message? (y/n)"
+  - If "n": stop without staging or committing
+
+## Step 3 — Read the diff for context
 
 ```bash
 git diff --cached
@@ -28,7 +64,7 @@ git diff --cached
 
 Use this to understand what actually changed, not just file names.
 
-## Step 3 — Generate the commit message
+## Step 4 — Generate the commit message
 
 Follow `~/.claude/guidelines/conventional-commits.md`. The format is:
 
@@ -45,20 +81,15 @@ Follow `~/.claude/guidelines/conventional-commits.md`. The format is:
 - Include a body only if the why isn't obvious from the subject
 - Add `BREAKING CHANGE:` footer if applicable
 
-## Step 4 — Show and confirm
+## Step 5 — Show and confirm
 
 Display the proposed message clearly. Then:
 
-- If `-y` was passed in arguments: commit immediately without prompting
+- If `-y` was passed: commit immediately without prompting
 - Otherwise: ask "Commit with this message? (y/n)"
+  - If "n": stop (changes remain staged so the user can commit manually)
 
-If confirmed, commit:
-
-```bash
-git commit -m "<message>"
-```
-
-Use a heredoc for multi-line messages to preserve formatting:
+If confirmed, commit using a heredoc to preserve formatting:
 
 ```bash
 git commit -m "$(cat <<'EOF'
