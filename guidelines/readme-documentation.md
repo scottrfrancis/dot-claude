@@ -2,11 +2,13 @@
 
 Guidelines for organizing project documentation with README.md as the central navigation hub.
 
-## Core Principle
+## Core Principles
 
-**All user-facing information must be accessible from the README.md file, either directly included or linked.**
+**Single entry point.** All user-facing information must be accessible from README.md, either directly included or linked. Users should never need to hunt through the repository structure to find documentation. The README serves as the single entry point for understanding and using the project.
 
-Users should never need to hunt through the repository structure to find documentation. The README serves as the single entry point for understanding and using the project.
+**DRY — Don't Repeat Yourself.** Each fact lives in exactly one place. When the same information is needed in multiple sections or files, link to the canonical source — never copy it. Duplicated docs drift apart and contradict each other.
+
+**Describe current state. Git keeps history.** Write documentation that reflects how the project works *right now*. Do not narrate evolution ("previously we used X, now we use Y"), explain why things changed, or add "added in v2.0"-style annotations. Readers who need history have `git log`.
 
 ## README Structure
 
@@ -166,6 +168,36 @@ docs/
 - Architecture and design documents
 - Contributing guidelines and development setup
 
+### DRY in Practice
+
+Each piece of information has one canonical home. Everything else links to it.
+
+**Do this:**
+```markdown
+## Installation
+
+See the [Installation Guide](docs/installation.md) for full details.
+
+Quick start:
+\`\`\`bash
+npm install my-tool
+\`\`\`
+```
+
+**Don't do this:**
+```markdown
+## Installation
+
+Run `npm install my-tool`. Configure it by setting `API_KEY` in your environment,
+setting `timeout` in `config.json`, and enabling `verbose` in `config.json`...
+
+## Configuration
+
+Set `API_KEY` in your environment, `timeout` in `config.json`, `verbose` in `config.json`...
+```
+
+If a config option is documented in [docs/configuration.md](docs/configuration.md), the README mentions it once with a link — it does not also describe it inline.
+
 ### Navigation Aids
 
 **Do this:**
@@ -222,6 +254,7 @@ Check out our wiki for more info. There's also some docs in the docs folder.
 2. **Update navigation**: When adding new docs, update README links
 3. **Review organization**: Periodically assess if the structure still makes sense
 4. **User feedback**: Monitor issues for documentation requests or confusion
+5. **Prune historical narrative**: Remove "previously", "as of v2", "we changed this because", and similar language. If the information is relevant, restate it as current fact; otherwise delete it.
 
 ## Claude Code Integration
 
@@ -236,3 +269,5 @@ Ensure that:
 - Documentation structure is clear and navigable
 - Links include helpful descriptions
 - Organization follows established patterns
+- No information is duplicated — each fact has one canonical location; everything else links to it
+- Content describes current state only — no version history, change rationale, or "we used to" narrative
