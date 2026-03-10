@@ -1,6 +1,6 @@
 ---
 description: Stage changed files and commit with an AI-generated conventional commit message
-argument-hint: [-y to skip confirmation] [-t type to suggest commit type] [-all to include untracked files]
+argument-hint: [-n to confirm before committing] [-t type to suggest commit type] [-all to include untracked files]
 allowed-tools: Bash, Read, Glob
 ---
 
@@ -52,9 +52,7 @@ Untracked files (skipped — use -all to include them):
 
 Then stage. Without `-all` use `git add -u` (tracked modifications and deletions only). With `-all` use `git add -A` (everything, including untracked files).
 
-- If `-y` was passed: stage without prompting
-- Otherwise: ask "Stage these files and generate commit message? (y/n)"
-  - If "n": stop without staging or committing
+Stage immediately unless `-n` was passed, in which case ask "Stage these files and generate commit message? (y/n)" and stop if "n".
 
 ## Step 3 — Read the diff for context
 
@@ -81,15 +79,11 @@ Follow `~/.claude/guidelines/conventional-commits.md`. The format is:
 - Include a body only if the why isn't obvious from the subject
 - Add `BREAKING CHANGE:` footer if applicable
 
-## Step 5 — Show and confirm
+## Step 5 — Show and commit
 
-Display the proposed message clearly. Then:
+Display the proposed message clearly. Commit immediately unless `-n` was passed, in which case ask "Commit with this message? (y/n)" and stop if "n" (changes remain staged).
 
-- If `-y` was passed: commit immediately without prompting
-- Otherwise: ask "Commit with this message? (y/n)"
-  - If "n": stop (changes remain staged so the user can commit manually)
-
-If confirmed, commit using a heredoc to preserve formatting:
+Commit using a heredoc to preserve formatting:
 
 ```bash
 git commit -m "$(cat <<'EOF'

@@ -47,6 +47,7 @@ Hooks         ←  validate quality    ←  data enforcement
 │
 ├── hooks/                       # Global hooks (fire for every project)
 │   ├── load-handoff-context.sh  # SessionStart: auto-inject recent handoff context
+│   ├── pre-tool-safety.sh       # PreToolUse: block destructive git/rm/config writes
 │   └── session-end-reminder.sh  # Stop: remind about /session-logger and /handoff
 │
 ├── guidelines/                  # Reusable development standards
@@ -69,7 +70,6 @@ Hooks         ←  validate quality    ←  data enforcement
 │   ├── handoff.md               # Continuation prompt for session handoff
 │   ├── mine-sessions.md         # Session log analysis and pattern extraction
 │   ├── arch-review.md           # Principal Architect review framework
-│   ├── arch-review              # (executable companion)
 │   ├── doc-review.md            # Documentation audit: accuracy, DRY, clarity
 │   ├── editorial-review.md      # Prose audit: AI tells, voice/tone refinement
 │   ├── security-audit.md        # Breach-driven security audit for web apps
@@ -102,7 +102,7 @@ Hooks         ←  validate quality    ←  data enforcement
 | Command | Invocation | Purpose |
 | ------- | --------- | ------- |
 | **commit-manual** | `/commit <type> [scope] <description>` | Create a conventional commit with validated type |
-| **autocommit** | `/autocommit [-y] [-t type]` | Stage tracked changes and commit with an AI-generated conventional commit message |
+| **autocommit** | `/autocommit [-n] [-t type] [-all]` | Stage tracked changes and commit with an AI-generated conventional commit message; `-n` prompts for confirmation |
 | **arch-review** | `/arch-review` | Principal Architect review: AWS/SOLID frameworks, security, testing, AI patterns, technical debt |
 | **extract-adr** | `/extract-adr` | Convert significant decisions from session logs into Architecture Decision Records |
 | **doc-review** | `/doc-review` | Audit project documentation for accuracy, DRY, and clarity; commit fixes on a `docs/review-*` branch |
@@ -146,7 +146,8 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
 | Event | Hook | What It Does |
 | ----- | ---- | ------------ |
 | **SessionStart** | `load-handoff-context.sh` | Auto-injects the most recent `handoff-*.md` as context on new session startup. Checks project-local `.claude/session-logs/` first, then global. Skips files >7 days old. |
-| **Stop** | `session-end-reminder.sh` | Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) when neither has been run in the last 2 hours. |
+| **PreToolUse** | `pre-tool-safety.sh` | Blocks (exit 2) destructive operations: `git reset --hard`, `git push --force`, `git worktree remove --force`, `rm -rf`, and redirects to sensitive config files. Prompts for user confirmation before proceeding. |
+| **Stop** | `session-end-reminder.sh` | Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) when neither has been run today. |
 
 ### Project Hook Types
 
@@ -157,7 +158,7 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
 
 ### Hook Design Rules
 
-- **Advisory only** — hooks warn on stderr but never block operations (exit 0 always)
+- **Advisory by default** — most hooks warn on stderr and exit 0; PreToolUse hooks may exit 2 to block an operation and prompt the user to confirm
 - **Fast** — 5-second timeout; no network calls, no heavy computation
 - **Defensive** — `set -euo pipefail`, drain stdin with `cat > /dev/null` or `jq`, guard all greps with `|| true`
 - **Context injection** — SessionStart hooks can output JSON with `additionalContext` to inject text into Claude's context

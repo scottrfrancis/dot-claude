@@ -6,6 +6,11 @@
 
 set -euo pipefail
 
+# Require jq — exit silently if unavailable (hook is advisory only)
+if ! command -v jq > /dev/null 2>&1; then
+  exit 0
+fi
+
 # Read hook input from stdin
 HOOK_INPUT=$(cat)
 
@@ -24,7 +29,8 @@ for search_dir in "${CWD}/.claude/session-logs" "${HOME}/.claude/session-logs"; 
     continue
   fi
 
-  # Find handoff files, most recent first
+  # Find handoff files modified within 7 days, most recent first
+  # -mtime -7 is POSIX/BSD-safe (days); sort -r picks the most recent by name (YYYY-MM-DD prefix)
   CANDIDATE=$(find "$search_dir" -maxdepth 1 -name "handoff-*.md" -type f -mtime -7 2>/dev/null \
     | sort -r \
     | head -1)
