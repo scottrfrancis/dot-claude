@@ -37,11 +37,15 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 
 ## Custom Commands
 
-- `~/.claude/commands/commit` - Helper for creating conventional commits
+- `~/.claude/commands/commit-manual` - Helper for creating conventional commits
+- `~/.claude/commands/autocommit.md` - Generate and apply a conventional commit message for staged changes
 - `~/.claude/commands/lets-go.md` - Session initialization with git sync protocol
 - `~/.claude/commands/session-logger.md` - Session summary with cross-linking and effectiveness assessment
 - `~/.claude/commands/handoff.md` - Generate continuation prompt for seamless session handoff
+- `~/.claude/commands/pickup.md` - Resume from the most recent handoff prompt
 - `~/.claude/commands/mine-sessions.md` - Analyze session logs for patterns, metrics, and process improvements
+- `~/.claude/commands/arch-review.md` - Principal Architect review framework
+- `~/.claude/commands/doc-review.md` - Audit documentation for accuracy, DRY, and clarity; commit on a docs branch
 - `~/.claude/commands/editorial-review.md` - Audit prose for AI tells; accepts optional voice/style parameter (author name, publication, URL, or adjective)
 - `~/.claude/commands/security-audit.md` - Breach-driven security audit for web applications
 

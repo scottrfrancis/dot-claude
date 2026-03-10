@@ -51,14 +51,17 @@ Hooks         ←  validate quality    ←  data enforcement
 │
 ├── guidelines/                  # Reusable development standards
 │   ├── shell-scripts.md         # Bash best practices: error handling, portability
-│   ├── convential-commits.md    # Git commit message format and types
+│   ├── conventional-commits.md  # Git commit message format and types
 │   ├── readme-documentation.md  # README-centric documentation patterns
 │   ├── session-safety.md        # Hardware system session isolation (CRITICAL)
 │   ├── ai-patterns.md           # LLM integration: caching, routing, RAG, guardrails
 │   ├── project-setup.md         # Tiered checklist for bootstrapping new projects
 │   ├── shell-escaping.md        # Shell quoting, TTY handling, VS Code compatibility
 │   ├── C4-diagramming.md        # C4 Model PlantUML organization
-│   └── markdown-formatting.md   # Spacing and list formatting standards
+│   ├── markdown-formatting.md   # Spacing and list formatting standards
+│   ├── prose-style.md           # Anti-AI-smell rules: punctuation, sentence variation, word choice
+│   ├── prototype-hygiene.md     # Ship clean: config over code, stable docs, PRs over branches
+│   └── security-hardening.md    # Defense-in-depth patterns grounded in breach analysis
 │
 ├── commands/                    # Global commands available in every project
 │   ├── lets-go.md               # Session initialization with git sync protocol
@@ -67,8 +70,12 @@ Hooks         ←  validate quality    ←  data enforcement
 │   ├── mine-sessions.md         # Session log analysis and pattern extraction
 │   ├── arch-review.md           # Principal Architect review framework
 │   ├── arch-review              # (executable companion)
+│   ├── doc-review.md            # Documentation audit: accuracy, DRY, clarity
+│   ├── editorial-review.md      # Prose audit: AI tells, voice/tone refinement
+│   ├── security-audit.md        # Breach-driven security audit for web apps
+│   ├── pickup.md                # Resume from the most recent handoff prompt
 │   ├── commit-manual            # Conventional commit helper
-│   ├── autocommit               # AI-powered commit message generator
+│   ├── autocommit.md            # AI-powered commit message generator
 │   ├── checkpoint-progress      # WIP commit and session state saver
 │   ├── session-cleanup          # Pre-session device/process cleanup
 │   ├── validate-hw-env          # Hardware environment pre-check
@@ -88,6 +95,7 @@ Hooks         ←  validate quality    ←  data enforcement
 | **session-logger** | `/session-logger [topic]` | Create structured session summary with: activities, decisions, reusable insights, effectiveness assessment. Cross-links to previous session log automatically |
 | **handoff** | `/handoff [topic notes]` | Generate forward-looking continuation prompt for the next session. Use when context window is filling up or when pausing work mid-task. Saves to `session-logs/handoff-*.md` |
 | **mine-sessions** | `/mine-sessions [days:N] [save]` | Analyze session logs for patterns, metrics, and process improvement recommendations. Extracts reusable insights, tracks decision evolution, identifies process friction |
+| **pickup** | `/pickup` | Resume from the most recent handoff: load handoff file, quick git sync, archive the handoff so it isn't re-injected next session |
 
 ### Git and Code Quality
 
@@ -97,6 +105,9 @@ Hooks         ←  validate quality    ←  data enforcement
 | **autocommit** | `/autocommit [-y] [-t type]` | Analyze changes and generate commit message with AI |
 | **arch-review** | `/arch-review` | Principal Architect review: AWS/SOLID frameworks, security, testing, AI patterns, technical debt |
 | **extract-adr** | `/extract-adr` | Convert significant decisions from session logs into Architecture Decision Records |
+| **doc-review** | `/doc-review` | Audit project documentation for accuracy, DRY, and clarity; commit fixes on a `docs/review-*` branch |
+| **editorial-review** | `/editorial-review [style]` | Audit prose for AI-generated patterns; refine toward a target voice or style |
+| **security-audit** | `/security-audit` | Breach-driven security audit: OWASP top 10, secrets exposure, injection, auth weaknesses |
 
 ### System Operations
 
@@ -112,13 +123,16 @@ Hooks         ←  validate quality    ←  data enforcement
 | --------- | ------------ |
 | **project-setup.md** | Starting any new project — tiered checklist (Foundation → Tracked → Domain-Specific) |
 | **shell-scripts.md** | Writing any bash script — directory detection, `set -euo pipefail`, cleanup traps |
-| **convential-commits.md** | Every git commit — `type(scope): description` format |
+| **conventional-commits.md** | Every git commit — `type(scope): description` format |
 | **readme-documentation.md** | Organizing project documentation — README as central hub |
 | **session-safety.md** | **CRITICAL** — hardware systems only. Prevents device contention across sessions |
 | **ai-patterns.md** | Building LLM integrations — 17 patterns: structured prompting, caching, routing, RAG, security |
 | **shell-escaping.md** | Complex shell commands — quoting rules, heredocs, VS Code terminal escaping |
 | **C4-diagramming.md** | Architecture diagrams — modular PlantUML with C4 Model levels |
 | **markdown-formatting.md** | All markdown files — blank line rules, list spacing |
+| **prose-style.md** | Narrative writing — anti-AI-smell rules: punctuation, sentence variation, transitions |
+| **prototype-hygiene.md** | Prototypes and early-stage projects — config over code, stable docs, PRs over branches |
+| **security-hardening.md** | Web applications — defense-in-depth patterns grounded in real-world breach analysis |
 
 ## Hooks System
 
