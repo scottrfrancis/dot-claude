@@ -101,6 +101,10 @@ project/.claude/overrides.md
 3. Explain the reasoning behind each guideline
 4. Keep guidelines concise but comprehensive
 
+## Onboarding Guides
+
+- [Copilot to Claude Code](./guides/copilot-to-claude-code.md) - Transition guide for GitHub Copilot users: mental model shift, setup, session lifecycle, permissions, commands
+
 ## Quick Reference
 
 List all available guidelines:
@@ -120,3 +124,4 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - 2025-01-31: Initial setup with shell script guidelines
 - 2026-02-17: Establish as pure base class — remove project-specific content, document extension pattern
 - 2026-03-10: Add PreToolUse safety hook; create MEMORY.md; clean up settings.json; document checkpoint-progress and extract-adr
+- 2026-03-10: Add guides/ directory; copilot-to-claude-code.md onboarding guide
