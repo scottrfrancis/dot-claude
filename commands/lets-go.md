@@ -21,6 +21,27 @@ Arguments provided: $ARGUMENTS
 
 ## Git Sync Protocol
 
+### ~/.claude config repo
+
+Run this check first, before any project-specific work:
+
+```bash
+git -C ~/.claude fetch origin
+git -C ~/.claude rev-list --count HEAD..origin/main   # behind
+git -C ~/.claude rev-list --count origin/main..HEAD   # ahead
+git -C ~/.claude status --porcelain
+```
+
+Alert the user prominently if out of sync:
+
+- **Behind**: "⚠ ~/.claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C ~/.claude pull`."
+- **Ahead**: "~/.claude has {N} unpushed commits — consider pushing to back up your config."
+- **Dirty**: "~/.claude has uncommitted changes."
+
+Skip silently if `~/.claude` has no remote or the fetch fails.
+
+### Project repo
+
 Run these checks in order:
 
 1. `git fetch origin` — update remote tracking refs
