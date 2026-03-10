@@ -8,8 +8,18 @@ set -euo pipefail
 # Read hook input from stdin
 cat > /dev/null
 
+# Require git
+if ! command -v git > /dev/null 2>&1; then
+  exit 0
+fi
+
 # Must be in a git repo to detect changes
 if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+  exit 0
+fi
+
+# .claude/session-logs must exist or checks are meaningless
+if [[ ! -d ".claude/session-logs" ]]; then
   exit 0
 fi
 
@@ -23,8 +33,11 @@ if [[ "$TOTAL_CHANGES" -lt 3 ]]; then
 fi
 
 # --- Check 1: Session log reminder ---
-# Look for a session log created in the last 2 hours (excluding handoff and mine-report files)
-RECENT_LOG=$(find .claude/session-logs -name "*.md" ! -name "handoff-*" ! -name "mine-report-*" -mmin -120 -type f 2>/dev/null | head -1 || true)
+# Look for a session log created today (mtime -1 = within 24h; BSD/macOS + GNU compatible)
+# Excludes handoff and mine-report files
+RECENT_LOG=$(find .claude/session-logs -maxdepth 1 -name "*.md" \
+  ! -name "handoff-*" ! -name "mine-report-*" \
+  -mtime -1 -type f 2>/dev/null | head -1 || true)
 
 if [[ -z "$RECENT_LOG" ]]; then
   echo "Session reminder: ${TOTAL_CHANGES} files changed but no session log created. Consider running /session-logger." >&2
@@ -32,7 +45,8 @@ fi
 
 # --- Check 2: Handoff reminder ---
 if [[ "$TOTAL_CHANGES" -ge 5 ]]; then
-  RECENT_HANDOFF=$(find .claude/session-logs -name "handoff-*.md" -mmin -120 -type f 2>/dev/null | head -1 || true)
+  RECENT_HANDOFF=$(find .claude/session-logs -maxdepth 1 -name "handoff-*.md" \
+    -mtime -1 -type f 2>/dev/null | head -1 || true)
 
   if [[ -z "$RECENT_HANDOFF" ]]; then
     echo "Handoff reminder: ${TOTAL_CHANGES} files changed. Consider running /handoff to preserve context for the next session." >&2

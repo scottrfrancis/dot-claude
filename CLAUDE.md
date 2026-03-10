@@ -49,12 +49,15 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - `~/.claude/commands/doc-review.md` - Audit documentation for accuracy, DRY, and clarity; commit on a docs branch
 - `~/.claude/commands/editorial-review.md` - Audit prose for AI tells; accepts optional voice/style parameter (author name, publication, URL, or adjective)
 - `~/.claude/commands/security-audit.md` - Breach-driven security audit for web applications
+- `~/.claude/commands/checkpoint-progress` - Git checkpoint script: stages all changes and commits a WIP snapshot with timestamp
+- `~/.claude/commands/extract-adr` - Extract architectural decisions from a session log into ADR format; saves to `docs/adr/`
 
 ## Global Hooks
 
 Registered in `~/.claude/settings.json`, these fire for every project automatically:
 
 - **SessionStart** → `~/.claude/hooks/load-handoff-context.sh` — Auto-injects the most recent `handoff-*.md` as context on new session startup (skips files >7 days old)
+- **PreToolUse** → `~/.claude/hooks/pre-tool-safety.sh` — Blocks destructive git operations (`reset --hard`, `push --force`), recursive deletes, and writes to sensitive config files; prompts for confirmation
 - **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run
 
 Project-local hooks in `.claude/settings.local.json` layer on top of these.
@@ -116,3 +119,4 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 
 - 2025-01-31: Initial setup with shell script guidelines
 - 2026-02-17: Establish as pure base class — remove project-specific content, document extension pattern
+- 2026-03-10: Add PreToolUse safety hook; create MEMORY.md; clean up settings.json; document checkpoint-progress and extract-adr
