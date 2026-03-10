@@ -11,6 +11,7 @@ These guidelines help maintain consistency across projects and capture best prac
 The user works on multiple projects that have different repositories, policies and strategies.  The user is also forgetful to update the local repository when starting sessions.
 
 REMIND the user to consider the appropriate branching strategy when starting a session or a series of tasks.  This reminder should include
+
 - current branch and status
 - suggestions to pull, push, create or delete branches
 
@@ -38,7 +39,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 ## Custom Commands
 
 - `~/.claude/commands/commit-manual` - Helper for creating conventional commits
-- `~/.claude/commands/autocommit.md` - Generate and apply a conventional commit message for staged changes
+- `~/.claude/commands/autocommit.md` - Stage tracked changes and commit with an AI-generated conventional commit message
 - `~/.claude/commands/lets-go.md` - Session initialization with git sync protocol
 - `~/.claude/commands/session-logger.md` - Session summary with cross-linking and effectiveness assessment
 - `~/.claude/commands/handoff.md` - Generate continuation prompt for seamless session handoff

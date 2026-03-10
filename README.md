@@ -102,7 +102,7 @@ Hooks         ←  validate quality    ←  data enforcement
 | Command | Invocation | Purpose |
 | ------- | --------- | ------- |
 | **commit-manual** | `/commit <type> [scope] <description>` | Create a conventional commit with validated type |
-| **autocommit** | `/autocommit [-y] [-t type]` | Analyze changes and generate commit message with AI |
+| **autocommit** | `/autocommit [-y] [-t type]` | Stage tracked changes and commit with an AI-generated conventional commit message |
 | **arch-review** | `/arch-review` | Principal Architect review: AWS/SOLID frameworks, security, testing, AI patterns, technical debt |
 | **extract-adr** | `/extract-adr` | Convert significant decisions from session logs into Architecture Decision Records |
 | **doc-review** | `/doc-review` | Audit project documentation for accuracy, DRY, and clarity; commit fixes on a `docs/review-*` branch |
