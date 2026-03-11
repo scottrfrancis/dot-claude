@@ -34,7 +34,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [Security Hardening](./guidelines/security-hardening.md) - Defense-in-depth patterns grounded in real-world breach analysis
 - [Python Code Standards](./guidelines/python.md) - *Coming soon*
 - [JavaScript/TypeScript Guidelines](./guidelines/javascript.md) - *Coming soon*
-- [Testing Strategies](./guidelines/testing.md) - *Coming soon*
+- [Testing Strategies](./guidelines/testing.md) - Test pyramid, mocking, CI integration, framework-specific notes
 
 ## Custom Commands
 
@@ -49,6 +49,8 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - `~/.claude/commands/doc-review.md` - Audit documentation for accuracy, DRY, and clarity; commit on a docs branch
 - `~/.claude/commands/editorial-review.md` - Audit prose for AI tells; accepts optional voice/style parameter (author name, publication, URL, or adjective)
 - `~/.claude/commands/security-audit.md` - Breach-driven security audit for web applications
+- `~/.claude/commands/review-pr.md` - PR code review: bugs, security, missing tests, style; works with PR numbers or branches
+- `~/.claude/commands/babysit-pr.md` - Monitor a PR for check results, reviews, and merge readiness; pairs with `/loop`
 - `~/.claude/commands/checkpoint-progress` - Git checkpoint script: stages all changes and commits a WIP snapshot with timestamp
 - `~/.claude/commands/extract-adr` - Extract architectural decisions from a session log into ADR format; saves to `docs/adr/`
 
@@ -125,3 +127,4 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - 2026-02-17: Establish as pure base class — remove project-specific content, document extension pattern
 - 2026-03-10: Add PreToolUse safety hook; create MEMORY.md; clean up settings.json; document checkpoint-progress and extract-adr
 - 2026-03-10: Add guides/ directory; copilot-to-claude-code.md onboarding guide
+- 2026-03-11: Add /review-pr and /babysit-pr commands; add testing guideline
