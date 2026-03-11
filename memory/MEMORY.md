@@ -35,9 +35,7 @@
 
 ## Orphaned Commands (needs cleanup)
 
-- `commands/checkpoint-progress` — bash script for git checkpointing; not in CLAUDE.md; keep or document
-- `commands/extract-adr` — YAML skill for extracting ADRs from session logs; not in CLAUDE.md; keep or document
-- `commands/arch-review` (no ext) — appears to be a bash variant; `arch-review.md` is the canonical skill
+- `commands/arch-review` (no ext) — appears to be a bash variant; `arch-review.md` is the canonical skill; safe to delete
 
 ## Patterns to Reuse
 
