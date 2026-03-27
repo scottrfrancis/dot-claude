@@ -54,13 +54,19 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - `~/.claude/commands/checkpoint-progress` - Git checkpoint script: stages all changes and commits a WIP snapshot with timestamp
 - `~/.claude/commands/extract-adr` - Extract architectural decisions from a session log into ADR format; saves to `docs/adr/`
 
+## Cross-Tool Session Protocol
+
+Session logs are written to `session-logs/` at the project root — a shared location accessible by Claude Code, Cursor, Copilot, and Droid. Legacy locations (`.claude/session-logs/`, `.factory/logs/`) are searched as fallbacks.
+
+All session logs and handoff files include YAML frontmatter with a `tool:` field (e.g., `tool: claude-code`) so any receiving tool knows the source. This enables cross-tool session continuity — a handoff written in Cursor can be picked up by Claude Code, and vice versa.
+
 ## Global Hooks
 
 Registered in `~/.claude/settings.json`, these fire for every project automatically:
 
-- **SessionStart** → `~/.claude/hooks/load-handoff-context.sh` — Auto-injects the most recent `handoff-*.md` as context on new session startup (skips files >7 days old)
+- **SessionStart** → `~/.claude/hooks/load-handoff-context.sh` — Auto-injects the most recent `handoff-*.md` as context on new session startup; searches `session-logs/`, `.claude/session-logs/`, `.factory/logs/`, then `~/.claude/session-logs/` (skips files >7 days old)
 - **PreToolUse** → `~/.claude/hooks/pre-tool-safety.sh` — Blocks destructive git operations (`reset --hard`, `push --force`), recursive deletes, and writes to sensitive config files; prompts for confirmation
-- **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run
+- **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run; checks both `session-logs/` and `.claude/session-logs/`
 
 Project-local hooks in `.claude/settings.local.json` layer on top of these.
 
@@ -128,3 +134,4 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - 2026-03-10: Add PreToolUse safety hook; create MEMORY.md; clean up settings.json; document checkpoint-progress and extract-adr
 - 2026-03-10: Add guides/ directory; copilot-to-claude-code.md onboarding guide
 - 2026-03-11: Add /review-pr and /babysit-pr commands; add testing guideline
+- 2026-03-27: Cross-tool session sync — session-logs/ as shared primary location, YAML frontmatter with tool: field, multi-location search in all commands/hooks, project docs integration (docs/guidelines/, docs/adr/, AGENTS.md) in review commands

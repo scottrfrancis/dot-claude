@@ -12,8 +12,8 @@ steps:
   - name: "Find log file"
     run: |
       if [ -z "$logfile" ]; then
-        # Find most recent log with ADR markers
-        LOGFILE=$(grep -l "ADR-worthy" .claude/session-logs/*.md 2>/dev/null | tail -1)
+        # Find most recent log with ADR markers (check all cross-tool locations)
+        LOGFILE=$(grep -l "ADR-worthy" session-logs/*.md .claude/session-logs/*.md .factory/logs/*.md 2>/dev/null | tail -1)
         if [ -z "$LOGFILE" ]; then
           echo "No session logs found with ADR markers"
           exit 1

@@ -6,12 +6,25 @@ allowed-tools: Write, Bash, Read, LS, Grep, Glob, TodoWrite, Git, Gh
 
 as $ARGUMENTS
 
+## Load Handoff Context
+
+The SessionStart hook auto-injects handoff context, but verify it loaded and check for cross-tool handoffs:
+
+1. Look for the most recent `handoff-*.md` file in these locations (check all, take newest):
+   - `session-logs/` (shared cross-tool location)
+   - `.claude/session-logs/` (Claude Code legacy location)
+   - `.factory/logs/` (Droid legacy location)
+2. If found and less than 7 days old, read it and incorporate as session context
+3. If the file has YAML frontmatter with a `tool:` field, note the source (e.g., "Continuing from a Cursor session")
+4. Report: "Loaded handoff context from [filename] ([tool])" or "No recent handoff found"
+
+## Review Project Documentation
+
 I'll review the project documentation including:
 
 - README
 - ARCHITECTURE.md (if present)
 - CONTRIBUTING.md (if present)
-- .claude/session-logs (verify auto-loaded handoff context; the SessionStart hook injects the most recent handoff automatically)
 - docs/
 - plans/
 - TODO

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # SessionStart hook: Auto-inject most recent handoff context into new sessions.
 # Advisory only — never blocks session start.
-# Looks for handoff files in project-local .claude/session-logs/ first,
-# then falls back to ~/.claude/session-logs/.
+# Looks for handoff files in shared session-logs/ first, then legacy locations
+# (.claude/session-logs/, .factory/logs/), then global ~/.claude/session-logs/.
 
 set -euo pipefail
 
@@ -22,9 +22,9 @@ fi
 
 CWD=$(echo "$HOOK_INPUT" | jq -r '.cwd // empty' 2>/dev/null)
 
-# Find most recent handoff file, checking project-local first then global
+# Find most recent handoff file, checking shared cross-tool location first, then legacy paths
 HANDOFF_FILE=""
-for search_dir in "${CWD}/.claude/session-logs" "${HOME}/.claude/session-logs"; do
+for search_dir in "${CWD}/session-logs" "${CWD}/.claude/session-logs" "${CWD}/.factory/logs" "${HOME}/.claude/session-logs"; do
   if [[ ! -d "$search_dir" ]]; then
     continue
   fi
