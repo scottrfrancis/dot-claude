@@ -2,6 +2,16 @@
 
 Perform a targeted security audit of the web application codebase. This audit follows the breach-driven methodology: map real attack patterns to your system, find the gaps, recommend fixes.
 
+## Before auditing: load project security context
+
+If the project has these files, read them before starting the audit:
+
+1. `docs/guidelines/security.md` — project-specific security rules (CWE-117, CWE-22, CWE-209, etc.). These exist because they caused real review failures.
+2. `docs/learnings/` — especially any files about CodeQL or security scanner pitfalls.
+3. `docs/adr/` — any security-related architecture decisions.
+
+Not all projects have these. Skip any that don't exist.
+
 ## Audit Scope
 
 Focus on the credential-compromise-to-data-access attack chain — the most common web application breach pattern:
@@ -60,12 +70,18 @@ For each finding, report:
 | **Recommendation** | Specific fix with code pattern |
 | **Effort** | Small / Medium / Large |
 
+### Phase 5: Project-specific rules
+
+If `docs/guidelines/security.md` exists, verify every rule in it is followed across the entire codebase. These rules represent patterns that have caused real review failures on this project.
+
 ## After the Audit
 
 1. Prioritize findings: Direct breach vectors → Impact amplifiers → Operational hygiene
 2. Create a hardening PR addressing all findings
-3. Write tests for each finding (organized by tier)
-4. Update security documentation to reflect the current state
+3. Write tests for each finding
+4. Update security documentation
+5. For findings that represent NEW patterns not yet in `docs/guidelines/security.md`, recommend adding them as rules
+6. For findings that represent architectural security decisions, recommend creating an ADR in `docs/adr/`
 
 ## Reference
 

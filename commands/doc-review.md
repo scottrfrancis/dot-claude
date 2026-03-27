@@ -11,10 +11,13 @@ Audit and improve this project's documentation, then commit changes on a dedicat
 Find all documentation files in this priority order:
 
 1. `README.md` (root)
-2. `ARCHITECTURE.md`, `CONTRIBUTING.md`, `CHANGELOG.md` (root, whichever exist)
-3. `docs/**/*.md` (recursive)
+2. `AGENTS.md`, `CONTRIBUTING.md`, `CHANGELOG.md` (root, whichever exist)
+3. `docs/guidelines/*.md` (modular rule files)
+4. `docs/adr/*.md` (architecture decision records)
+5. `docs/design/*.md` (PRD, SRS, database schema, plans)
+6. `docs/**/*.md` (everything else, recursive)
 
-Exclude: `node_modules/`, `.git/`, `.claude/session-logs/`, `.claude/memory/`, any generated or vendored directory.
+Exclude: `node_modules/`, `.git/`, `session-logs/`, `.factory/logs/`, `.claude/session-logs/`, `.claude/memory/`, any generated or vendored directory.
 
 List the files found and their count before proceeding. If more than 20 files are found,
 note that lower-priority files may be skipped if context runs short.
@@ -58,6 +61,17 @@ Git handles history. Remove:
 
 Keep: rationale for current decisions that isn't obvious from the code.
 
+### Guidelines and ADR consistency
+
+If `docs/guidelines/` exists:
+- Do the guideline files match what `AGENTS.md` says about them? Are the summary bullets in the AGENTS.md Guidelines table accurate?
+- Are there rules in guideline files that should be but aren't summarized in AGENTS.md?
+- Are there rules in AGENTS.md that should have been extracted to a guideline file?
+
+If `docs/adr/` exists:
+- Are accepted ADRs still valid? Do any need Deprecated or Superseded status?
+- Are there architectural decisions in the codebase that aren't captured as ADRs?
+
 ### Clarity and new-member accessibility
 
 - Is there a clear "start here" or getting-started path near the top of README?
@@ -75,7 +89,8 @@ Keep: rationale for current decisions that isn't obvious from the code.
 ## Phase 4 — Commit
 
 1. Determine today's date (YYYY-MM-DD format)
-2. Create branch: `git checkout -b docs/review-YYYY-MM-DD`
+2. If `docs/guidelines/commits-and-branching.md` exists, read it for branch naming conventions.
+3. Create branch: `git checkout -b docs/review-YYYY-MM-DD`
    - If the branch already exists, try `docs/review-YYYY-MM-DD-2`, `-3`, etc.
 3. Stage only the `*.md` files that were changed (`git add <file>` explicitly, not `git add .`)
 4. Commit in logical groupings (e.g., separate commit for root-level docs vs. `docs/` subdirectory):

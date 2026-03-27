@@ -14,21 +14,24 @@ Generate a continuation prompt capturing current session state for the next sess
 2. Run `git status` and `git diff --stat` for uncommitted changes
 3. Check `git log --oneline -5` for recent commits this session
 4. Read any active TODO lists or plan files
-5. Check for project-specific tracking files referenced in CLAUDE.md or `.claude/memory/`
-6. Check for recent session logs (`.claude/session-logs/`) for additional context
+5. Check for recent session logs (`session-logs/` then `.claude/session-logs/`) for additional context
 
 Arguments provided: $ARGUMENTS
 
 ## Generate Continuation Prompt
 
-Write to `.claude/session-logs/handoff-YYYY-MM-DD-HHMM.md` using the current date and time.
+Write to `session-logs/handoff-YYYY-MM-DD-HHMM.md` using the current date and time. If `session-logs/` does not exist, create it. If creation fails, fall back to `.claude/session-logs/`.
 
-Use this structure:
+The file MUST include YAML frontmatter for cross-tool compatibility. Populate `branch`, `dirty`, and `files_changed` from git status:
 
 ```markdown
-Continuation prompt:
-
-This session continued work on [project context]. Here's what happened and what may need follow-up:
+---
+tool: claude-code
+timestamp: YYYY-MM-DDTHH:MM:SS-TZ
+branch: <current branch from git>
+dirty: <true if uncommitted changes, false otherwise>
+files_changed: <count of uncommitted changed files>
+---
 
 ## Completed This Session
 [Numbered list of completed tasks with specifics — file paths, decisions, outcomes]
@@ -37,15 +40,24 @@ This session continued work on [project context]. Here's what happened and what 
 [Branch, uncommitted changes, work-in-progress items]
 [On {branch} with {N} uncommitted changes from this session]
 
-## In Progress / Unfinished
+## In Progress
 [Tasks started but not completed, with current status and what remains]
 
 ## Suggested Follow-Up
 [Prioritized next steps — what to do first in the next session]
 
-## Key Decisions Made
+## Key Decisions
 [Decisions that affect future work — rationale included so the next session doesn't revisit them]
+
+## Blockers / Risks
+[Anything the next session needs to be aware of]
 ```
+
+The YAML frontmatter is required — it identifies the source tool so any receiving tool (Cursor, Copilot, Droid) knows where the handoff came from.
+
+## Reminder
+
+If `/session-logger` hasn't been run yet and 3+ files were changed, remind the user to run it before ending the session.
 
 ## Rules
 
@@ -53,6 +65,5 @@ This session continued work on [project context]. Here's what happened and what 
 - Include file paths for anything created or modified
 - The continuation prompt must be self-contained — a new session reading only this text should have full context to continue
 - Bias toward actionable items over narrative
-- If `/session-logger` hasn't been run yet, note that as a follow-up item
 - Do not fabricate or assume tasks — only include work that actually happened in this session
 - If the user provided topic notes in $ARGUMENTS, incorporate them as additional context

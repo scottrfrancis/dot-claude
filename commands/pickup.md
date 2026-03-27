@@ -8,23 +8,20 @@ Pick up where the last session left off.
 
 ## Step 1: Find the handoff file
 
-Search for the most recent `handoff-*.md` modified within the last 7 days.
-Check project-local `.claude/session-logs/` first, then `~/.claude/session-logs/`.
-Use the same priority order as the SessionStart hook.
+Search for the most recent `handoff-*.md` file across all tool locations:
 
-```bash
-# Project-local first
-find "$(pwd)/.claude/session-logs" -maxdepth 1 -name "handoff-*.md" -type f -mtime -7 2>/dev/null | sort -r | head -1
+1. Check `session-logs/` (shared cross-tool location)
+2. Then `.claude/session-logs/` (Claude Code legacy location)
+3. Then `.factory/logs/` (Droid legacy location)
+4. Then `~/.claude/session-logs/` (global fallback)
 
-# Fallback: global
-find "$HOME/.claude/session-logs" -maxdepth 1 -name "handoff-*.md" -type f -mtime -7 2>/dev/null | sort -r | head -1
-```
+Take the most recently modified file across all locations (must be less than 7 days old).
 
 If no handoff file is found, say so and suggest running `/lets-go` instead to set session context.
 
 ## Step 2: Read the handoff
 
-Read and display the full contents of the handoff file so it is in active context.
+Read and display the full contents of the handoff file so it is in active context. If the file has YAML frontmatter with a `tool:` field, note which tool created it (e.g., "Picking up from a Cursor session" or "Last session was in Droid").
 
 ## Step 3: Quick git sync
 
@@ -54,6 +51,6 @@ mv "$HANDOFF_FILE" "$ARCHIVE_DIR/"
 
 Output a brief "ready to continue" summary with these sections:
 
-- **Handoff loaded**: filename consumed and archived
+- **Handoff loaded**: filename consumed and archived (note source tool if from YAML frontmatter)
 - **Current state**: branch, sync status, clean/dirty
 - **Resuming**: top suggested follow-up item from the handoff

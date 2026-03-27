@@ -6,13 +6,15 @@ allowed-tools: Write, Bash, Read, Glob, Grep
 
 # Session Logger
 
-Create a comprehensive session summary and save it to `.claude/session-logs/` with proper organization.
+Create a comprehensive session summary and save it to the shared cross-tool session logs directory.
 
 ## Setup
 
-Create the session logs directory if it doesn't exist:
+Create the logs directory if it doesn't exist. Prefer `session-logs/` (shared cross-tool location); fall back to `.claude/session-logs/` if creation fails:
 
-!mkdir -p .claude/session-logs
+```bash
+mkdir -p session-logs 2>/dev/null || mkdir -p .claude/session-logs
+```
 
 ## Gather Context
 
@@ -22,7 +24,7 @@ Arguments provided: $ARGUMENTS
 
 ## Link to Previous Session
 
-Find the most recent session log in `.claude/session-logs/` (excluding `mine-report-*` and `handoff-*` files). If found, add to the header:
+Find the most recent session log in `session-logs/` (then `.claude/session-logs/` as fallback), excluding `mine-report-*` and `handoff-*` files. If found, add to the header:
 
 ```markdown
 **Previous Session**: [filename](filename) — [one-line summary from that log's Summary section]
@@ -32,9 +34,19 @@ This creates a browsable chain across sessions. If no previous session log exist
 
 ## Generate Session Summary
 
-Save to: `.claude/session-logs/YYYY-MM-DD-HHMM${topic:+-$topic}.md`
+Save to: `session-logs/session-YYYY-MM-DD-HHMM[-topic].md` (or `.claude/session-logs/` if `session-logs/` is unavailable).
 
 ### Required Sections
+
+#### YAML Frontmatter (required for cross-tool compatibility)
+
+```markdown
+---
+tool: claude-code
+timestamp: YYYY-MM-DDTHH:MM:SS-TZ
+branch: <current branch from git>
+---
+```
 
 #### Header
 
@@ -59,7 +71,7 @@ Table format: `| File | Change |`
 Numbered list of significant decisions with reasoning. Only include decisions that future sessions should know about.
 
 #### Reusable Insights
-Bullet list of patterns, lessons, or techniques that apply beyond this specific session. Must be genuinely novel — not restatements of existing patterns in `.claude/memory/`.
+Bullet list of patterns, lessons, or techniques that apply beyond this specific session.
 
 ### Session Effectiveness Assessment
 
@@ -67,13 +79,16 @@ Include a `## Session Effectiveness` section:
 
 - **Goal achieved?** — Yes / Partial / No
 - **Blockers encountered** — Obstacles that slowed progress or remain unresolved
-- **Process friction** — Points where the workflow felt inefficient or manual steps could be automated
+- **Process friction** — Points where the workflow felt inefficient
 - **Carry-forward items** — Specific tasks for the next session
+
+## Reminder
+
+If `/handoff` hasn't been run yet and 5+ files were changed, remind the user to run it before ending the session.
 
 ## Rules
 
 - Only include sections that have content — do not generate empty sections
 - File paths must be relative to the project root
-- Keep the summary compact (~150 lines). Scale depth to match session complexity; the verbose 250+ line format is deprecated.
-- The "Reusable Insights" section should contain genuinely novel observations
+- Keep the summary compact (~150 lines)
 - The effectiveness assessment should be honest — partial completion or blockers are valuable data

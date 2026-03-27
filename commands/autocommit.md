@@ -64,7 +64,7 @@ Use this to understand what actually changed, not just file names.
 
 ## Step 4 — Generate the commit message
 
-Follow `~/.claude/guidelines/conventional-commits.md`. The format is:
+If `docs/guidelines/commits-and-branching.md` exists in the project, read it for project-specific commit conventions (scopes, types, footer requirements). Otherwise, follow `~/.claude/guidelines/conventional-commits.md`. The format is:
 
 ```
 <type>[optional scope]: <description>
