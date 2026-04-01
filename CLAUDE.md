@@ -32,9 +32,12 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [Prose Style](./guidelines/prose-style.md) - Anti-AI-smell rules for narrative writing: punctuation, sentence variation, transitions, word choice
 - [Prototype Hygiene](./guidelines/prototype-hygiene.md) - Ship clean from day one: config over code, stable docs over stale state, PRs over branches
 - [Security Hardening](./guidelines/security-hardening.md) - Defense-in-depth patterns grounded in real-world breach analysis
+- [Go Code Standards](./guidelines/golang.md) - JSON response safety (no fmt.Fprintf), gosec patterns, G104 triage
 - [Python Code Standards](./guidelines/python.md) - *Coming soon*
 - [JavaScript/TypeScript Guidelines](./guidelines/javascript.md) - *Coming soon*
 - [Testing Strategies](./guidelines/testing.md) - Test pyramid, mocking, CI integration, framework-specific notes
+- [CI Local Parity](./guidelines/ci-local-parity.md) - Run exact CI commands locally before pushing; install all scanners; budget for pre-existing issues
+- [DOCX Conversion](./guidelines/docx-conversion.md) - python-docx over pandoc; color palette, typography, hyperlinks
 
 ## Custom Commands
 
