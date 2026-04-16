@@ -14,3 +14,17 @@ statsig
 telemetry
 todos
 tmp.credentials.json
+
+# Runtime state / caches
+sessions/
+tasks/
+usage-data/
+backups/
+chrome/
+mcp-needs-auth-cache.json
+plugins/blocklist.json
+plugins/install-counts-cache.json
+plugins/marketplaces/
+
+# Nested claude install artifacts
+.claude/
