@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""Export AI agent prompt history to a markdown file.
+
+Supports: Factory Droid (~/.factory/history.json), Claude Code (~/.claude/projects/**/*/sessions/*/session.jsonl)
+
+Usage:
+  /export-prompts              # Export today's prompts
+  /export-prompts 2026-04-13   # Export a specific date
+  /export-prompts 7            # Export last N days
+  /export-prompts all          # Export everything
+"""
+
+import json
+import os
+import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+
+OUTPUT_DIR = Path.cwd()
+
+DROID_HISTORY = Path.home() / ".factory" / "history.json"
+CLAUDE_PROJECTS = Path.home() / ".claude" / "projects"
+
+
+def load_droid_history():
+    path = DROID_HISTORY.resolve() if DROID_HISTORY.is_symlink() else DROID_HISTORY
+    if not path.exists():
+        return []
+    with open(path) as f:
+        raw = json.load(f)
+    return [
+        {"timestamp": e["timestamp"], "command": e["command"], "source": "droid"}
+        for e in raw
+        if e.get("type") == "message"
+    ]
+
+
+def load_claude_history():
+    if not CLAUDE_PROJECTS.exists():
+        return []
+    entries = []
+    for session_file in CLAUDE_PROJECTS.rglob("session.jsonl"):
+        with open(session_file) as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    msg = json.loads(line)
+                except (json.JSONDecodeError, ValueError):
+                    continue
+                if msg.get("type") != "human":
+                    continue
+                ts = msg.get("timestamp", "")
+                text = msg.get("message", {}).get("content", "")
+                if isinstance(text, list):
+                    parts = [p.get("text", "") for p in text if p.get("type") == "text"]
+                    text = " ".join(parts)
+                if text and len(text) > 2:
+                    entries.append({"timestamp": ts, "command": text, "source": "claude"})
+    return entries
+
+
+def filter_entries(history, arg):
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    if not arg or arg.lower() == "today":
+        dates = {today}
+        label = today
+    elif arg.lower() == "all":
+        dates = None
+        label = "all-time"
+    elif arg.isdigit():
+        n = int(arg)
+        dates = {(datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(n)}
+        label = f"last-{n}-days"
+    else:
+        dates = {arg}
+        label = arg
+
+    messages = [
+        e for e in history
+        if dates is None or e.get("timestamp", "")[:10] in dates
+    ]
+    return messages, label
+
+
+def format_output(messages, label):
+    lines = [f"# Prompt History — {label}", ""]
+
+    current_date = None
+    count = 0
+    for entry in messages:
+        ts = entry["timestamp"]
+        date_part = ts[:10]
+        time_part = ts[11:19]
+        source = entry.get("source", "")
+
+        if date_part != current_date:
+            current_date = date_part
+            day_msgs = [e for e in messages if e["timestamp"][:10] == date_part]
+            lines.append(f"## {date_part} ({len(day_msgs)} prompts)")
+            lines.append("")
+            count = 0
+
+        count += 1
+        tag = f" [{source}]" if source else ""
+        lines.append(f"**{count}. [{date_part} {time_part}]{tag}**")
+        lines.append("")
+        lines.append(entry["command"])
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def main():
+    arg = sys.argv[1] if len(sys.argv) > 1 else "today"
+
+    history = load_droid_history() + load_claude_history()
+    history.sort(key=lambda e: e.get("timestamp", ""))
+
+    sources = {e["source"] for e in history}
+    print(f"Sources found: {', '.join(sources) or 'none'}")
+
+    messages, label = filter_entries(history, arg)
+
+    if not messages:
+        print(f"No prompts found for: {label}")
+        sys.exit(0)
+
+    filename = f"prompts-{label}.md"
+    output_path = OUTPUT_DIR / filename
+
+    content = format_output(messages, label)
+    with open(output_path, "w") as f:
+        f.write(content)
+
+    print(f"Exported {len(messages)} prompts to {output_path}")
+
+
+if __name__ == "__main__":
+    main()

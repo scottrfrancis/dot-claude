@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""SessionEnd hook: log token usage to a branch-keyed ledger.
+
+Reads the session's token usage from its .settings.json and appends
+an entry to ~/.factory/token-ledger.json keyed by project:branch.
+"""
+
+import json
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+LEDGER_FILE = Path.home() / ".factory" / "token-ledger.json"
+
+
+def get_git_branch(cwd):
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True, text=True, cwd=cwd, timeout=5
+        )
+        return result.stdout.strip() if result.returncode == 0 else None
+    except Exception:
+        return None
+
+
+def get_project_name(cwd):
+    return Path(cwd).name
+
+
+def find_settings_file(session_id, cwd):
+    sessions_dir = Path.home() / ".factory" / "sessions"
+    if sessions_dir.is_symlink():
+        sessions_dir = sessions_dir.resolve()
+    elif not sessions_dir.exists():
+        sessions_dir = Path.home() / ".factory" / "sessions"
+        if not sessions_dir.exists():
+            return None
+
+    for project_dir in sessions_dir.iterdir():
+        if not project_dir.is_dir():
+            continue
+        settings = project_dir / f"{session_id}.settings.json"
+        if settings.exists():
+            return settings
+    return None
+
+
+def load_ledger():
+    path = LEDGER_FILE.resolve() if LEDGER_FILE.is_symlink() else LEDGER_FILE
+    if path.exists():
+        with open(path) as f:
+            return json.load(f)
+    return {}
+
+
+def save_ledger(data):
+    path = LEDGER_FILE.resolve() if LEDGER_FILE.is_symlink() else LEDGER_FILE
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def main():
+    try:
+        hook_input = json.load(sys.stdin)
+    except (json.JSONDecodeError, ValueError):
+        sys.exit(0)
+
+    session_id = hook_input.get("session_id", "")
+    cwd = hook_input.get("cwd", "")
+
+    if not session_id or not cwd:
+        sys.exit(0)
+
+    branch = get_git_branch(cwd)
+    if not branch:
+        sys.exit(0)
+
+    project = get_project_name(cwd)
+    settings_file = find_settings_file(session_id, cwd)
+
+    if not settings_file:
+        sys.exit(0)
+
+    with open(settings_file) as f:
+        settings = json.load(f)
+
+    token_usage = settings.get("tokenUsage", {})
+    if not token_usage:
+        sys.exit(0)
+
+    ledger = load_ledger()
+    key = f"{project}:{branch}"
+
+    if key not in ledger:
+        ledger[key] = {"sessions": [], "totals": {}}
+
+    entry = {
+        "session_id": session_id[:8],
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "model": settings.get("model", "unknown"),
+        "tokens": token_usage,
+    }
+    ledger[key]["sessions"].append(entry)
+
+    # Recompute totals
+    totals = {}
+    for s in ledger[key]["sessions"]:
+        for tok_key, tok_val in s.get("tokens", {}).items():
+            totals[tok_key] = totals.get(tok_key, 0) + tok_val
+    ledger[key]["totals"] = totals
+
+    save_ledger(ledger)
+
+
+if __name__ == "__main__":
+    main()

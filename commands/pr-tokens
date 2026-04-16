@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+"""Format token usage for the current branch as a PR description snippet.
+
+Usage:
+  /pr-tokens          # Show token summary for current branch
+  /pr-tokens --reset  # Clear ledger for current branch (after merge)
+  /pr-tokens --all    # Show all branches in ledger
+"""
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+LEDGER_FILE = Path.home() / ".factory" / "token-ledger.json"
+
+COST_PER_MILLION = {
+    "inputTokens": 15.0,
+    "outputTokens": 75.0,
+    "cacheCreationTokens": 3.75,
+    "cacheReadTokens": 0.30,
+    "thinkingTokens": 75.0,
+}
+
+
+def get_git_branch():
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True, text=True, timeout=5
+        )
+        return result.stdout.strip() if result.returncode == 0 else None
+    except Exception:
+        return None
+
+
+def get_project_name():
+    return Path.cwd().name
+
+
+def load_ledger():
+    path = LEDGER_FILE.resolve() if LEDGER_FILE.is_symlink() else LEDGER_FILE
+    if path.exists():
+        with open(path) as f:
+            return json.load(f)
+    return {}
+
+
+def save_ledger(data):
+    path = LEDGER_FILE.resolve() if LEDGER_FILE.is_symlink() else LEDGER_FILE
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def format_tokens(n):
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.1f}K"
+    return str(n)
+
+
+def estimate_cost(totals):
+    cost = 0.0
+    for key, rate in COST_PER_MILLION.items():
+        cost += totals.get(key, 0) / 1_000_000 * rate
+    return cost
+
+
+def format_pr_snippet(key, data):
+    totals = data.get("totals", {})
+    sessions = data.get("sessions", [])
+    cost = estimate_cost(totals)
+
+    lines = [
+        "<details>",
+        "<summary>AI Token Usage</summary>",
+        "",
+        f"**Branch:** `{key}`",
+        f"**Sessions:** {len(sessions)}",
+        f"**Estimated cost:** ${cost:.2f}",
+        "",
+        "| Metric | Count |",
+        "|--------|-------|",
+        f"| Input tokens | {format_tokens(totals.get('inputTokens', 0))} |",
+        f"| Output tokens | {format_tokens(totals.get('outputTokens', 0))} |",
+        f"| Cache creation | {format_tokens(totals.get('cacheCreationTokens', 0))} |",
+        f"| Cache read | {format_tokens(totals.get('cacheReadTokens', 0))} |",
+        f"| Thinking tokens | {format_tokens(totals.get('thinkingTokens', 0))} |",
+        "",
+    ]
+
+    if sessions:
+        models = set(s.get("model", "unknown") for s in sessions)
+        lines.append(f"**Models used:** {', '.join(sorted(models))}")
+        lines.append("")
+
+    lines.append("</details>")
+    return "\n".join(lines)
+
+
+def main():
+    args = sys.argv[1:]
+    ledger = load_ledger()
+
+    if "--all" in args:
+        if not ledger:
+            print("Token ledger is empty.")
+            return
+        for key, data in sorted(ledger.items()):
+            cost = estimate_cost(data.get("totals", {}))
+            sessions = len(data.get("sessions", []))
+            print(f"  {key}: {sessions} sessions, ${cost:.2f}")
+        return
+
+    branch = get_git_branch()
+    project = get_project_name()
+
+    if not branch:
+        print("Error: not in a git repository", file=sys.stderr)
+        sys.exit(1)
+
+    key = f"{project}:{branch}"
+
+    if "--reset" in args:
+        if key in ledger:
+            del ledger[key]
+            save_ledger(ledger)
+            print(f"Cleared token ledger for {key}")
+        else:
+            print(f"No ledger entry for {key}")
+        return
+
+    if key not in ledger:
+        print(f"No token data for {key}.")
+        print("Token data is recorded automatically at session end.")
+        sys.exit(0)
+
+    snippet = format_pr_snippet(key, ledger[key])
+    print(snippet)
+
+
+if __name__ == "__main__":
+    main()
