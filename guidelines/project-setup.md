@@ -19,8 +19,33 @@ These hooks are registered in `~/.claude/settings.json` and fire for every proje
 
 Project-local hooks in `.claude/settings.local.json` layer **on top of** these global hooks — they don't replace them.
 
+## Environment Management (All Projects)
+
+Use **conda (miniforge)** for all Python and Node.js environments. Never use venv, virtualenv, pyenv, nvm, or bare pip/npm.
+
+- [ ] Create a per-project conda env named after the project: `conda create -n <project-name> python=3.12`
+- [ ] Add Node.js via conda when needed: `conda install nodejs`
+- [ ] Add an `environment.yml` at project root for reproducibility
+- [ ] Update setup instructions in CLAUDE.md and README to use `conda activate <project-name>` instead of venv
+- [ ] Keep `pyproject.toml` for project metadata and build config -- conda handles the environment, pip (inside conda) handles the package install
+
+### environment.yml Template
+
+```yaml
+name: <project-name>
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  # - nodejs  # uncomment if needed
+  - pip
+  - pip:
+    - -e ".[dev]"
+```
+
 ## Tier 1: Foundation (All Projects)
 
+- [ ] Create conda environment (see Environment Management above)
 - [ ] Create `CLAUDE.md` at project root with: role definition, tone guidance, repository structure overview, key commands or workflows
 - [ ] Create `.claude/memory/MEMORY.md` as a context index — even a 5-line file linking to key docs saves context in future sessions
 - [ ] Create `.claude/session-logs/` directory — needed for handoff context auto-loading (global SessionStart hook looks here)
