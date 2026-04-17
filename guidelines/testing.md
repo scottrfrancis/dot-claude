@@ -2,6 +2,41 @@
 
 Practical testing guidelines to pair with arch-review's quality gates.
 
+## Red-Green-Refactor TDD (REQUIRED — ALWAYS)
+
+**Red-Green-Refactor TDD is mandatory for every code change.** No production code is written without a failing test first. This applies to bug fixes, new features, and refactors alike. There is no "I'll add tests later." Tests come first, always.
+
+The cycle — repeat for every behavior:
+
+1. **🔴 RED** — Write a failing test that expresses the desired behavior. Run it and confirm it fails for the right reason (the behavior is missing, not a typo/compile error). Do NOT write any production code yet.
+2. **🟢 GREEN** — Write the minimum production code needed to make the failing test pass. Resist adding logic the current test doesn't require.
+3. **🔵 REFACTOR** — With all tests green, clean up the code: remove duplication, improve names, clarify structure. Tests must stay green throughout. Refactor production and test code alike.
+
+### Non-negotiable rules
+
+- **Never** write production code without a corresponding failing test first.
+- **Never** write more than one failing test at a time.
+- **Never** add production logic beyond what the currently-failing test demands.
+- **Always** run the test between RED and GREEN to verify it actually fails (and fails for the right reason).
+- **Always** keep the cycle short — minutes, not hours. If a cycle runs long, the increment is too big; split it.
+- **No retroactive tests.** Tests added after the production code they exercise do not count as TDD and must be flagged in code review.
+
+### When TDD feels hard
+
+If you are tempted to skip TDD because "this is trivial" or "I already know the answer": write the test anyway. The discipline catches design smells, enforces small increments, and produces the coverage the codebase needs.
+
+If the test is hard to write, that is signal: the design is probably coupled, or the behavior is under-specified. Fix the design before fixing the test.
+
+### Narrow exceptions
+
+These are the only cases where writing code before a test is acceptable:
+
+- **Spikes** — exploratory code in `/tmp` or a scratch branch, explicitly labeled as throwaway. Any production code derived from a spike must be re-built via TDD; the spike itself is discarded.
+- **Pure config changes** — no behavior, no tests required (but verify with an integration or smoke test where practical).
+- **Generated code** — protobuf stubs, ORM migrations, lockfiles. Trust the generator; test the consumer.
+
+If you think you have another exception, you do not. Write the test.
+
 ## Test Pyramid
 
 Prioritize by speed and reliability:

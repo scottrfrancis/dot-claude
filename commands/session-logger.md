@@ -22,6 +22,25 @@ Review the conversation history to identify what was accomplished. Also check gi
 
 Arguments provided: $ARGUMENTS
 
+## Dot-Repo Sync Check (`~/.claude`)
+
+As part of end-of-session hygiene, verify the global Claude Code config at `~/.claude` is in sync with its GitHub origin. This is consistent with `/lets-go`, `/pickup`, and `/handoff`.
+
+```bash
+git -C ~/.claude fetch origin
+git -C ~/.claude rev-list --count HEAD..origin/main   # behind
+git -C ~/.claude rev-list --count origin/main..HEAD   # ahead
+git -C ~/.claude status --porcelain
+```
+
+Alert the user prominently if out of sync, and note the state in the `## Session Effectiveness` section under `Process friction` if drift is detected:
+
+- **Behind**: "⚠ ~/.claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C ~/.claude pull`."
+- **Ahead**: "~/.claude has {N} unpushed commits — consider pushing to back up your config."
+- **Dirty**: "~/.claude has uncommitted changes."
+
+Skip silently if `~/.claude` has no remote or the fetch fails.
+
 ## Link to Previous Session
 
 Find the most recent session log in `session-logs/` (then `.claude/session-logs/` as fallback), excluding `mine-report-*` and `handoff-*` files. If found, add to the header:
