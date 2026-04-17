@@ -25,7 +25,26 @@ Read and display the full contents of the handoff file so it is in active contex
 
 ## Step 3: Quick git sync
 
-Run the same git checks as `/lets-go`:
+Run the same git checks as `/lets-go` — **both dot-repo and project repo**.
+
+### Dot-Repo Sync Check (`~/.claude`)
+
+```bash
+git -C ~/.claude fetch origin
+git -C ~/.claude rev-list --count HEAD..origin/main   # behind
+git -C ~/.claude rev-list --count origin/main..HEAD   # ahead
+git -C ~/.claude status --porcelain
+```
+
+Alert the user prominently if out of sync:
+
+- **Behind**: "⚠ ~/.claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C ~/.claude pull`."
+- **Ahead**: "~/.claude has {N} unpushed commits — consider pushing to back up your config."
+- **Dirty**: "~/.claude has uncommitted changes."
+
+Skip silently if `~/.claude` has no remote or the fetch fails.
+
+### Project repo
 
 1. `git fetch origin` (silent)
 2. Report current branch and upstream state:

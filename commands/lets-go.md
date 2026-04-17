@@ -62,9 +62,9 @@ This is advisory only — continue the session regardless.
 
 ## Git Sync Protocol
 
-### ~/.claude config repo
+### Dot-Repo Sync Check (`~/.claude`)
 
-Run this check first, before any project-specific work:
+Run this check first, before any project-specific work. Consistent with `/pickup`, `/handoff`, and `/session-logger`.
 
 ```bash
 git -C ~/.claude fetch origin
@@ -80,6 +80,14 @@ Alert the user prominently if out of sync:
 - **Dirty**: "~/.claude has uncommitted changes."
 
 Skip silently if `~/.claude` has no remote or the fetch fails.
+
+### Other Dot-Repos (Opportunistic)
+
+The user may run sessions from other tools (Cursor, Droid, Copilot) on this machine. If any of those dot-repos are discoverable, run the same `fetch / rev-list / status` pattern against them and report drift with the same behind/ahead/dirty wording. **Skip silently for any repo not installed on this machine** — do not emit errors.
+
+- **dot-droid**: check only if `$HOME/.factory` is a symlink to a git repo. Resolve `readlink -f $HOME/.factory` and take its parent; confirm `.git` exists there.
+- **dot-copilot**: check only if a `.github/copilot-instructions.md` (or any `.github/instructions/*.instructions.md`) symlink exists in the current project. Resolve it and walk up until `.git` is found.
+- **dot-cursor**: check only if `$DOT_CURSOR_DIR` is set, or if any of `$HOME/workspace/dot-cursor`, `$HOME/dot-cursor`, `/Volumes/workspace/dot-cursor` has a `.git` directory.
 
 ### Project repo
 

@@ -18,6 +18,25 @@ Generate a continuation prompt capturing current session state for the next sess
 
 Arguments provided: $ARGUMENTS
 
+## Dot-Repo Sync Check (`~/.claude`)
+
+Before generating the handoff, verify the global Claude Code config at `~/.claude` is in sync with its GitHub origin. This catches stale or uncommitted config that the next session should know about.
+
+```bash
+git -C ~/.claude fetch origin
+git -C ~/.claude rev-list --count HEAD..origin/main   # behind
+git -C ~/.claude rev-list --count origin/main..HEAD   # ahead
+git -C ~/.claude status --porcelain
+```
+
+Alert the user prominently if out of sync, and note the state in the `## Blockers / Risks` section of the handoff if drift is detected:
+
+- **Behind**: "⚠ ~/.claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C ~/.claude pull`."
+- **Ahead**: "~/.claude has {N} unpushed commits — consider pushing to back up your config."
+- **Dirty**: "~/.claude has uncommitted changes."
+
+Skip silently if `~/.claude` has no remote or the fetch fails.
+
 ## Generate Continuation Prompt
 
 Write to `session-logs/handoff-YYYY-MM-DD-HHMM.md` using the current date and time. If `session-logs/` does not exist, create it. If creation fails, fall back to `.claude/session-logs/`.
