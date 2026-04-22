@@ -38,6 +38,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [Testing Strategies](./guidelines/testing.md) - Test pyramid, mocking, CI integration, framework-specific notes
 - [CI Local Parity](./guidelines/ci-local-parity.md) - Run exact CI commands locally before pushing; install all scanners; budget for pre-existing issues
 - [DOCX Conversion](./guidelines/docx-conversion.md) - python-docx over pandoc; color palette, typography, hyperlinks
+- [Karpathy Principles](./guidelines/karpathy-principles.md) - Deltas not already covered: surface assumptions before implementing; match existing style; mention don't delete pre-existing dead code
 
 ## Custom Commands
 
