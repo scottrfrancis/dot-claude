@@ -24,6 +24,7 @@ chrome/
 mcp-needs-auth-cache.json
 plugins/blocklist.json
 plugins/install-counts-cache.json
+plugins/known_marketplaces.json
 plugins/marketplaces/
 
 # Nested claude install artifacts
