@@ -58,6 +58,19 @@ Work on a branch with 16 commits, pushed to origin, that never gets a PR opened 
 - Don't let branches sit. If the work is done, the PR should exist.
 - If the work isn't ready for review, open a draft PR — still more visible than a branch.
 
+## Rule 4: Fail Loud — Silent Skips Are Lies
+
+**"Completed" is wrong if anything was silently skipped.**
+
+The shipped-prototype failure mode: a migration logs `completed successfully` after dropping 14% of rows on constraint violations, found 11 days later. A test suite reports `all tests pass` when 18 were marked `skip`. A deploy reports green when one of three regions failed. The error was logged, just not surfaced.
+
+- **A migration that skipped rows did not complete.** Report the count, the reason, and the affected IDs.
+- **"Tests pass" requires every test to have run.** If any were skipped, the headline is "ran with skips," not "pass."
+- **A script that swallowed an error and moved on did not succeed.** Use `set -euo pipefail`, check return codes, propagate failures.
+- **Default to surfacing uncertainty.** "I'm not sure if the cache invalidated" is a useful sentence. "Cache invalidated" when you're not sure is tomorrow's production bug report.
+
+**The test:** for any operation you call "done," what's the smallest piece of work that could have silently failed inside it, and where in your output does that show up? If the answer is "nowhere," the report is wrong.
+
 ## Meta-Lesson
 
 The gap between "working" and "shipped" is where quality dies. Working code with hardcoded details, stale docs, and unopened PRs is a prototype pretending to be a product. The genericization pass is the cost of not doing it right the first time.

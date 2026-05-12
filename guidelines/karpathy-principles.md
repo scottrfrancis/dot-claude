@@ -30,6 +30,19 @@ The system prompt says "delete unused code completely" — this applies to **orp
 
 **The test:** Every line in your diff should trace to the stated task. A reviewer asking "why did this line change?" for any hunk should get an answer tied directly to the request.
 
+## Delta 3: Read Before You Write
+
+The duplicate-function failure: a new helper gets added next to an identical existing one that wasn't read. The new one wins via import order; the original silently becomes dead code that other call sites still depend on. Six months of subtle drift before anyone notices.
+
+Before adding a function, type, or constant to a file:
+
+- **Skim the file's exports.** What's already defined here? A `users.ts` likely already exports `getUserById`.
+- **Grep for the name and adjacent variants.** `formatDate`, `format_date`, `dateFormat` — the convention may differ from what you'd reach for.
+- **Check immediate callers and shared utilities.** If the call site imports from `utils/format`, the new helper probably belongs there too.
+- **If you can't tell why an existing structure is the way it is, ask.** The shape often encodes a constraint that isn't obvious from the file alone.
+
+**The test:** Before writing a new helper, you should be able to answer "what already existed in this module that I considered reusing, and why I'm not." If the answer is "I didn't look," stop and look.
+
 ## See Also
 
 - `testing.md` — Goal-Driven Execution is covered here as mandatory RED-GREEN-REFACTOR, stronger than Karpathy's version.
