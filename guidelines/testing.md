@@ -37,6 +37,21 @@ These are the only cases where writing code before a test is acceptable:
 
 If you think you have another exception, you do not. Write the test.
 
+## Tests Must Be Able to Fail
+
+A passing test is only meaningful if it could fail when the behavior under test is broken. Common false-greens:
+
+- Auth function returns a hardcoded constant. 12 tests assert on that constant. All pass. Production breaks the moment auth has to actually decide.
+- The test mocks the very function it claims to test. The mock returns the expected value. The test passes regardless of the implementation.
+- The test asserts on the input it just provided (`expect(result.name).toBe(input.name)`) without checking that any real work happened in between.
+- Setup creates the exact state the test asserts on, with no transformation in between.
+
+Tests must encode **why** the behavior matters, not just **what** the function does today. A test that can't fail when business logic changes is wrong.
+
+**The mutation check:** for any non-trivial test, ask: "if I changed the production logic to return the wrong answer, would this test fail?" If you can't name a specific edit that would flip RED, the test is asserting on the wrong thing.
+
+This is also the discipline that protects the RED step. A test that would have passed against an empty function body wasn't a real RED — and the GREEN code that follows isn't anchored to anything.
+
 ## Test Pyramid
 
 Prioritize by speed and reliability:
