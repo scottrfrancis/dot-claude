@@ -4,21 +4,41 @@ Quad-chart format for short, recurring status updates. Originally surfaced for t
 
 ## Format
 
-A 2x2 grid. One screen total. **~3 bullets per quadrant**, fragment-style.
+A 2x2 *conceptually* — four quadrants of equal weight — rendered in the document as **four H2 sections with bullets, in this order**: Last week → This week → Risks → Asks.
 
+```markdown
+## Last week
+- ...
+- ...
+- ...
+
+## This week
+- ...
+- ...
+- ...
+
+## Risks
+- ...
+- ...
+- ...
+
+## Asks
+- ...
+- ...
+- ...
 ```
-┌──────────────────────────────┬──────────────────────────────┐
-│  Last week — what got done   │  This week — what's next     │
-│  (accomplishments, hits)     │  (plan, priorities)          │
-├──────────────────────────────┼──────────────────────────────┤
-│  Risks / Lowlights / Blockers│  Asks                        │
-│  (what's slipping / unknown) │  (what I need from you)      │
-└──────────────────────────────┴──────────────────────────────┘
-```
 
-### When pasting into a Google Doc
+**~3 bullets per section**, fragment-style. One screen total when rendered.
 
-Use a 2-column × 2-row markdown table (or a Google Docs native table if the doc already has formatting). Quadrant order reads left-to-right, top-to-bottom: **Last week → This week → Risks → Asks**.
+### Why not a literal table
+
+Tried it on 2026-05-21. A markdown 2x2 table with `<br>` line breaks pasted via Google Docs' "Paste from Markdown" splits each `<br>` into its own row — turning a 4-cell 2x2 into ~16 rows of fragmented sentences with most cells empty. **Do not use a literal markdown table.** The hierarchical-section form pastes cleanly and reads the same.
+
+### Pasting into Google Docs
+
+In Google Docs: **Tools → Preferences → Enable Markdown** (one-time). Then for each paste: **right-click → "Paste from Markdown"** (or Edit menu). Plain Ctrl/⌘+V leaves it as raw text — must be the right-click path. No keyboard shortcut as of mid-2026.
+
+With Paste-from-Markdown on, the H2 sections render as Google Docs headings and the bullets render as native lists.
 
 ## Conventions
 
@@ -63,3 +83,5 @@ The "Amazon 2x2" attribution appears in some second-hand sources (e.g. a Scribd 
 ## Discovery context
 
 Format confirmed by Scott Francis on 2026-05-21 during the Damar engagement; per Scott, the layout came from a Solutions Architect group, possibly Cisco-rooted. Live search did *not* find a canonical Cisco SA spec, but the quadrant labels (Last week / This week / Risks / Asks) match the SA-org status-report pattern that's common across multiple firms.
+
+Hierarchical-section rendering chosen (over literal 2x2 markdown table) after the first paste-into-Google-Docs attempt that same day shredded the table on import. Section form is functionally identical (same four quadrants, same content) and survives the paste cleanly.
