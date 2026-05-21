@@ -39,6 +39,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [CI Local Parity](./guidelines/ci-local-parity.md) - Run exact CI commands locally before pushing; install all scanners; budget for pre-existing issues
 - [DOCX Conversion](./guidelines/docx-conversion.md) - python-docx over pandoc; color palette, typography, hyperlinks
 - [Karpathy Principles](./guidelines/karpathy-principles.md) - Deltas not already covered: surface assumptions before implementing; match existing style; mention don't delete pre-existing dead code; read before you write
+- [2x2 Status Report](./guidelines/2x2-status-report.md) - Quad-chart format for short weekly status reports (Last week / This week / Risks / Asks); SA-org tradition, not the canonical Amazon WBR
 
 ## Custom Commands
 
@@ -142,3 +143,4 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - 2026-03-11: Add /review-pr and /babysit-pr commands; add testing guideline
 - 2026-03-27: Cross-tool session sync — session-logs/ as shared primary location, YAML frontmatter with tool: field, multi-location search in all commands/hooks, project docs integration (docs/guidelines/, docs/adr/, AGENTS.md) in review commands
 - 2026-05-11: Add surface-conflicts global rule; karpathy-principles "read before you write" delta; testing.md "tests must be able to fail" section; prototype-hygiene.md "fail loud" rule
+- 2026-05-21: Add 2x2-status-report guideline (quad-chart weekly status; disambiguates from canonical Amazon WBR)
