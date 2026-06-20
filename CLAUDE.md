@@ -41,6 +41,9 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [DOCX Conversion](./guidelines/docx-conversion.md) - python-docx over pandoc; color palette, typography, hyperlinks
 - [Karpathy Principles](./guidelines/karpathy-principles.md) - Deltas not already covered: surface assumptions before implementing; match existing style; mention don't delete pre-existing dead code; read before you write
 - [2x2 Status Report](./guidelines/2x2-status-report.md) - Quad-chart format for short weekly status reports (Last week / This week / Risks / Asks); SA-org tradition, not the canonical Amazon WBR
+- [Architecture Diagram Craft](./guidelines/architecture-diagrams.md) - AWS reference-diagram visual conventions (numbered flow, icon/color rules, boundaries, critique rubric, reference assets); GCP/multi-cloud adaptation; companion to C4-diagramming.md
+- [C4 Diagramming](./guidelines/C4-diagramming.md) - PlantUML file organization for C4 diagrams (modular includes, C1/C2/C3 layout, boundary conflicts)
+- [Central Ops Knowledge](./guidelines/central-ops-knowledge.md) - The vision + doctrine for the central, authoritative, dynamic+archival ops-knowledge state (HomeAssistant bundle/wiki + Librarian RAG + Hazel); consult-before-acting, write-back. Propagated to all AI tools.
 
 ## Custom Commands
 
@@ -145,3 +148,22 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - 2026-03-27: Cross-tool session sync — session-logs/ as shared primary location, YAML frontmatter with tool: field, multi-location search in all commands/hooks, project docs integration (docs/guidelines/, docs/adr/, AGENTS.md) in review commands
 - 2026-05-11: Add surface-conflicts global rule; karpathy-principles "read before you write" delta; testing.md "tests must be able to fail" section; prototype-hygiene.md "fail loud" rule
 - 2026-05-21: Add 2x2-status-report guideline (quad-chart weekly status; disambiguates from canonical Amazon WBR)
+<\!-- central-ops-knowledge: begin -->
+## Central Ops Knowledge (shared doctrine — all my AI tools)
+
+I maintain ONE central, authoritative **ops-knowledge state** for my homelab/home: **dynamic**
+(live, current, queryable by every human and AI on the LAN) and **archival** (durable,
+portable, hand-off-able to anyone taking over anything). It lives in the **HomeAssistant repo**
+(`/Volumes/workspace/HomeAssistant/` → `successor-bundle/` OKF bundle + `wiki/`), is surfaced
+live by the **Librarian RAG + Hazel** (OpenWebUI on `mini.local`), and kept current by the
+`tools/*-scan.sh` self-tracking probes. Full doctrine: `~/.claude/guidelines/central-ops-knowledge.md`.
+
+Operating rules for every agent (Claude, OpenCode, Codex, Cursor, Droid, Copilot…):
+1. **Consult before acting on infrastructure** — before stopping/changing a service, host, or
+   config, check the knowledge base for "what is this and *why*." Stale assumptions cause outages.
+2. **Write back** — when you learn or change something about the ops state, record or flag it so
+   it stays current. Session-only knowledge is lost.
+3. **OKF form** — plain markdown + YAML, **no secrets** (pointers only), conformant for any tool.
+4. **Local-first / WAN-tolerant** — prefer local LLM/files/Kiwix; must work with the internet down.
+5. **Respect boundaries** — household surfaces LAN-only; don't touch non-Scott tailnet hosts.
+<\!-- central-ops-knowledge: end -->
