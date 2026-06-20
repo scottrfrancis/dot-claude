@@ -28,6 +28,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [README Documentation](./guidelines/readme-documentation.md) - Organizing project documentation with README as central hub
 - [Session Safety](./guidelines/session-safety.md) - **CRITICAL** - Prevent session hangs and context loss on hardware systems
 - [AI Systems Engineering Patterns](./guidelines/ai-patterns.md) - LLM integration patterns: caching, routing, guardrails, RAG
+- [Tool Delegation for LLM Cron Skills](./guidelines/ai-cron-tool-delegation.md) - When a cron skill must produce a number, build a deterministic helper and wire it via cron payload — not via SKILL.md or AGENTS.md
 - [Project Setup](./guidelines/project-setup.md) - Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling
 - [Prose Style](./guidelines/prose-style.md) - Anti-AI-smell rules for narrative writing: punctuation, sentence variation, transitions, word choice
 - [Prototype Hygiene](./guidelines/prototype-hygiene.md) - Ship clean from day one: config over code, stable docs over stale state, PRs over branches
