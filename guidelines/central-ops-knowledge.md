@@ -20,7 +20,7 @@ block to it.
 ## Where it lives
 
 - **Knowledge base:** the **HomeAssistant repo** — `/Volumes/workspace/HomeAssistant/`:
-  the **`successor-bundle/`** (OKF v0.1 bundle) + **`wiki/`** (Karpathy wiki).
+  the **`home-ops/`** (OKF v0.1 bundle; renamed from `successor-bundle/` 2026-06-20) + **`wiki/`** (Karpathy wiki).
 - **Dynamic access:** the **Librarian RAG** (pgvector @ vault:5433, Ollama @ dev-ai) with
   **Hazel** (OpenWebUI on `mini.local`) as the household front-end. One corpus.
 - **Stays current via:** the `tools/*-scan.sh` self-tracking probes (network, resilience,

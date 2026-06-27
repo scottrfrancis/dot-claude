@@ -1,5 +1,11 @@
 # Claude Code Memory
 
+- [infra-ha-control](infra-ha-control.md) — control HA via REST/WS API + token (not just InfluxDB reads); govee2mqtt on mini (api-key-only, Govee 454); B-hyve "Smart Outdoor Timer"
+
+## Personal / Contacts
+
+- **Linda** — Scott's wife. Email: `lindasfrancis88@gmail.com`. Address deliverables meant for her by name. For home-equipment decisions her priority is time + dependability/predictability (see HomeAssistant project memory `user-slo-household`).
+
 ## This Config Repo (~/.claude)
 
 - Global config for all projects. Commands in `commands/`, guidelines in `guidelines/`, hooks in `hooks/`

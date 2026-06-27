@@ -154,7 +154,7 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 I maintain ONE central, authoritative **ops-knowledge state** for my homelab/home: **dynamic**
 (live, current, queryable by every human and AI on the LAN) and **archival** (durable,
 portable, hand-off-able to anyone taking over anything). It lives in the **HomeAssistant repo**
-(`/Volumes/workspace/HomeAssistant/` → `successor-bundle/` OKF bundle + `wiki/`), is surfaced
+(`/Volumes/workspace/HomeAssistant/` → `home-ops/` OKF bundle + `wiki/`), is surfaced
 live by the **Librarian RAG + Hazel** (OpenWebUI on `mini.local`), and kept current by the
 `tools/*-scan.sh` self-tracking probes. Full doctrine: `~/.claude/guidelines/central-ops-knowledge.md`.
 
