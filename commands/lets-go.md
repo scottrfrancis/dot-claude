@@ -109,6 +109,14 @@ Run these checks in order:
    - If clean + behind: offer to pull automatically
 7. If on default branch (main/master) with uncommitted changes: suggest creating a feature branch
 
+## Project Auto-Checks (opportunistic, cheap)
+
+Run only if the corresponding project tooling exists; **skip silently otherwise**. These are token-cheap freshness checks, never LLM ingestion.
+
+- **Gemini meeting transcripts** — if `tools/pull-gemini-notes.sh` exists in the project, run the `fetch-meeting-notes` skill (or the script directly:
+  `GOOGLE_WORKSPACE_CLI_CONFIG_DIR=$HOME/.config/gws/ail tools/pull-gemini-notes.sh Catalyst`).
+  This pulls any new "Notes by Gemini" Docs from Drive (free — no model tokens). Report newly pulled transcripts in the Ready Output. If new files landed, **suggest** `/harvest-action-items` (do not auto-run — it spends tokens). If `gws auth status` shows expired/no auth, note it briefly and continue. Setup/troubleshooting: the project's `tools/SETUP-gemini-notes.md`.
+
 ## Ready Output
 
 I will confirm when I am ready with a simple "i am ready to claude" and a very short, high-level plan.
