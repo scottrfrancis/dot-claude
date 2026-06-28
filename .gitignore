@@ -29,3 +29,9 @@ plugins/marketplaces/
 
 # Nested claude install artifacts
 .claude/
+
+# Local-only secrets and per-host state
+token
+.claude.json*
+downloads
+session-env
