@@ -117,6 +117,25 @@ Run only if the corresponding project tooling exists; **skip silently otherwise*
   `GOOGLE_WORKSPACE_CLI_CONFIG_DIR=$HOME/.config/gws/ail tools/pull-gemini-notes.sh Catalyst`).
   This pulls any new "Notes by Gemini" Docs from Drive (free — no model tokens). Report newly pulled transcripts in the Ready Output. If new files landed, **suggest** `/harvest-action-items` (do not auto-run — it spends tokens). If `gws auth status` shows expired/no auth, note it briefly and continue. Setup/troubleshooting: the project's `tools/SETUP-gemini-notes.md`.
 
+## Time Tracking Check (opportunistic)
+
+If the local `b` time tracker is installed, surface its state so billable work
+gets clocked. **Skip silently if `b` is not present on this device.** See the
+`/b` command and [[beaufort-time-tracking]] for the full surface.
+
+```bash
+B="$(command -v b 2>/dev/null)"
+if [ -z "$B" ]; then
+  RH="$(dscl . -read "/Users/$(whoami)" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
+  [ -x "$RH/bin/b" ] && B="$RH/bin/b"
+fi
+[ -n "$B" ] && "$B" list-open
+```
+
+- **A timer is open** → note it in the Ready Output: "⏱ tracking: TR-NNN customer/project (elapsed Xm)". Don't start another.
+- **No open timer** + this looks like billable project work → nudge once, advisory: "No active timer — `/b start` to clock this session." Do not auto-start.
+- **`b` absent** → say nothing.
+
 ## Ready Output
 
 I will confirm when I am ready with a simple "i am ready to claude" and a very short, high-level plan.

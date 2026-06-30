@@ -74,6 +74,23 @@ files_changed: <count of uncommitted changed files>
 
 The YAML frontmatter is required — it identifies the source tool so any receiving tool (Cursor, Copilot, Droid) knows where the handoff came from.
 
+## Time Tracking (opportunistic)
+
+If the local `b` time tracker is installed and a timer is still open, note it in
+`## Blockers / Risks` so the next session (or the user) closes it. **Skip
+silently if `b` is absent.**
+
+```bash
+B="$(command -v b 2>/dev/null)"
+if [ -z "$B" ]; then
+  RH="$(dscl . -read "/Users/$(whoami)" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
+  [ -x "$RH/bin/b" ] && B="$RH/bin/b"
+fi
+[ -n "$B" ] && "$B" list-open
+```
+
+- **Open timer** → add to Blockers / Risks: "⏱ TR-NNN still running since HH:MM — `/b stop`."
+
 ## Reminder
 
 If `/session-logger` hasn't been run yet and 3+ files were changed, remind the user to run it before ending the session.

@@ -62,6 +62,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - `~/.claude/commands/babysit-pr.md` - Monitor a PR for check results, reviews, and merge readiness; pairs with `/loop`
 - `~/.claude/commands/checkpoint-progress` - Git checkpoint script: stages all changes and commits a WIP snapshot with timestamp
 - `~/.claude/commands/extract-adr` - Extract architectural decisions from a session log into ADR format; saves to `docs/adr/`
+- `~/.claude/commands/b.md` - Drive the local `b` time tracker (start/stop/status/log); project-aware, syncs to hasami via the `time-push` agent
 
 ## Cross-Tool Session Protocol
 
@@ -137,6 +138,7 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - Create temporary test scripts and programs in `/tmp`, not in the project directory
 - When the user reports a PR has been merged, prompt them to update the local repository (pull, delete merged branch)
 - When asked to push to a repo, suggest a new branch if the current branch is the default (main/master)
+- **Time tracking** — the local `b` tool (beaufort time-tool) tracks billable/work time; records accumulate in `~/.beaufort/data/time.db` and sync to hasami via the `time-push` launchd agent (local-first, no runtime SSH). `/lets-go` surfaces any open timer and nudges (advisory) when none is running on project work; `/session-logger` and `/handoff` remind to `/b stop`. **Remind, never auto-start/stop** — starting a timer posts real billable state. Use `/b` to drive it. Skip silently on devices where `b` isn't installed.
 
 ## Version History
 
@@ -148,6 +150,7 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - 2026-03-27: Cross-tool session sync — session-logs/ as shared primary location, YAML frontmatter with tool: field, multi-location search in all commands/hooks, project docs integration (docs/guidelines/, docs/adr/, AGENTS.md) in review commands
 - 2026-05-11: Add surface-conflicts global rule; karpathy-principles "read before you write" delta; testing.md "tests must be able to fail" section; prototype-hygiene.md "fail loud" rule
 - 2026-05-21: Add 2x2-status-report guideline (quad-chart weekly status; disambiguates from canonical Amazon WBR)
+- 2026-06-30: Add `/b` command + time-tracking touchpoints in `/lets-go`, `/session-logger`, `/handoff` (remind-don't-auto policy); local `b` time-tool on studio-3 → `time-push` → hasami ingest (`bronze.time_entry`, `task_raw`)
 <\!-- central-ops-knowledge: begin -->
 ## Central Ops Knowledge (shared doctrine — all my AI tools)
 
