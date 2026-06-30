@@ -101,6 +101,23 @@ Include a `## Session Effectiveness` section:
 - **Process friction** — Points where the workflow felt inefficient
 - **Carry-forward items** — Specific tasks for the next session
 
+## Time Tracking (opportunistic)
+
+If the local `b` time tracker is installed, check for an open timer and fold
+the session's tracked time into the log. **Skip silently if `b` is absent.**
+
+```bash
+B="$(command -v b 2>/dev/null)"
+if [ -z "$B" ]; then
+  RH="$(dscl . -read "/Users/$(whoami)" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
+  [ -x "$RH/bin/b" ] && B="$RH/bin/b"
+fi
+[ -n "$B" ] && { "$B" list-open; "$B" yesterday 2>/dev/null; }
+```
+
+- **A timer is still open** → remind: "⏱ TR-NNN is still running — `/b stop` to close it." (Don't stop it automatically.)
+- Note total tracked time for this session in the `## Session Effectiveness` section when a relevant entry exists.
+
 ## Reminder
 
 If `/handoff` hasn't been run yet and 5+ files were changed, remind the user to run it before ending the session.
