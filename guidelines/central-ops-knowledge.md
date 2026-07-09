@@ -21,8 +21,16 @@ block to it.
 
 - **Knowledge base:** the **HomeAssistant repo** — `/Volumes/workspace/HomeAssistant/`:
   the **`home-ops/`** (OKF v0.1 bundle; renamed from `successor-bundle/` 2026-06-20) + **`wiki/`** (Karpathy wiki).
-- **Dynamic access:** the **Librarian RAG** (pgvector @ vault:5433, Ollama @ dev-ai) with
-  **Hazel** (OpenWebUI on `mini.local`) as the household front-end. One corpus.
+- **Dynamic access:** served live off a git clone on `mini` (15-min `git pull`) as two
+  LAN-only services — the **`kb-mcp` filesystem MCP** (`mini:8092`; read-only
+  `search`/`read_file`/`list_dir`; a standard MCP any agent registers — **Hazel**/OpenWebUI is
+  one client, reusable by Claude Desktop, Cursor, OpenClaw too) and **`kb-static`** HTML browse
+  (`mini:8090`) for humans. The MCP reads markdown **live** — no re-index. See
+  `home-ops/software/kb-serving.md` and
+  `wiki/decisions/2026-07-09-kb-access-via-filesystem-mcp.md`.
+  - *RAG on hold:* ingesting the bundle into the **Librarian RAG** (pgvector @ vault:5433,
+    Ollama @ dev-ai) is on **indefinite hold**; the Librarian still serves its estate/wisdom
+    corpus. Revisit only if semantic retrieval outgrows the MCP's substring search.
 - **Stays current via:** the `tools/*-scan.sh` self-tracking probes (network, resilience,
   equipment, automations) — run weekly on `mini`.
 
