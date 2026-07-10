@@ -17,7 +17,23 @@ Search for the most recent `handoff-*.md` file across all tool locations:
 
 Take the most recently modified file across all locations (must be less than 7 days old).
 
-If no handoff file is found, say so and suggest running `/lets-go` instead to set session context.
+### Workspace-wide fallback (when launched from home / not in a project)
+
+The cwd-relative paths above only work when you launch from inside the project
+repo. Handoffs are actually written into each project's `session-logs/` under
+`/Volumes/workspace/<repo>/`. So **also run this scan whenever cwd is not a git
+repo, or when steps 1–4 found nothing**:
+
+```bash
+find /Volumes/workspace -maxdepth 3 -path '*/session-logs/handoff-*.md' -mtime -7 2>/dev/null \
+  -exec stat -f '%Sm %N' -t '%Y-%m-%d %H:%M' {} \; | sort -r | head -8
+```
+
+Because multiple projects are usually in flight, **do not blindly grab the newest**:
+- If exactly one candidate, use it.
+- If several across different repos, **list the top few (repo + timestamp + handoff title) and ask the user which to resume.** Newest ≠ what they want.
+
+If no handoff file is found anywhere, say so and suggest running `/lets-go` instead to set session context.
 
 ## Step 2: Read the handoff
 

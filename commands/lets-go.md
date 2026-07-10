@@ -14,6 +14,14 @@ The SessionStart hook auto-injects handoff context, but verify it loaded and che
    - `session-logs/` (shared cross-tool location)
    - `.claude/session-logs/` (Claude Code legacy location)
    - `.factory/logs/` (Droid legacy location)
+   - **Workspace-wide fallback** — when cwd is *not* a git repo (e.g. launched from `~`), the
+     paths above miss handoffs written into each project's `session-logs/`. Also scan:
+     ```bash
+     find /Volumes/workspace -maxdepth 3 -path '*/session-logs/handoff-*.md' -mtime -7 2>/dev/null \
+       -exec stat -f '%Sm %N' -t '%Y-%m-%d %H:%M' {} \; | sort -r | head -8
+     ```
+     If several candidates across different repos, list the top few (repo + timestamp) and ask
+     which to resume rather than assuming the newest — or just note them and continue.
 2. If found and less than 7 days old, read it and incorporate as session context
 3. If the file has YAML frontmatter with a `tool:` field, note the source (e.g., "Continuing from a Cursor session")
 4. Report: "Loaded handoff context from [filename] ([tool])" or "No recent handoff found"
