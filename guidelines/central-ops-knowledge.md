@@ -50,3 +50,11 @@ block to it.
    assistant must work with the internet down and subscriptions lapsed.
 5. **Respect boundaries.** Household/help surfaces stay **LAN-only**; don't touch non-Scott
    tailnet hosts (e.g. Alice's Mac) without asking.
+6. **The LAN is a trusted surface (decided 2026-07-10).** Raw bundles across **all** visibility
+   tiers — including `sensitive` (health, finance, estate) — **may be served to humans and agents
+   on the LAN** (kb-static / kb-mcp / Hazel / the mini portal). Visibility tiers label
+   **off-LAN** handling, not LAN access. The boundary that matters is **LAN vs. off-LAN**:
+   off-LAN copies (cloud/S3/OneDrive) stay **git-crypt-encrypted** (no plaintext sensitive leaves
+   the LAN), and the non-Scott tailnet-host boundary in rule 5 stands. *(Supersedes any earlier
+   "a `family` card is the only household-visible surface / raw sensitive never touches mini"
+   guidance.)*
