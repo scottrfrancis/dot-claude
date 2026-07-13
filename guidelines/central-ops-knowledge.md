@@ -19,9 +19,13 @@ block to it.
 
 ## Where it lives
 
-- **Knowledge base:** the **HomeAssistant repo** — `/Volumes/workspace/HomeAssistant/`:
-  the **`home-ops/`** (OKF v0.1 bundle; renamed from `successor-bundle/` 2026-06-20) + **`wiki/`** (Karpathy wiki).
-- **Dynamic access:** served live off a git clone on `mini` (15-min `git pull`) as two
+- **Knowledge base:** the **`okf-knowledge` bundle** — the durable authoritative home (OKF v0.1;
+  infra content promoted from the older `HomeAssistant/home-ops/` on 2026-07-01, authoritative going
+  forward). Vault-authoritative bare repo `vault:/volume1/gitrepos/okf-knowledge.git`; working clones
+  on **hasami → `~/okf-knowledge`** and **Studio → `/Volumes/workspace/okf-knowledge`**; the Karpathy
+  **`wiki/`** rides alongside. On the LAN, agents read the bundle from the nearest clone (on hasami:
+  `~/okf-knowledge/` — e.g. `infra/hosts.md`, `infra/beaufort.md`, `infra/ai-stack.md`).
+- **Dynamic access:** served live off an `okf-knowledge` git clone on `mini` (15-min `git pull`) as two
   LAN-only services — the **`kb-mcp` filesystem MCP** (`mini:8092`; read-only
   `search`/`read_file`/`list_dir`; a standard MCP any agent registers — **Hazel**/OpenWebUI is
   one client, reusable by Claude Desktop, Cursor, OpenClaw too) and **`kb-static`** HTML browse

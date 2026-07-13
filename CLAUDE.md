@@ -43,7 +43,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [2x2 Status Report](./guidelines/2x2-status-report.md) - Quad-chart format for short weekly status reports (Last week / This week / Risks / Asks); SA-org tradition, not the canonical Amazon WBR
 - [Architecture Diagram Craft](./guidelines/architecture-diagrams.md) - AWS reference-diagram visual conventions (numbered flow, icon/color rules, boundaries, critique rubric, reference assets); GCP/multi-cloud adaptation; companion to C4-diagramming.md
 - [C4 Diagramming](./guidelines/C4-diagramming.md) - PlantUML file organization for C4 diagrams (modular includes, C1/C2/C3 layout, boundary conflicts)
-- [Central Ops Knowledge](./guidelines/central-ops-knowledge.md) - The vision + doctrine for the central, authoritative, dynamic+archival ops-knowledge state (HomeAssistant bundle/wiki, served live via the `kb-mcp` filesystem MCP + `kb-static` browse on mini; Hazel/OpenWebUI is one client); consult-before-acting, write-back. Propagated to all AI tools.
+- [Central Ops Knowledge](./guidelines/central-ops-knowledge.md) - The vision + doctrine for the central, authoritative, dynamic+archival ops-knowledge state (`okf-knowledge` bundle + wiki, served live via the `kb-mcp` filesystem MCP + `kb-static` browse on mini; Hazel/OpenWebUI is one client); consult-before-acting, write-back. Propagated to all AI tools.
 
 ## Custom Commands
 
@@ -156,8 +156,10 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 
 I maintain ONE central, authoritative **ops-knowledge state** for my homelab/home: **dynamic**
 (live, current, queryable by every human and AI on the LAN) and **archival** (durable,
-portable, hand-off-able to anyone taking over anything). It lives in the **HomeAssistant repo**
-(`/Volumes/workspace/HomeAssistant/` → `home-ops/` OKF bundle + `wiki/`), is surfaced
+portable, hand-off-able to anyone taking over anything). It lives in the **`okf-knowledge` bundle**
+(vault-authoritative `vault:/volume1/gitrepos/okf-knowledge.git`; clones: hasami `~/okf-knowledge`,
+Studio `/Volumes/workspace/okf-knowledge`; `wiki/` alongside — infra content promoted from the older
+`HomeAssistant/home-ops/` on 2026-07-01), is surfaced
 live to agents via the read-only **`kb-mcp` filesystem MCP** (`mini.local:8092`, tools
 `search`/`read_file`/`list_dir`; registered in **Hazel**/OpenWebUI and reusable by any MCP
 client) and to humans via **`kb-static`** browse (`mini.local:8090`), and kept current by the
@@ -168,8 +170,8 @@ indefinite hold — the MCP reads markdown live, no re-index.) Full doctrine:
 Operating rules for every agent (Claude, OpenCode, Codex, Cursor, Droid, Copilot…):
 1. **Consult before acting on infrastructure** — before stopping/changing a service, host, or
    config, check the knowledge base for "what is this and *why*." Stale assumptions cause outages.
-   On the LAN, query it live via the `kb-mcp` MCP (or read `home-ops/`+`wiki/` markdown directly);
-   off-LAN, read the repo checkout.
+   On the LAN, query it live via the `kb-mcp` MCP (or read the `okf-knowledge` bundle markdown
+   directly — on hasami: `~/okf-knowledge/`, e.g. `infra/`); off-LAN, read the repo checkout.
 2. **Write back** — when you learn or change something about the ops state, record or flag it so
    it stays current. Session-only knowledge is lost.
 3. **OKF form** — plain markdown + YAML, **no secrets** (pointers only), conformant for any tool.
