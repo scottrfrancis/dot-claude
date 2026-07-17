@@ -34,8 +34,12 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [Prototype Hygiene](./guidelines/prototype-hygiene.md) - Ship clean from day one: config over code, stable docs over stale state, PRs over branches
 - [Security Hardening](./guidelines/security-hardening.md) - Defense-in-depth patterns grounded in real-world breach analysis
 - [Go Code Standards](./guidelines/golang.md) - JSON response safety (no fmt.Fprintf), gosec patterns, G104 triage
-- [Python Code Standards](./guidelines/python.md) - *Coming soon*
-- [JavaScript/TypeScript Guidelines](./guidelines/javascript.md) - *Coming soon*
+- [Python Code Standards](./guidelines/python.md) - Type hints, error handling, testing patterns
+- [TypeScript Standards](./guidelines/typescript.md) - Strict types, functional components, error boundaries
+- [Docker Standards](./guidelines/docker.md) - Multi-stage builds, security, layer optimization
+- [Terraform Standards](./guidelines/terraform.md) - Module structure, state management, security
+- [Git Workflow](./guidelines/git-workflow.md) - Branch + PR discipline; never commit/push main; stacked-PR handling
+- [ADR Format](./guidelines/adr.md) - Canonical Architecture Decision Record convention: docs/decisions/ADR-NNNN, numbering, status lifecycle, FR-### traceability
 - [Testing Strategies](./guidelines/testing.md) - Test pyramid, mocking, CI integration, framework-specific notes
 - [CI Local Parity](./guidelines/ci-local-parity.md) - Run exact CI commands locally before pushing; install all scanners; budget for pre-existing issues
 - [DOCX Conversion](./guidelines/docx-conversion.md) - python-docx over pandoc; color palette, typography, hyperlinks
@@ -61,8 +65,18 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - `~/.claude/commands/review-pr.md` - PR code review: bugs, security, missing tests, style; works with PR numbers or branches
 - `~/.claude/commands/babysit-pr.md` - Monitor a PR for check results, reviews, and merge readiness; pairs with `/loop`
 - `~/.claude/commands/checkpoint-progress` - Git checkpoint script: stages all changes and commits a WIP snapshot with timestamp
-- `~/.claude/commands/extract-adr` - Extract architectural decisions from a session log into ADR format; saves to `docs/adr/`
+- `~/.claude/commands/extract-adr` - Extract architectural decisions from a session log into the canonical ADR format; saves to `docs/decisions/` with sequential numbering (see `guidelines/adr.md`)
 - `~/.claude/commands/b.md` - Drive the local `b` time tracker (start/stop/status/log); project-aware, syncs to hasami via the `time-push` agent
+
+### Spec-Driven Development (SDLC) — harvested from the airgapped engagement fork
+
+- `~/.claude/commands/discovery-init.md` - Scaffold a Spec-Driven Development project: artifact templates, glossary, constitution, traceability chain
+- `~/.claude/commands/interview-to-spec.md` - Convert interview notes into readout, FR-### requirements, Gherkin scenarios, and tracker updates
+- `~/.claude/commands/design-review.md` - Review design deliverables for consistency, terminology alignment, cross-document reference integrity
+- `~/.claude/commands/trace-check.md` - Validate bidirectional traceability across requirements, feature files, scenarios, and tests
+- `~/.claude/commands/constitution.md` - Generate CONSTITUTION.md + WORKFLOWS.md (principles, Definition of Done, quality gates)
+- `~/.claude/commands/assumptions.md` - Track hypothesis-driven assumptions (if-true/if-false/fallback) in ASSUMPTIONS-TRACKER.md
+- `~/.claude/commands/gherkin.md` - Draft Gherkin acceptance scenarios from a requirement or FR-###
 
 ## Cross-Tool Session Protocol
 

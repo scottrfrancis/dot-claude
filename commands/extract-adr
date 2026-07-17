@@ -26,52 +26,46 @@ steps:
 
   - name: "Extract and format ADR"
     ask_claude: |
-      From the session log above, extract the architectural decisions and format them as proper ADRs.
-      
-      For each significant decision, create an ADR following this template:
-      
-      # ADR-XXX: [Title]
-      
-      ## Status
-      Proposed
-      
+      From the session log above, extract the architectural decisions and format them as
+      proper ADRs following the **adr guideline** (~/.claude/guidelines/adr.md) — the
+      canonical convention. One decision per ADR. Use this exact template:
+
+      # ADR-NNNN: <short imperative title>
+
+      - **Status:** Proposed
+      - **Date:** <YYYY-MM-DD from the session log, or ask>
+      - **Deciders:** <who, from the log>
+      - **Related requirements:** FR-###   (omit if none — enables trace-check)
+      - **Related ADRs:** ADR-NNNN (omit if none)
+
       ## Context
-      What is the issue that we're seeing that is motivating this decision?
-      
+      The forces at play: problem, constraints, what made the decision necessary.
+
       ## Decision
-      What is the change that we're proposing and/or doing?
-      
+      "We will …" — active voice, one decision.
+
       ## Consequences
-      What becomes easier or more difficult to do because of this change?
-      
-      ### Positive
-      - List positive consequences
-      
-      ### Negative  
-      - List negative consequences
-      
-      ### Neutral
-      - List neutral consequences
-      
-      ## Alternatives Considered
-      - What other options were evaluated?
-      
-      ---
-      
-      Generate one or more ADRs based on the key decisions found in the log.
-      Use concrete, specific language and focus on architectural significance.
+      - **Positive:** what this enables.
+      - **Negative:** what it costs or risks.   (required — never omit)
+      - **Neutral:** follow-on work, things now locked in.
+
+      ## Alternatives considered
+      - Each realistic option and the one-line reason it lost.
+
+      Generate one ADR per significant decision; architecturally significant only.
+      Leave NNNN as a placeholder — the next step assigns the number.
     save_to_var: "adr_content"
 
   - name: "Save ADR"
     run: |
-      mkdir -p docs/adr
-      TIMESTAMP=$(date +"%Y%m%d")
-      FILENAME="docs/adr/adr-${TIMESTAMP}-draft.md"
-      
-      echo "$adr_content" > "$FILENAME"
-      echo "✅ ADR draft saved to $FILENAME"
+      # canonical location + sequential numbering (see ~/.claude/guidelines/adr.md)
+      DIR="docs/decisions"; [ -d docs/adr ] && [ ! -d docs/decisions ] && DIR="docs/adr"
+      mkdir -p "$DIR"
+      LAST=$(grep -rho 'ADR-[0-9]\{4\}' docs 2>/dev/null | sort -u | tail -1 | sed 's/ADR-//')
+      NEXT=$(printf "%04d" $(( 10#${LAST:-0} + 1 )))
+      FILENAME="$DIR/ADR-${NEXT}-draft.md"
+
+      echo "$adr_content" | sed "s/ADR-NNNN/ADR-${NEXT}/g" > "$FILENAME"
+      echo "✅ ADR draft saved to $FILENAME (number ${NEXT})"
       echo ""
-      echo "Next steps:"
-      echo "1. Review and edit the ADR"
-      echo "2. Assign a proper number"
-      echo "3. Update status when approved"
+      echo "Next: review, rename -draft to a kebab slug, set Status to Accepted when approved."
