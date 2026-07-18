@@ -54,11 +54,15 @@ block to it.
    assistant must work with the internet down and subscriptions lapsed.
 5. **Respect boundaries.** Household/help surfaces stay **LAN-only**; don't touch non-Scott
    tailnet hosts (e.g. Alice's Mac) without asking.
-6. **The LAN is a trusted surface (decided 2026-07-10).** Raw bundles across **all** visibility
-   tiers — including `sensitive` (health, finance, estate) — **may be served to humans and agents
-   on the LAN** (kb-static / kb-mcp / Hazel / the mini portal). Visibility tiers label
-   **off-LAN** handling, not LAN access. The boundary that matters is **LAN vs. off-LAN**:
-   off-LAN copies (cloud/S3/OneDrive) stay **git-crypt-encrypted** (no plaintext sensitive leaves
-   the LAN), and the non-Scott tailnet-host boundary in rule 5 stands. *(Supersedes any earlier
-   "a `family` card is the only household-visible surface / raw sensitive never touches mini"
-   guidance.)*
+6. **The LAN is a trusted surface (decided 2026-07-10); Scott's personal cloud is inside the
+   trust perimeter (decided 2026-07-13).** Raw bundles across **all** visibility tiers — including
+   `sensitive` (health, finance, estate) — **may be served to humans and agents on the LAN**
+   (kb-static / kb-mcp / Hazel / the mini portal). **Scott's personal OneDrive and Google Drive
+   are trusted** — he already keeps PHI/PII/PCI there — so **plaintext sensitive content may leave
+   the LAN to those personal-cloud accounts** (e.g. the readable OneDrive shadow). git-crypt is
+   **retained on the git repository** so the bare repo + its S3/GitHub off-site copies stay
+   ciphertext (defense-in-depth), but it is **not required** for the personal-cloud shadow.
+   Still unchanged: **secret credential *values* never enter a bundle** (pointers only), and the
+   **non-Scott tailnet-host boundary** in rule 5 stands. *(Supersedes the earlier "no plaintext
+   sensitive leaves the LAN / off-LAN copies stay git-crypt-encrypted" rule, and the older
+   "a `family` card is the only household-visible surface / raw sensitive never touches mini.")*
