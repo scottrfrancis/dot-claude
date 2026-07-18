@@ -200,7 +200,7 @@ Before designing a non-trivial component, or coining a new mechanism/abstraction
 
 - **Consult the pattern library first** — the `dot-patterns` corpus (GoF index with house
   stances, personal patterns, vetted mixins). On the LAN: the **patterns MCP** at `mini.local:8093` (search/read_file), or read the
-  vault checkout `/Volumes/scott-home/dot-patterns` directly. Off-LAN: the installed skills
+  vault checkout `/Volumes/workspace/dot-patterns` directly. Off-LAN: the installed skills
   / your local `dot-patterns` checkout.
 - **Name the pattern you apply** ("this is Strategy" / "the data-diode black/white/gray") in
   your plan and PR so reviewers share the vocabulary.
