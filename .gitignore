@@ -47,3 +47,6 @@ policy-limits.json
 remote-settings.json
 scheduled_tasks.lock
 settings.local.json
+
+# local session records — not committed (also keeps internal logs out of the public repo)
+session-logs/
