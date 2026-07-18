@@ -193,3 +193,17 @@ Operating rules for every agent (Claude, OpenCode, Codex, Cursor, Droid, Copilot
 4. **Local-first / WAN-tolerant** — prefer local LLM/files/Kiwix; must work with the internet down.
 5. **Respect boundaries** — household surfaces LAN-only; don't touch non-Scott tailnet hosts.
 <\!-- central-ops-knowledge: end -->
+
+## Design-pattern discipline
+
+Before designing a non-trivial component, or coining a new mechanism/abstraction:
+
+- **Consult the pattern library first** — the `dot-patterns` corpus (GoF index with house
+  stances, personal patterns, vetted mixins). On the LAN, query it via `kb-mcp` (`search`).
+  Off-LAN, use the installed skills / your `dot-patterns` checkout.
+- **Name the pattern you apply** ("this is Strategy" / "the data-diode black/white/gray") in
+  your plan and PR so reviewers share the vocabulary.
+- **Don't reinvent what the library names.** Reuse an applicable pattern; if you deviate, say why.
+- **If you coin something reusable, flag it for capture** rather than letting it evaporate.
+- Prefer the GoF house stances (composition over inheritance; Strategy over if-ladders;
+  avoid Singleton/Visitor) unless there's a stated reason.
