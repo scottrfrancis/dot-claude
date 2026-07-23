@@ -8,7 +8,7 @@ State: `/Volumes/workspace/okf-knowledge/inbox/link-audit/state.json`.
 
 1. **Sync first**: `git -C /Volumes/workspace/okf-knowledge pull -q` and
    `git -C /Volumes/workspace/HomeAssistant pull -q` (other agents write these repos).
-2. **Read `state.json`**; pick the FIRST target with `"status": "pending"`. If none:
+2. **Read `state.json`**; pick the FIRST target with `"status": "in-progress"` (an orphaned/partial prior attempt — resume it, honoring any notes about work already done), else the first `"pending"`. If none:
    the sweep is complete — if `final-report` was already done, just say so and, if
    running under /loop, END THE LOOP (ScheduleWakeup stop). Set the chosen target to
    `"in-progress"` immediately (crash-safe).
