@@ -125,6 +125,16 @@ Run only if the corresponding project tooling exists; **skip silently otherwise*
   `GOOGLE_WORKSPACE_CLI_CONFIG_DIR=$HOME/.config/gws/ail tools/pull-gemini-notes.sh Catalyst`).
   This pulls any new "Notes by Gemini" Docs from Drive (free — no model tokens). Report newly pulled transcripts in the Ready Output. If new files landed, **suggest** `/harvest-action-items` (do not auto-run — it spends tokens). If `gws auth status` shows expired/no auth, note it briefly and continue. Setup/troubleshooting: the project's `tools/SETUP-gemini-notes.md`.
 
+- **Action-items pruning** — if `ACTION_ITEMS.md` exists at the project root and contains an outline-format `## Open / Active` section (see Catalyst-RCM's `lint-action-items` skill for the format), run:
+  ```bash
+  grep -A2 -E "^#### AI-[0-9]+ · (done|dropped) ·" ACTION_ITEMS.md | grep -oE "since [0-9]{4}-[0-9]{2}-[0-9]{2}" | awk '{print $2}' | while read -r d; do
+    se=$(date -j -f "%Y-%m-%d" "$d" +%s 2>/dev/null) || continue
+    days=$(( ($(date +%s) - se) / 86400 ))
+    [ "$days" -gt 7 ] && echo "$d ($days days)"
+  done
+  ```
+  Free — no model tokens. If any dates print, note the count in the Ready Output ("N item(s) past the 7-day prune window") and **suggest** `/lint-action-items` (do not auto-run). No standing cron for this — deliberate, per user preference (2026-08-09): reminder-only at session start/end, not scheduled automation. The `Stop` hook (`session-end-reminder.sh`) carries the matching session-end reminder.
+
 ## Time Tracking Check (opportunistic)
 
 If the local `b` time tracker is installed, surface its state so billable work

@@ -91,7 +91,7 @@ Registered in `~/.claude/settings.json`, these fire for every project automatica
 
 - **SessionStart** → `~/.claude/hooks/load-handoff-context.sh` — Auto-injects the most recent `handoff-*.md` as context on new session startup; searches `session-logs/`, `.claude/session-logs/`, `.factory/logs/`, then `~/.claude/session-logs/` (skips files >7 days old)
 - **PreToolUse** → `~/.claude/hooks/pre-tool-safety.sh` — Blocks destructive git operations (`reset --hard`, `push --force`), recursive deletes, and writes to sensitive config files; prompts for confirmation
-- **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run; checks both `session-logs/` and `.claude/session-logs/`
+- **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run; checks both `session-logs/` and `.claude/session-logs/`. Also: if the cwd has an outline-format `ACTION_ITEMS.md` (see Catalyst-RCM's `lint-action-items` skill), reminds about `/lint-action-items` when items are past the 7-day prune window — reminder-only by design, no standing cron
 
 Project-local hooks in `.claude/settings.local.json` layer on top of these.
 

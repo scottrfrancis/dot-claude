@@ -55,4 +55,26 @@ if [[ "$TOTAL_CHANGES" -ge 5 ]]; then
   fi
 fi
 
+# --- Check 3: Action-items pruning reminder (project-agnostic — skips silently if absent) ---
+# Looks for the outline-format tracker (see Catalyst-RCM's ACTION_ITEMS.md / lint-action-items skill):
+# "#### AI-NNN · done|dropped · title" headings, with a "since YYYY-MM-DD" date on the next line.
+if [[ -f "ACTION_ITEMS.md" ]] && grep -q "^## Open / Active" "ACTION_ITEMS.md" 2>/dev/null; then
+  TODAY_EPOCH=$(date +%s)
+  STALE_COUNT=0
+  ITEM_DATES=$(grep -A2 -E "^#### AI-[0-9]+ · (done|dropped) ·" "ACTION_ITEMS.md" 2>/dev/null \
+    | grep -oE "since [0-9]{4}-[0-9]{2}-[0-9]{2}" | awk '{print $2}' || true)
+  while IFS= read -r d; do
+    [[ -z "$d" ]] && continue
+    SINCE_EPOCH=$(date -j -f "%Y-%m-%d" "$d" +%s 2>/dev/null) || continue
+    DAYS=$(( (TODAY_EPOCH - SINCE_EPOCH) / 86400 ))
+    if [[ "$DAYS" -gt 7 ]]; then
+      STALE_COUNT=$((STALE_COUNT + 1))
+    fi
+  done <<< "$ITEM_DATES"
+
+  if [[ "$STALE_COUNT" -gt 0 ]]; then
+    echo "Action-items reminder: ${STALE_COUNT} item(s) in ACTION_ITEMS.md are past the 7-day prune window. Consider running /lint-action-items." >&2
+  fi
+fi
+
 exit 0
