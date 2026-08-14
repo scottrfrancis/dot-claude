@@ -1,18 +1,32 @@
 ---
 name: infra-ha-control
-description: How to query AND control Home Assistant (REST/WS API + token), plus the govee2mqtt/B-hyve setup
+description: Do not record local infrastructure facts in this repo — read them from the LAN-local kb-mcp MCP serving the OKF bundle federation
 metadata:
   type: reference
 ---
 
-**Controlling HA:** two paths, both now persistent. (1) **SSH** — key-based, survives across sessions (see below). (2) **HTTP/WS API at `http://homeassistant.local:8123`** with a **long-lived access token**, now persisted (600) in the HA work dir: **`/Volumes/workspace/HomeAssistant/.env`** (`HA_URL` + `HA_TOKEN`) and **`.ha-curl.cfg`** (curl config → use `curl -K /Volumes/workspace/HomeAssistant/.ha-curl.cfg http://homeassistant.local:8123/api/...` so the token never appears in commands). Both are `.gitignore`d there; do NOT copy the token into `~/.claude` (git-synced). Network calls (API or SSH to homeassistant.local) need `dangerouslyDisableSandbox: true` (not in the sandbox allowlist). Scott can revoke the token anytime in HA → profile → Long-Lived Access Tokens.
-- **REST:** `curl -K <cfg>` where cfg is a 600 file holding `header = "Authorization: Bearer <token>"` — keeps the token out of command strings. Endpoints: `/api/states`, `/api/states/<entity>`, `/api/error_log`, `/api/config/automation/config/<id>` (GET/POST to read/patch automations), `/api/services/<domain>/<svc>` (POST to call services).
-- **Config-entry status / integration health** needs the **WebSocket API** (`config_entries/get`) — no REST equivalent. Use a conda env with `websockets` (e.g. the `washer-guide` env, see [[feedback-conda-docx]]): connect `ws://…/api/websocket`, auth with the token, send `{"id":1,"type":"config_entries/get"}`. (The Supervisor proxy `/api/hassio/*` returns **401** for long-lived tokens — can't configure add-ons via the API.)
+**This repo is public. Local infrastructure facts do not belong here** — not hostnames,
+addresses, ports, account names, device inventories, or access paths. This file previously
+carried a Home Assistant control/access map and has been redacted.
 
-**HA navigation (HAOS 2026.x — corrected; do NOT say "Settings → Add-ons"):** the add-on store/management was **renamed to "Apps"** — it's at **Settings → Apps** ("Run extra applications next to Home Assistant"). Add-on config = Settings → Apps → `<add-on>` → Configuration / Info (Restart) tabs. Scott also has **File editor** and **Studio Code Server** in his sidebar (fastest way to edit `/config` YAML without root SSH).
+**Read local infrastructure from the `kb-mcp` MCP server**, LAN-local on **mini**. It is a
+read-only filesystem MCP over the whole OKF federation, with tools `list_bundles`,
+`search`, `read_file`, and `list_dir`. Endpoint and doctrine: `CLAUDE.md` §"Central Ops
+Knowledge". Start with `list_bundles`; the registry bundle `knowledge-index` is the
+discovery entry point.
 
-**SSH into HA (works as of 2026-06-08):** via the **Advanced SSH & Web Terminal add-on** (under Settings → Apps), listening on **port 22** (NOT 22222), login user **`hassio`** (not root). `ssh hassio@homeassistant.local` — Scott's `~/.ssh/id_ed25519` (scottfrancis@studio.local) is in the add-on's `authorized_keys`, so key auth works; a password fallback exists too (not stored here). HA OS = Pi4, HAOS aarch64. Gives a shell with **/config readable** (configuration.yaml + includes: automations, scripts, scenes, binary_sensors, templates, mqtt, modbus, influxdb, govee_learning, secrets, temperature_fahrenheit). The **`ha` CLI works** (`ha core check` succeeded → can validate config & `ha core restart`). Gotcha: as `hassio` you can READ but **not WRITE** /config (root-owned) — writes need root/sudo (defer + get Scott's OK before editing config). Net: this finally enables direct YAML editing (e.g. the deferred [[project-washer-replacement]] binary_sensors migration) instead of paste-the-YAML.
+- **`infra`** — **the authoritative record for hostnames, addresses, services, networks,
+  databases, and the host fleet.** Check here first for what a host or service is and
+  *why*, before changing anything. Home Assistant's host and agent-access facts live here
+  too, in `hosts.md`.
+- **`home-ops`** — household operations: HA automations, equipment, runbooks, emergency
+  and howto guides, and credential *pointers* (never secret values).
+- Other bundles (`health`, `finance-estate`, `career`, `writing`, isolated `client:*`)
+  exist; enumerate rather than assume.
 
-**Govee (2026-06-08):** restored via **govee2mqtt** as a standalone Docker container on **mini** (`~/govee2mqtt/`, image `ghcr.io/wez/govee2mqtt:latest`, `restart: unless-stopped`, `network_mode: host`). Bridges to **EMQX on vault (192.168.4.3:1883, anonymous OK)** → HA MQTT auto-discovery. **Runs API-KEY-ONLY** (`.env` has `GOVEE_API_KEY` but NO email/password): Govee's undocumented email/password login returns **`status 454`** (a known widespread govee2mqtt issue, spring 2026) and crash-loops — so **do not re-add GOVEE_EMAIL/GOVEE_PASSWORD**. The H6199 "DreamView T1" appears as **`light.dreamview_t1`** (+15 segments, 301 effects). The two automations `automation.family_room_turn_on/off_dreamview_with_tv` were re-pointed to that entity. Replaced the deprecated LaggAt/hacs-govee integration; "Govee Lights Local" doesn't support the H6199 and "Govee Bluetooth" has no BLE proxy near the TV (only the Pi's onboard radio).
+Off-LAN, read the repo checkouts instead. Either way the rule is the same: **consult
+before acting on infrastructure, and write findings back to the KB** — not into this repo.
+New facts go to `inbox/` as `status: proposed` for triage; don't auto-merge.
 
-**B-hyve (2026-06-08):** reinstalled; device "Smart Outdoor Timer", 2 zones (back/front yard) as `valve.garage_smart_outdoor_timer_*_zone`, healthy (`binary_sensor…fault`=off). It reports timing/zone state, NOT gallons — pair with the city water meter for volume ([[infra-water-meter-lag]], [[infra-ha-influxdb]]).
+Secrets are never in the KB or in memory. It records what a credential unlocks and where
+it is kept; retrieve the value from the household password manager.

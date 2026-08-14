@@ -31,6 +31,8 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [Tool Delegation for LLM Cron Skills](./guidelines/ai-cron-tool-delegation.md) - When a cron skill must produce a number, build a deterministic helper and wire it via cron payload — not via SKILL.md or AGENTS.md
 - [Project Setup](./guidelines/project-setup.md) - Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling
 - [Prose Style](./guidelines/prose-style.md) - Anti-AI-smell rules for narrative writing: punctuation, sentence variation, transitions, word choice
+- [Markdown Formatting](./guidelines/markdown-formatting.md) - Spacing rules for generated Markdown: blank lines around lists, paragraph separation, consistent bullet markers
+- [PR Token Tracking](./guidelines/pr-token-tracking.md) - Include AI token usage in PR descriptions, read from the branch-keyed ledger
 - [Prototype Hygiene](./guidelines/prototype-hygiene.md) - Ship clean from day one: config over code, stable docs over stale state, PRs over branches
 - [Security Hardening](./guidelines/security-hardening.md) - Defense-in-depth patterns grounded in real-world breach analysis
 - [Data-Diode List Control](./guidelines/data-diode-list-control.md) - Black/white/gray list pattern for one-way egress boundaries (scrub/allow/pending-promotable); the gray list discovers unknowns before they leak
@@ -68,6 +70,12 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - `~/.claude/commands/checkpoint-progress` - Git checkpoint script: stages all changes and commits a WIP snapshot with timestamp
 - `~/.claude/commands/extract-adr` - Extract architectural decisions from a session log into the canonical ADR format; saves to `docs/decisions/` with sequential numbering (see `guidelines/adr.md`)
 - `~/.claude/commands/b.md` - Drive the local `b` time tracker (start/stop/status/log); project-aware, syncs to hasami via the `time-push` agent
+- `~/.claude/commands/build-pdf.md` - Build a PDF from ordered markdown sections via the `md2pdf` CLI and a `report.yaml` manifest
+- `~/.claude/commands/link-sweep.md` - One target per invocation of the federation link audit; designed to run under `/loop`
+- `~/.claude/commands/export-prompts` - Python: export AI agent prompt history (Droid + Claude Code sessions) to markdown, by date or range
+- `~/.claude/commands/pr-tokens` - Python: format the current branch's token usage as a PR-description snippet (see `guidelines/pr-token-tracking.md`)
+- `~/.claude/commands/session-cleanup` - Bash: kill zombie Claude processes before a session (see `guidelines/session-safety.md`)
+- `~/.claude/commands/validate-hw-env` - Bash: verify exclusive device access before hardware testing; fails when competing sessions are detected
 
 ### Spec-Driven Development (SDLC) — harvested from the airgapped engagement fork
 
@@ -90,10 +98,22 @@ All session logs and handoff files include YAML frontmatter with a `tool:` field
 Registered in `~/.claude/settings.json`, these fire for every project automatically:
 
 - **SessionStart** → `~/.claude/hooks/load-handoff-context.sh` — Auto-injects the most recent `handoff-*.md` as context on new session startup; searches `session-logs/`, `.claude/session-logs/`, `.factory/logs/`, then `~/.claude/session-logs/` (skips files >7 days old)
+- **SessionStart** → `~/.claude/hooks/account-mismatch-warn.sh` — Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) doesn't match the logged-in oauth account. Advisory only; silent on match; needs `jq`
 - **PreToolUse** → `~/.claude/hooks/pre-tool-safety.sh` — Blocks destructive git operations (`reset --hard`, `push --force`), recursive deletes, and writes to sensitive config files; prompts for confirmation
-- **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run; checks both `session-logs/` and `.claude/session-logs/`
+- **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run; checks both `session-logs/` and `.claude/session-logs/`. Also: if the cwd has an outline-format `ACTION_ITEMS.md` (see Catalyst-RCM's `lint-action-items` skill), reminds about `/lint-action-items` when items are past the 7-day prune window — reminder-only by design, no standing cron
 
 Project-local hooks in `.claude/settings.local.json` layer on top of these.
+
+Also present but **not currently registered**: `~/.claude/hooks/log-session-tokens` — a `SessionEnd` hook that appends token usage to `~/.factory/token-ledger.json` keyed by `project:branch`. It is the ledger writer that `guidelines/pr-token-tracking.md` and `/pr-tokens` read from, so those two are inert until it is wired into `settings.json`.
+
+**Note:** `settings.json` is deliberately gitignored (it carries per-host and account state), so a fresh clone of this repo has the hook *scripts* but no registration. After cloning, register the hooks above in `~/.claude/settings.json` or the hooks will silently never fire.
+
+## Skills
+
+Global skills live in `~/.claude/skills/<name>/SKILL.md` and are available in every project:
+
+- `explain-diff-html` - Rich, interactive HTML explanation of a code change, diff, branch, or PR
+- `explain-diff-md` - Same, as a single self-contained Markdown file (fits the wiki/OKF knowledge base)
 
 ## How to Use These Guidelines
 
@@ -165,6 +185,7 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - 2026-03-27: Cross-tool session sync — session-logs/ as shared primary location, YAML frontmatter with tool: field, multi-location search in all commands/hooks, project docs integration (docs/guidelines/, docs/adr/, AGENTS.md) in review commands
 - 2026-05-11: Add surface-conflicts global rule; karpathy-principles "read before you write" delta; testing.md "tests must be able to fail" section; prototype-hygiene.md "fail loud" rule
 - 2026-05-21: Add 2x2-status-report guideline (quad-chart weekly status; disambiguates from canonical Amazon WBR)
+- 2026-08-13: Completeness audit — index 8 previously undocumented guidelines/commands, add a Skills section, document the `account-mismatch-warn` hook and the unregistered `log-session-tokens`, note that gitignored `settings.json` means a fresh clone has no hook registration
 - 2026-06-30: Add `/b` command + time-tracking touchpoints in `/lets-go`, `/session-logger`, `/handoff` (remind-don't-auto policy); local `b` time-tool on studio-3 → `time-push` → hasami ingest (`bronze.time_entry`, `task_raw`)
 <\!-- central-ops-knowledge: begin -->
 ## Central Ops Knowledge (shared doctrine — all my AI tools)
