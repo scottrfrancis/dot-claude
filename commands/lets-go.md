@@ -135,6 +135,27 @@ Run only if the corresponding project tooling exists; **skip silently otherwise*
   ```
   Free — no model tokens. If any dates print, note the count in the Ready Output ("N item(s) past the 7-day prune window") and **suggest** `/lint-action-items` (do not auto-run). No standing cron for this — deliberate, per user preference (2026-08-09): reminder-only at session start/end, not scheduled automation. The `Stop` hook (`session-end-reminder.sh`) carries the matching session-end reminder.
 
+- **Local dev stack health** — if the project has a runner script exposing a `status` verb
+  (e.g. Catalyst-RCM's `tools/run-dashboard.sh`), run it and report the result. Free — no model
+  tokens. **Report the configuration, not just the ports.** "Something is listening" is the
+  weakest possible reading of health, and it is the one that misleads: on 2026-08-14 the Client
+  Dashboard was up, serving pages, passing every port check, and failing every chat query with
+  `could not resolve credentials from session`, because the runner set `LLM_PROVIDER=bedrock`
+  without `AWS_PROFILE` and `~/.aws` has no `[default]`. Credentials resolve lazily inside the
+  first LLM call, so nothing surfaced until a human typed a question.
+
+  The three things worth a line each in the Ready Output:
+
+  - **Age and commit** — a server older than the branch tip serves stale code and silently
+    invalidates anything that talks to it over HTTP.
+  - **Provider + credentials** — which LLM provider the *running process* has (read it off the
+    pid, not from the current shell — they drift), and whether its credentials actually resolve.
+  - **Sidecar services** — MCP servers the runner does not itself start. A missing calculator MCP
+    doesn't fail; it changes the answers, which is worse.
+
+  If the check reports a problem, say so plainly in the Ready Output rather than burying it, and
+  offer the restart. Do not auto-restart — a running server may be mid-test.
+
 ## Time Tracking Check (opportunistic)
 
 If the local `b` time tracker is installed, surface its state so billable work
