@@ -1,6 +1,6 @@
 # Claude Code Memory
 
-- [infra-ha-control](infra-ha-control.md) — control HA via REST/WS API + token (not just InfluxDB reads); govee2mqtt on mini (api-key-only, Govee 454); B-hyve "Smart Outdoor Timer"
+- [infra-ha-control](infra-ha-control.md) — local infra facts do NOT belong in this public repo; read them from the `kb-mcp` MCP on mini (`infra` bundle for hosts/addresses/services, `home-ops` for household)
 
 ## Personal / Contacts
 
