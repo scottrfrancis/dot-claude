@@ -103,19 +103,25 @@ Include a `## Session Effectiveness` section:
 
 ## Time Tracking (opportunistic)
 
-If the local `b` time tracker is installed, check for an open timer and fold
-the session's tracked time into the log. **Skip silently if `b` is absent.**
+If the local `punch` time tracker is installed, check for an open timer and fold
+the session's tracked time into the log. **Skip silently if `punch` is absent** —
+but only claim absence when `$P` is genuinely empty, not when the home lookup
+failed (see `/punch` for why that distinction cost a correction on 2026-08-14).
 
 ```bash
-B="$(command -v b 2>/dev/null)"
-if [ -z "$B" ]; then
-  RH="$(dscl . -read "/Users/$(whoami)" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
-  [ -x "$RH/bin/b" ] && B="$RH/bin/b"
+P="$(command -v punch 2>/dev/null || command -v b 2>/dev/null)"
+if [ -z "$P" ]; then
+  U="$(id -un 2>/dev/null || echo "${USER:-}")"
+  RH="$( { getent passwd "$U" | cut -d: -f6; } 2>/dev/null )"        # Linux
+  [ -z "$RH" ] && RH="$( { dscl . -read "/Users/$U" NFSHomeDirectory | awk '{print $2}'; } 2>/dev/null )"  # macOS
+  for c in "$RH/bin/punch" "$RH/.local/bin/punch" "$RH/bin/b" "$RH/.local/bin/b"; do
+    [ -z "$P" ] && [ -x "$c" ] && P="$c"
+  done
 fi
-[ -n "$B" ] && { "$B" list-open; "$B" yesterday 2>/dev/null; }
+[ -n "$P" ] && { "$P" list-open; "$P" yesterday 2>/dev/null; }
 ```
 
-- **A timer is still open** → remind: "⏱ TR-NNN is still running — `/b stop` to close it." (Don't stop it automatically.)
+- **A timer is still open** → remind: "⏱ TR-NNN is still running — `/punch stop` to close it." (Don't stop it automatically.)
 - Note total tracked time for this session in the `## Session Effectiveness` section when a relevant entry exists.
 
 ## Reminder
