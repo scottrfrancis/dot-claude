@@ -69,7 +69,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - `~/.claude/commands/babysit-pr.md` - Monitor a PR for check results, reviews, and merge readiness; pairs with `/loop`
 - `~/.claude/commands/checkpoint-progress` - Git checkpoint script: stages all changes and commits a WIP snapshot with timestamp
 - `~/.claude/commands/extract-adr` - Extract architectural decisions from a session log into the canonical ADR format; saves to `docs/decisions/` with sequential numbering (see `guidelines/adr.md`)
-- `~/.claude/commands/b.md` - Drive the local `b` time tracker (start/stop/status/log); project-aware, syncs to hasami via the `time-push` agent
+- `~/.claude/commands/punch.md` - Drive the local `punch` time tracker (start/stop/status/log); project-aware, syncs to hasami via the time-push agent. Renamed from `/b` on 2026-08-14; `b` remains a symlink
 - `~/.claude/commands/build-pdf.md` - Build a PDF from ordered markdown sections via the `md2pdf` CLI and a `report.yaml` manifest
 - `~/.claude/commands/link-sweep.md` - One target per invocation of the federation link audit; designed to run under `/loop`
 - `~/.claude/commands/export-prompts` - Python: export AI agent prompt history (Droid + Claude Code sessions) to markdown, by date or range
@@ -173,7 +173,7 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - Create temporary test scripts and programs in `/tmp`, not in the project directory
 - When the user reports a PR has been merged, prompt them to update the local repository (pull, delete merged branch)
 - When asked to push to a repo, suggest a new branch if the current branch is the default (main/master)
-- **Time tracking** — the local `b` tool (beaufort time-tool) tracks billable/work time; records accumulate in `~/.beaufort/data/time.db` and sync to hasami via the `time-push` launchd agent (local-first, no runtime SSH). `/lets-go` surfaces any open timer and nudges (advisory) when none is running on project work; `/session-logger` and `/handoff` remind to `/b stop`. **Remind, never auto-start/stop** — starting a timer posts real billable state. Use `/b` to drive it. Skip silently on devices where `b` isn't installed.
+- **Time tracking** — the local `punch` tool (beaufort time-tool) tracks billable/work time; records accumulate in `~/.beaufort/data/time.db` and sync to hasami via a push agent — `time-push` launchd on macOS, `beaufort-time-push` systemd user timer on Linux (local-first, no runtime SSH). `/lets-go` surfaces any open timer and nudges (advisory) when none is running on project work; `/session-logger` and `/handoff` remind to `/punch stop`. **Remind, never auto-start/stop** — starting a timer posts real billable state. Use `/punch` to drive it. Skip silently on devices where `punch` isn't installed — but **verify before claiming absence**: the old macOS-only `dscl` detection returned empty under a sandbox and reported the tracker missing on a host that had it (2026-08-14). Installed on studio-3 and dev.local; `b` still works as a symlink.
 
 ## Version History
 
@@ -187,6 +187,7 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - 2026-05-21: Add 2x2-status-report guideline (quad-chart weekly status; disambiguates from canonical Amazon WBR)
 - 2026-08-13: Completeness audit — index 8 previously undocumented guidelines/commands, add a Skills section, document the `account-mismatch-warn` hook and the unregistered `log-session-tokens`, note that gitignored `settings.json` means a fresh clone has no hook registration
 - 2026-06-30: Add `/b` command + time-tracking touchpoints in `/lets-go`, `/session-logger`, `/handoff` (remind-don't-auto policy); local `b` time-tool on studio-3 → `time-push` → hasami ingest (`bronze.time_entry`, `task_raw`)
+- 2026-08-14: Rename `b` → `punch` (`b` kept as a symlink); fix the tracker-detection snippet in all three commands — the macOS-only `dscl` lookup returned empty under a sandbox and reported "not installed" on a host that had it. Now tries `getent` then `dscl`, and treats an empty home as not-found rather than building `/bin/punch`. Installed on dev.local
 <\!-- central-ops-knowledge: begin -->
 ## Central Ops Knowledge (shared doctrine — all my AI tools)
 
