@@ -5,8 +5,10 @@
 # git history; a later edit does not erase it. This is a gate, not a nudge: it exits
 # non-zero so CI fails before the next one lands.
 #
-# It scans only files intended to be public. Private segments under memory/local/ are
-# gitignored and are not scanned — that is where this content is supposed to live.
+# It scans only files intended to be public: memory/*.md and glossary/*.md. Private segments
+# under memory/local/ and glossary/local/ are gitignored and are not scanned — that is where
+# this content is supposed to live. Client vocabulary is often the most identifying thing in
+# a repo, so the universal glossary is scanned like everything else.
 #
 #   check-public-memory.sh [FILE...]     default: <repo-root>/memory/*.md
 #
@@ -20,7 +22,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 if [ $# -gt 0 ]; then
   FILES=("$@")
 else
-  mapfile -t FILES < <(find "$REPO_ROOT/memory" -maxdepth 1 -type f -name '*.md' 2>/dev/null | sort)
+  mapfile -t FILES < <({ find "$REPO_ROOT/memory" -maxdepth 1 -type f -name '*.md' 2>/dev/null
+                         find "$REPO_ROOT/glossary" -maxdepth 1 -type f -name '*.md' 2>/dev/null; } | sort)
 fi
 
 # Pattern and what it catches, separated by ';;'. That delimiter rather than '|', which is

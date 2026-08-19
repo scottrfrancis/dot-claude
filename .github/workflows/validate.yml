@@ -52,3 +52,6 @@ jobs:
 
       - name: No private detail in public memory
         run: bash bin/check-public-memory.sh
+
+      - name: Glossary is well-formed
+        run: bash bin/check-glossary.sh glossary/GLOSSARY.md
