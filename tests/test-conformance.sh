@@ -17,7 +17,7 @@ hasnt()  { case "$2" in *"$3"*) bad "$1" "should not mention '$3': $2" ;; *) ok 
 
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 
-reset() { rm -rf "$WORK"/p; mkdir -p "$WORK"/p/session-logs "$WORK"/p/logs; log_header > "$WORK"/p/logs/rule-conflict-log.md; }
+reset() { rm -rf "$WORK"/p; mkdir -p "$WORK"/p/session-logs "$WORK"/p/logs "$WORK"/p/memory; log_header > "$WORK"/p/logs/rule-conflict-log.md; }
 log_header() { printf '# Runtime Conflict Log\n\n---\n\n(New entries appended below this separator.)\n'; }
 
 session() { printf -- '---\ntool: claude-code\n---\n# Session Log: %s\n' "$1" > "$WORK/p/session-logs/session-$1.md"; }
@@ -68,6 +68,39 @@ out="$(run)"
 has "flags a conflict still awaiting a decision" "$out" "awaiting"
 has "names the pending id" "$out" "RC002"
 hasnt "does not name a decided conflict" "$out" "RC001 "
+
+# --- memory decay ---------------------------------------------------------
+# Memory that only accretes becomes memory that lies. A fact is flagged when it has gone
+# unverified too long, or when it carries no verification date at all.
+mem() { printf '# Memory\n\n%s\n' "$1" > "$WORK/p/memory/MEMORY.md"; }
+today="$(date +%Y-%m-%d)"
+old="$(date -d '400 days ago' +%Y-%m-%d 2>/dev/null || date -v-400d +%Y-%m-%d)"
+
+reset
+hasnt "quiet when there is no memory file" "$(run)" "memory"
+
+reset; mem "- A fresh fact [$today]"
+hasnt "quiet when every fact is fresh" "$(run)" "memory fact"
+
+reset; mem "- A stale fact [$old]"
+out="$(run)"
+has "flags a fact past the staleness window" "$out" "memory fact"
+has "names the guideline to act on" "$out" "MEMORY.md"
+
+reset; mem "- An undated fact with no date at all"
+has "flags an undated fact — unverifiable is not fresh" "$(run)" "undated"
+
+reset; mem "- A fresh fact [$today]
+- A stale fact [$old]
+- Another stale one [$old]"
+case "$(run)" in *"2 memory fact"*) ok "counts only the stale facts" ;;
+  *) bad "counts only the stale facts" "$(run)" ;; esac
+
+# Retired facts are struck through on purpose and must not be re-flagged forever.
+reset; mem "## Retired
+
+- ~~A retired fact~~ — no longer true [retired $old]"
+hasnt "does not flag facts under Retired" "$(run)" "memory fact"
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

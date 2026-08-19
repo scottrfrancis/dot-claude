@@ -29,7 +29,7 @@ is **not** loaded into context. Keep them there.
 `2x2-status-report` · `C4-diagramming` · `adr` · `ai-cron-tool-delegation` · `ai-patterns` ·
 `architecture-diagrams` · `central-ops-knowledge` · `ci-local-parity` ·
 `conventional-commits` · `data-diode-list-control` · `docker` · `docx-conversion` ·
-`git-workflow` · `golang` · `karpathy-principles` · `markdown-formatting` ·
+`git-workflow` · `golang` · `karpathy-principles` · `markdown-formatting` · `memory` ·
 `pr-token-tracking` · `project-setup` · `prose-style` · `prototype-hygiene` · `python` ·
 `readme-documentation` ·
 `rule-conflict-protocol` · `security-hardening` · `session-safety` · `shell-escaping` ·
@@ -40,7 +40,7 @@ is **not** loaded into context. Keep them there.
 `arch-review` · `assumptions` · `autocommit` · `b` · `babysit-pr` · `build-pdf` ·
 `checkpoint-progress` · `commit-manual` · `constitution` · `design-review` ·
 `discovery-init` · `doc-review` · `editorial-review` · `export-prompts` · `extract-adr` ·
-`gherkin` · `handoff` · `interview-to-spec` · `lets-go` · `link-sweep` · `mine-sessions` ·
+`gherkin` · `handoff` · `interview-to-spec` · `lets-go` · `link-sweep` · `memorialize` · `mine-sessions` ·
 `pickup` · `pr-tokens` · `review-pr` · `security-audit` · `session-cleanup` ·
 `session-logger` · `trace-check` · `validate-hw-env`
 
@@ -101,6 +101,13 @@ All session logs and handoff files include YAML frontmatter with a `tool:` field
 ## Global Behavioral Rules
 
 - **Red-Green-Refactor TDD is REQUIRED for ALL code changes.** Always write a failing test first (RED), then the minimum production code to pass (GREEN), then refactor with tests green. No production code without a failing test. No retroactive tests. See [Testing Strategies](./guidelines/testing.md) for the full cycle, non-negotiable rules, and the (narrow) exceptions.
+- **Durable facts get recorded, dated, and promoted.** Non-obvious context that the repo
+  does not already capture goes in `memory/MEMORY.md` — one fact per line, ending with the
+  date it was last verified. Never record credentials, addresses, or personal detail there;
+  point at `kb-mcp` instead. Re-verify or retire a fact rather than letting it stand
+  undated: a confidently wrong fact is worse than a missing one. When a fact hardens,
+  promote it — to a guideline, an ADR, or the `okf-knowledge` bundle — and leave a pointer.
+  See `guidelines/memory.md`.
 - **Architecture decisions get an ADR.** `guidelines/adr.md` is the single canonical
   convention — `docs/decisions/ADR-NNNN`, sequential numbering, status lifecycle, FR-###
   traceability. Read it before writing, extracting, or reviewing a decision record; do not
