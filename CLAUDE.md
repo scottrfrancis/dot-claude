@@ -2,10 +2,6 @@
 
 This directory contains consistent guidance for all my projects with Claude Code.
 
-## Overview
-
-These guidelines help maintain consistency across projects and capture best practices learned through experience. Reference these when starting new projects or when you need specific technical guidance.
-
 ## Branch Policy and Strategy
 
 The user works on multiple projects that have different repositories, policies and strategies.  The user is also forgetful to update the local repository when starting sessions.
@@ -17,75 +13,49 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 
 ## Session Safety (CRITICAL)
 
-**ALWAYS follow ~/.claude/guidelines/session-safety.md** when working on hardware development systems. Multiple Claude sessions accessing NPU/GPU devices simultaneously causes device contention, resource leakage, and complete context loss requiring system restart.
+On NPU/GPU hardware hosts, read `guidelines/session-safety.md` and run session cleanup
+before starting. Concurrent sessions cause device contention and context loss requiring a
+restart. Does not apply to ordinary development machines.
 
-**Before every session**: Run session cleanup, verify device availability, and ensure exclusive hardware access.
+## Where Things Live
 
-## Active Guidelines
+This file is in context on every turn, so it carries behavioral rules only. The annotated
+indexes — what each guideline, command, skill and hook is for — live in `README.md`, which
+is **not** loaded into context. Keep them there.
 
-- [Shell Script Best Practices](./guidelines/shell-scripts.md) - Directory management, error handling, and portability
-- [Conventional Commits](./guidelines/conventional-commits.md) - Standardized commit message format
-- [README Documentation](./guidelines/readme-documentation.md) - Organizing project documentation with README as central hub
-- [Session Safety](./guidelines/session-safety.md) - **CRITICAL** - Prevent session hangs and context loss on hardware systems
-- [AI Systems Engineering Patterns](./guidelines/ai-patterns.md) - LLM integration patterns: caching, routing, guardrails, RAG
-- [Tool Delegation for LLM Cron Skills](./guidelines/ai-cron-tool-delegation.md) - When a cron skill must produce a number, build a deterministic helper and wire it via cron payload — not via SKILL.md or AGENTS.md
-- [Project Setup](./guidelines/project-setup.md) - Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling
-- [Prose Style](./guidelines/prose-style.md) - Anti-AI-smell rules for narrative writing: punctuation, sentence variation, transitions, word choice
-- [Markdown Formatting](./guidelines/markdown-formatting.md) - Spacing rules for generated Markdown: blank lines around lists, paragraph separation, consistent bullet markers
-- [PR Token Tracking](./guidelines/pr-token-tracking.md) - Include AI token usage in PR descriptions, read from the branch-keyed ledger
-- [Prototype Hygiene](./guidelines/prototype-hygiene.md) - Ship clean from day one: config over code, stable docs over stale state, PRs over branches
-- [Security Hardening](./guidelines/security-hardening.md) - Defense-in-depth patterns grounded in real-world breach analysis
-- [Data-Diode List Control](./guidelines/data-diode-list-control.md) - Black/white/gray list pattern for one-way egress boundaries (scrub/allow/pending-promotable); the gray list discovers unknowns before they leak
-- [Go Code Standards](./guidelines/golang.md) - JSON response safety (no fmt.Fprintf), gosec patterns, G104 triage
-- [Python Code Standards](./guidelines/python.md) - Type hints, error handling, testing patterns
-- [TypeScript Standards](./guidelines/typescript.md) - Strict types, functional components, error boundaries
-- [Docker Standards](./guidelines/docker.md) - Multi-stage builds, security, layer optimization
-- [Terraform Standards](./guidelines/terraform.md) - Module structure, state management, security
-- [Git Workflow](./guidelines/git-workflow.md) - Branch + PR discipline; never commit/push main; stacked-PR handling
-- [ADR Format](./guidelines/adr.md) - Canonical Architecture Decision Record convention: docs/decisions/ADR-NNNN, numbering, status lifecycle, FR-### traceability
-- [Testing Strategies](./guidelines/testing.md) - Test pyramid, mocking, CI integration, framework-specific notes
-- [CI Local Parity](./guidelines/ci-local-parity.md) - Run exact CI commands locally before pushing; install all scanners; budget for pre-existing issues
-- [DOCX Conversion](./guidelines/docx-conversion.md) - python-docx over pandoc; color palette, typography, hyperlinks
-- [Karpathy Principles](./guidelines/karpathy-principles.md) - Deltas not already covered: surface assumptions before implementing; match existing style; mention don't delete pre-existing dead code; read before you write
-- [2x2 Status Report](./guidelines/2x2-status-report.md) - Quad-chart format for short weekly status reports (Last week / This week / Risks / Asks); SA-org tradition, not the canonical Amazon WBR
-- [Architecture Diagram Craft](./guidelines/architecture-diagrams.md) - AWS reference-diagram visual conventions (numbered flow, icon/color rules, boundaries, critique rubric, reference assets); GCP/multi-cloud adaptation; companion to C4-diagramming.md
-- [C4 Diagramming](./guidelines/C4-diagramming.md) - PlantUML file organization for C4 diagrams (modular includes, C1/C2/C3 layout, boundary conflicts)
-- [Central Ops Knowledge](./guidelines/central-ops-knowledge.md) - The vision + doctrine for the central, authoritative, dynamic+archival ops-knowledge state (`okf-knowledge` bundle + wiki, served live via the `kb-mcp` filesystem MCP + `kb-static` browse on mini; Hazel/OpenWebUI is one client); consult-before-acting, write-back. Propagated to all AI tools.
+**Guidelines** (`~/.claude/guidelines/`) — on-demand standards. Read the relevant one
+*before* the matching task; they are not auto-loaded. Filenames are self-describing:
 
-## Custom Commands
+`2x2-status-report` · `C4-diagramming` · `adr` · `ai-cron-tool-delegation` · `ai-patterns` ·
+`architecture-diagrams` · `central-ops-knowledge` · `ci-local-parity` ·
+`conventional-commits` · `data-diode-list-control` · `docker` · `docx-conversion` ·
+`git-workflow` · `golang` · `karpathy-principles` · `markdown-formatting` ·
+`pr-token-tracking` · `project-setup` · `prose-style` · `prototype-hygiene` · `python` ·
+`readme-documentation` · `security-hardening` · `session-safety` · `shell-escaping` ·
+`shell-scripts` · `terraform` · `testing` · `typescript`
 
-- `~/.claude/commands/commit-manual` - Helper for creating conventional commits
-- `~/.claude/commands/autocommit.md` - Stage tracked changes and commit with an AI-generated conventional commit message
-- `~/.claude/commands/lets-go.md` - Session initialization with git sync protocol
-- `~/.claude/commands/session-logger.md` - Session summary with cross-linking and effectiveness assessment
-- `~/.claude/commands/handoff.md` - Generate continuation prompt for seamless session handoff
-- `~/.claude/commands/pickup.md` - Resume from the most recent handoff prompt
-- `~/.claude/commands/mine-sessions.md` - Analyze session logs for patterns, metrics, and process improvements
-- `~/.claude/commands/arch-review.md` - Principal Architect review framework
-- `~/.claude/commands/doc-review.md` - Audit documentation for accuracy, DRY, and clarity; commit on a docs branch
-- `~/.claude/commands/editorial-review.md` - Audit prose for AI tells; accepts optional voice/style parameter (author name, publication, URL, or adjective)
-- `~/.claude/commands/security-audit.md` - Breach-driven security audit for web applications
-- `~/.claude/commands/review-pr.md` - PR code review: bugs, security, missing tests, style; works with PR numbers or branches
-- `~/.claude/commands/babysit-pr.md` - Monitor a PR for check results, reviews, and merge readiness; pairs with `/loop`
-- `~/.claude/commands/checkpoint-progress` - Git checkpoint script: stages all changes and commits a WIP snapshot with timestamp
-- `~/.claude/commands/extract-adr` - Extract architectural decisions from a session log into the canonical ADR format; saves to `docs/decisions/` with sequential numbering (see `guidelines/adr.md`)
-- `~/.claude/commands/b.md` - Drive the local `b` time tracker (start/stop/status/log); project-aware, syncs to hasami via the `time-push` agent
-- `~/.claude/commands/build-pdf.md` - Build a PDF from ordered markdown sections via the `md2pdf` CLI and a `report.yaml` manifest
-- `~/.claude/commands/link-sweep.md` - One target per invocation of the federation link audit; designed to run under `/loop`
-- `~/.claude/commands/export-prompts` - Python: export AI agent prompt history (Droid + Claude Code sessions) to markdown, by date or range
-- `~/.claude/commands/pr-tokens` - Python: format the current branch's token usage as a PR-description snippet (see `guidelines/pr-token-tracking.md`)
-- `~/.claude/commands/session-cleanup` - Bash: kill zombie Claude processes before a session (see `guidelines/session-safety.md`)
-- `~/.claude/commands/validate-hw-env` - Bash: verify exclusive device access before hardware testing; fails when competing sessions are detected
+**Commands** (`~/.claude/commands/`) — invoke as `/<name>`:
 
-### Spec-Driven Development (SDLC) — harvested from the airgapped engagement fork
+`arch-review` · `assumptions` · `autocommit` · `b` · `babysit-pr` · `build-pdf` ·
+`checkpoint-progress` · `commit-manual` · `constitution` · `design-review` ·
+`discovery-init` · `doc-review` · `editorial-review` · `export-prompts` · `extract-adr` ·
+`gherkin` · `handoff` · `interview-to-spec` · `lets-go` · `link-sweep` · `mine-sessions` ·
+`pickup` · `pr-tokens` · `review-pr` · `security-audit` · `session-cleanup` ·
+`session-logger` · `trace-check` · `validate-hw-env`
 
-- `~/.claude/commands/discovery-init.md` - Scaffold a Spec-Driven Development project: artifact templates, glossary, constitution, traceability chain
-- `~/.claude/commands/interview-to-spec.md` - Convert interview notes into readout, FR-### requirements, Gherkin scenarios, and tracker updates
-- `~/.claude/commands/design-review.md` - Review design deliverables for consistency, terminology alignment, cross-document reference integrity
-- `~/.claude/commands/trace-check.md` - Validate bidirectional traceability across requirements, feature files, scenarios, and tests
-- `~/.claude/commands/constitution.md` - Generate CONSTITUTION.md + WORKFLOWS.md (principles, Definition of Done, quality gates)
-- `~/.claude/commands/assumptions.md` - Track hypothesis-driven assumptions (if-true/if-false/fallback) in ASSUMPTIONS-TRACKER.md
-- `~/.claude/commands/gherkin.md` - Draft Gherkin acceptance scenarios from a requirement or FR-###
+**Skills** (`~/.claude/skills/<name>/SKILL.md`) — `explain-diff-html` · `explain-diff-md`.
+
+**Hooks** (`~/.claude/hooks/`) — registered in `~/.claude/settings.json`, which is
+gitignored, so a fresh clone has the scripts but no registration and they silently never
+fire. `log-session-tokens` is not registered at all, which leaves `/pr-tokens` and
+`guidelines/pr-token-tracking.md` inert until it is wired in.
+
+## Precedence
+
+A project's own `CLAUDE.md` extends this file; a project needing an exception to a global
+guideline records it in `<project>/.claude/overrides.md`, which wins over the guideline it
+names. Where two instruction files both apply, the one closest to the file being edited
+wins. Surface the conflict rather than blending the two — see **Global Behavioral Rules**.
 
 ## Downstream Repos
 
@@ -125,79 +95,6 @@ Session logs are written to `session-logs/` at the project root — a shared loc
 
 All session logs and handoff files include YAML frontmatter with a `tool:` field (e.g., `tool: claude-code`) so any receiving tool knows the source. This enables cross-tool session continuity — a handoff written in Cursor can be picked up by Claude Code, and vice versa.
 
-## Global Hooks
-
-Registered in `~/.claude/settings.json`, these fire for every project automatically:
-
-- **SessionStart** → `~/.claude/hooks/load-handoff-context.sh` — Auto-injects the most recent `handoff-*.md` as context on new session startup; searches `session-logs/`, `.claude/session-logs/`, `.factory/logs/`, then `~/.claude/session-logs/` (skips files >7 days old)
-- **SessionStart** → `~/.claude/hooks/account-mismatch-warn.sh` — Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) doesn't match the logged-in oauth account. Advisory only; silent on match; needs `jq`
-- **PreToolUse** → `~/.claude/hooks/pre-tool-safety.sh` — Blocks destructive git operations (`reset --hard`, `push --force`), recursive deletes, and writes to sensitive config files; prompts for confirmation
-- **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run; checks both `session-logs/` and `.claude/session-logs/`. Also: if the cwd has an outline-format `ACTION_ITEMS.md` (see Catalyst-RCM's `lint-action-items` skill), reminds about `/lint-action-items` when items are past the 7-day prune window — reminder-only by design, no standing cron
-
-Project-local hooks in `.claude/settings.local.json` layer on top of these.
-
-Also present but **not currently registered**: `~/.claude/hooks/log-session-tokens` — a `SessionEnd` hook that appends token usage to `~/.factory/token-ledger.json` keyed by `project:branch`. It is the ledger writer that `guidelines/pr-token-tracking.md` and `/pr-tokens` read from, so those two are inert until it is wired into `settings.json`.
-
-**Note:** `settings.json` is deliberately gitignored (it carries per-host and account state), so a fresh clone of this repo has the hook *scripts* but no registration. After cloning, register the hooks above in `~/.claude/settings.json` or the hooks will silently never fire.
-
-## Skills
-
-Global skills live in `~/.claude/skills/<name>/SKILL.md` and are available in every project:
-
-- `explain-diff-html` - Rich, interactive HTML explanation of a code change, diff, branch, or PR
-- `explain-diff-md` - Same, as a single self-contained Markdown file (fits the wiki/OKF knowledge base)
-
-## How to Use These Guidelines
-
-### Starting a New Project
-
-Include relevant guidelines in your initial Claude Code prompt:
-
-```yaml
-Please follow these guidelines:
-- ~/.claude/guidelines/shell-scripts.md for all bash scripts
-- ~/.claude/guidelines/shell-escaping.md for shell escaping
-- ~/.claude/guidelines/conventional-commits.md for git commits
-- ~/.claude/guidelines/readme-documentation.md for documentation organization
-```
-
-### Multiple Guidelines
-
-For projects using multiple technologies:
-
-```yaml
-Please follow these guidelines:
-- ~/.claude/guidelines/shell-scripts.md for bash scripts
-- ~/.claude/guidelines/python.md for Python code
-```
-
-### Project-Specific Overrides
-
-If a project needs exceptions to these guidelines, create a local override file:
-
-```sh
-project/.claude/overrides.md
-```
-
-## Contributing to Guidelines
-
-1. Update guidelines when you discover new patterns or best practices
-2. Include both positive examples (do this) and negative examples (avoid this)
-3. Explain the reasoning behind each guideline
-4. Keep guidelines concise but comprehensive
-
-## Onboarding Guides
-
-- [Copilot to Claude Code](./guides/copilot-to-claude-code.md) - Transition guide for GitHub Copilot users: mental model shift, setup, session lifecycle, permissions, commands
-
-## Quick Reference
-
-List all available guidelines:
-
-```bash
-find ~/.claude/guidelines -name "*.md" -type f | sort
-```
-
 ## Global Behavioral Rules
 
 - **Red-Green-Refactor TDD is REQUIRED for ALL code changes.** Always write a failing test first (RED), then the minimum production code to pass (GREEN), then refactor with tests green. No production code without a failing test. No retroactive tests. See [Testing Strategies](./guidelines/testing.md) for the full cycle, non-negotiable rules, and the (narrow) exceptions.
@@ -207,18 +104,6 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - When asked to push to a repo, suggest a new branch if the current branch is the default (main/master)
 - **Time tracking** — the local `b` tool (beaufort time-tool) tracks billable/work time; records accumulate in `~/.beaufort/data/time.db` and sync to hasami via the `time-push` launchd agent (local-first, no runtime SSH). `/lets-go` surfaces any open timer and nudges (advisory) when none is running on project work; `/session-logger` and `/handoff` remind to `/b stop`. **Remind, never auto-start/stop** — starting a timer posts real billable state. Use `/b` to drive it. Skip silently on devices where `b` isn't installed.
 
-## Version History
-
-- 2025-01-31: Initial setup with shell script guidelines
-- 2026-02-17: Establish as pure base class — remove project-specific content, document extension pattern
-- 2026-03-10: Add PreToolUse safety hook; create MEMORY.md; clean up settings.json; document checkpoint-progress and extract-adr
-- 2026-03-10: Add guides/ directory; copilot-to-claude-code.md onboarding guide
-- 2026-03-11: Add /review-pr and /babysit-pr commands; add testing guideline
-- 2026-03-27: Cross-tool session sync — session-logs/ as shared primary location, YAML frontmatter with tool: field, multi-location search in all commands/hooks, project docs integration (docs/guidelines/, docs/adr/, AGENTS.md) in review commands
-- 2026-05-11: Add surface-conflicts global rule; karpathy-principles "read before you write" delta; testing.md "tests must be able to fail" section; prototype-hygiene.md "fail loud" rule
-- 2026-05-21: Add 2x2-status-report guideline (quad-chart weekly status; disambiguates from canonical Amazon WBR)
-- 2026-08-13: Completeness audit — index 8 previously undocumented guidelines/commands, add a Skills section, document the `account-mismatch-warn` hook and the unregistered `log-session-tokens`, note that gitignored `settings.json` means a fresh clone has no hook registration
-- 2026-06-30: Add `/b` command + time-tracking touchpoints in `/lets-go`, `/session-logger`, `/handoff` (remind-don't-auto policy); local `b` time-tool on studio-3 → `time-push` → hasami ingest (`bronze.time_entry`, `task_raw`)
 <!-- central-ops-knowledge: begin -->
 ## Central Ops Knowledge (shared doctrine — all my AI tools)
 
