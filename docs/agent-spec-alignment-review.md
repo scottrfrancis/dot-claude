@@ -4,7 +4,13 @@
 **Scope:** `dot-claude`, `dot-copilot`, `dot-cursor`, `dot-droid`, `dot-opencode`
 **Status:** review only — no config files changed by this document.
 
-## Read this first: the requested source was unreachable
+> **Update (2026-08-19):** the intended source was **`agentic-spec.com`** — Volkhover's
+> *Agentic Spec-Driven Development* — not `agent-spec.com`. Its full project archive was
+> supplied directly and is reviewed against in **Part II**, which is the substantive half
+> of this document. Part I below remains valid as a format and consistency audit; read it
+> as the evidence Part II explains.
+
+## Read this first: the originally-named source was unreachable
 
 `agent-spec.com` is **blocked by this session's egress proxy** (`CONNECT tunnel
 failed, response 403`). Per the proxy runbook a 403 is an organization policy
@@ -374,123 +380,254 @@ line in each, since these configs are explicitly designed to be extended per pro
    once E1 exists to do the propagation.
 7. **E2** — CI, once there is a settled shape to validate against.
 
+
 ---
 
-# Addendum — reviewed against `agentic-spec.com` (Agentic Spec-Driven Development)
+# Part II — reviewed against Agentic Spec-Driven Development
 
-**Added 2026-08-19**, after the intended source was identified as `agentic-spec.com`
-rather than `agent-spec.com`.
+**Added 2026-08-19.** The intended source was `agentic-spec.com` — Anatoly Volkhover's
+*Agentic Spec-Driven Development* — not `agent-spec.com`. That domain is blocked by the
+same egress policy, but the site's **full project archive** was supplied directly: the
+companion site specified, built, and regenerated under its own method. This part is
+grounded in that archive, not in search summaries.
 
-## The site is also unreachable
+The archive is the method demonstrated on itself: a root `CLAUDE.md` of durable rules and
+a File Registry; four bootstrap protocol files (`rule-analysis.md`,
+`rule-conflict-protocol.md`, `disambiguate.md`, `regen-all.md`); nine `specs/`; two
+append-only `logs/`; and generated `artifacts/`.
 
-`agentic-spec.com` returns the same `CONNECT tunnel failed, response 403` from this
-session's egress proxy, as do the author's other properties (`anatoly.com`,
-`medium.com`, `ai.gopubby.com`). Nothing on that domain family is readable here.
+Part I asked whether these repos conform to the file formats agents read. This part asks
+the harder question: **do they have a mechanism that keeps a body of agent instructions
+correct as it grows?** Part I found six defects. Part II is largely the observation that
+this method has a named mechanism for each of them.
 
-What is established from search indexing: the site is the companion to **Anatoly
-Volkhover's *Agentic Spec-Driven Development*** — a *method* for building complete
-specifications that autonomous agents execute, not a file-format standard. Indexed
-summaries describe a spec that fuses product and technical judgment into one artifact
-that is **complete and consistent, leaving the agent no guesswork**, held as an
-**ontology graph linking ground truths, decisions, and preview artifacts**, with
-**protocols enforced by agentic AI** to keep every part consistent.
+## The method in one page
 
-**Treat the characterization below as second-hand.** It rests on search summaries of
-the site and on the broader SDD literature, not on the site's own text. The three
-findings are nonetheless grounded in the repositories themselves and stand on their
-own. If the site's contents are supplied, this section can be redone against them.
+| Mechanism | What it does |
+|---|---|
+| **Project Intent** | A stated purpose. Input that doesn't align with it stops work until relevance is established or the user issues a blind override. |
+| **File Registry** | Every file carries a **Type** (`rules`/`log`/`spec`/`view`/`asset`), a **Protocol**, an Extension, a Subfolder, a Description, and — where the Protocol demands — Dependencies and Instructions. All four sets are closed; adding a value needs explicit approval. Inventory changes hit the registry *before* the file system. |
+| **Protocols** | `read-only`, `append-only`, `editable`, `generated`, `guarded`. The Protocol, not convention, decides how an agent may touch the file. |
+| **Guarded Edits** | Before writing a `guarded` file, check the change against that file and *every other* `guarded` file for six categories: (A) direct contradictions, (B) duplicates, (C) vocabulary mismatch, (D) reference integrity, (E) scope drift, (F) rationale conflicts. Any finding blocks the write. Resolutions re-run the check in a loop until clean. An override is recorded as an inline comment beside the change — a visible, permanent trace. |
+| **Artifacts** | A `generated` file is never hand-edited, and never *read* except while regenerating it. A change request against one is routed to its Dependencies, or to its Instructions file if the generation procedure itself is at issue. Regeneration is manual only, topologically ordered, never a side effect. |
+| **Intake Logging** | Every user input recorded verbatim, append-only, before the work. No AI output in the log, no announcement that logging happened. Each entry lists the other files the turn modified. |
+| **Rule Conflicts** | Overlap is not conflict. On real incompatibility: stop before producing anything, append an entry to an append-only log under a stable `RC###` id, present the rules verbatim with sources and at least three options, and never infer a resolution. |
+| **Rule Analysis** | Every rule add/edit/remove runs a protocol: list the rule's explicit *and implicit* intents, flag conflicts against the whole rule set, verify formatting, verify every file reference resolves in the registry. Removal is blocked while other rules still reference the rule. |
+| **Glossary** | Term / Meaning / **Anti-meanings**. Entry changes run a **closure check** (every project term inside a definition is itself defined) and a **circularity check** (no definition chain loops back). |
+| **Rationale in place** | Specs carry a **Rationale** block beside each decision, and record superseded decisions inline. |
+| **Rule formatting** | Group under H2. One requirement per rule. MUST/SHOULD/MAY. **Pair every prohibition with the recommended alternative.** Long detail moves to a referenced file. Cite files by registered name only. |
 
-This reframes the review above. That was a *format* audit — frontmatter, file
-placement, context cost. This is a *method* question: **how well do these five repos
-implement spec-driven development?** They already ship a toolkit for it —
-`/discovery-init`, `/interview-to-spec`, `/constitution`, `/gherkin`, `/trace-check`,
-`/assumptions`, `/design-review`, plus the ADR convention and FR-### traceability —
-harvested from the airgapped engagement fork. Coverage is near-complete:
+## G1 — There is no File Registry, and every Part I defect is a symptom *(inclusion)*
 
-| Command | claude | cursor | droid | opencode | copilot |
-|---|:-:|:-:|:-:|:-:|:-:|
-| discovery-init · interview-to-spec · constitution · gherkin · trace-check · assumptions · design-review | ✓ | ✓ | ✓ | ✓ | ✓ |
-| adr | — | ✓ | ✓ | — | ✓ |
+This is the finding. Everything else in Part II follows from it.
 
-Three findings follow.
+The five repos ship roughly 29 guidelines, 24 commands, 27 Copilot instructions, 28 droid
+skills, 50 Cursor templates, 5 hooks, and a handful of scripts — with **no inventory, no
+type, no protocol, and no dependency edges**. Nothing anywhere declares what a given file
+*is* or how an agent may touch it. Re-read the Part I findings against that:
 
-## F1 — The spec-driven toolkit is present everywhere and wired in nowhere *(replacement)*
+| Part I finding | The registry mechanism that addresses it |
+|---|---|
+| B1 — doctrine block 7 weeks stale in 4 repos | `guarded`: category A/B findings block the write |
+| A2 — doctrine never reaches the deliverables | Description **non-overlap** + reference resolution |
+| C1 — Copilot instruction with Skill frontmatter | Type discipline: a `rules` file carries its format |
+| C3 — 7 commands in Cursor's rules directory | **Path discipline** — registered location is the location |
+| C5 — `allowed-tools: Git, Gh`, tools that don't exist | **Undefined References** — stop, don't infer |
+| D1 — 19.5 KB of catalogue on every turn | The registry *is* the catalogue, and it is structured |
+| E1 — hand-propagation across five repos | Dependencies + Instructions make propagation mechanical |
+| `log-session-tokens` unregistered and inert | Registration is what makes a file real |
 
-Every frontmatter defect in section C above lands on an SDLC file. That is not
-coincidence — it is one event with three symptoms:
+Eight independent defects, one missing mechanism. Part I's recommendations were each a
+hand-rolled partial substitute for it: the marker-sync tool with `--check` (E1) is a weak
+`guarded`; the frontmatter validator (E2) is a weak type discipline; "move annotations to
+README" (D1) is a registry without the structure that makes one useful.
 
-- **C5**: 9 `dot-claude` commands ship with no frontmatter. Seven are SDLC:
-  `assumptions`, `constitution`, `design-review`, `discovery-init`, `gherkin`,
-  `interview-to-spec`, `trace-check`. (`link-sweep` and `security-audit` are the only
-  non-SDLC members.)
-- **C3**: 7 `dot-cursor` `.mdc` files have neither `globs` nor `alwaysApply`. **All
-  seven are the same commands**, and they are in the rules directory rather than
-  `.cursor/commands/`.
-- **C4**: in `dot-droid`, the skills with *good* trigger-bearing descriptions are the
-  SDLC ones — `adr`, `assumptions`, `constitution`, `gherkin`. The ~20 label-only
-  descriptions are the older language and process skills.
+**Recommend:** add a File Registry to `dot-claude` first, as one table in the always-loaded
+file, with the Type/Protocol/Description/Dependencies/Instructions columns. Start with the
+files that already hurt: the doctrine blocks (`guarded`), the generated Cursor and Droid
+output (`generated`, with `sync-from-dot-claude.sh` as Instructions), the token ledger
+(`log`, `append-only`), and the hooks. Do not attempt all 160 files at once.
 
-So the toolkit was harvested wholesale, its content is the best-written material in the
-repos, and the wiring was never finished. A spec-driven method that no agent can invoke
-without being told its name by hand is a filing cabinet, not a method.
+## G2 — The doctrine blocks are the textbook `guarded` case *(replacement)*
 
-**Recommend:** finish the harvest as one unit of work — frontmatter on the seven
-`dot-claude` commands, relocation of the seven Cursor files to `.cursor/commands/`, and
-a check that each of the five tools can actually reach all eight. C3, C4 and C5 are one
-task, not three.
+Finding B1 — the central-ops block wrong in four of five repos for seven weeks — is
+category **A (direct contradiction)** and **B (duplicate)** of the Guarded Edits Protocol,
+which is exactly what that protocol exists to catch. The design-pattern block (A3) is
+category **E (scope drift)**: content that belongs in every deliverable, living in one.
 
-## F2 — `/trace-check` asks an LLM to do arithmetic *(replacement)*
+The method's answer is not a sync script. It is that a `guarded` file cannot be written
+until the proposed content has been checked against every other `guarded` file, and that
+an accepted inconsistency leaves an inline comment recording the acceptance — as
+`specs/errata-flow.md` does, where a superseded design decision is preserved in place:
 
-`/trace-check` is the most methodologically serious artifact in these repos. It walks
-four phases — discover artifacts, forward traceability (requirements → features →
-scenarios → tests), reverse traceability (tags → requirements), cross-reference
-integrity — and it is exactly the consistency protocol an agentic spec needs.
+```
+<!-- Override applied 2026-05-22 per Guarded Edits Protocol: the previous version
+     of this spec specified an on-site editable preview ... The current Step 5
+     supersedes that decision per explicit user instruction; ... -->
+```
 
-It is also a **prompt**. Every step is "search for `FR-` patterns", "report: covered
-count, uncovered count", "report: valid references, dangling references". An LLM is
-asked to grep a repository by reading and then produce counts.
+Nothing in these five repos records *that* a divergence was accepted, so a reader cannot
+distinguish deliberate variation from drift. That ambiguity is why B1 survived seven weeks:
+four stale copies and one current one look exactly like four tool-specific variants.
 
-`guidelines/ai-cron-tool-delegation.md` — in this repository — already states the rule
-this breaks: when a skill must produce a number, build a deterministic helper and wire
-it in, rather than asking the model to compute it in prose. Coverage counts and dangling-
-reference lists are numbers. A missed `@fr-###` tag is a silent false green, and a
-traceability report that is quietly wrong is worse than none.
+**Recommend:** mark the doctrine blocks `guarded`, and make E1's `--check` mode report the
+six categories rather than a plain diff. Where a repo genuinely needs a different wording,
+record the override inline instead of letting it read as drift.
 
-**Recommend:** split it. A deterministic `bin/trace-check` emits the matrix as JSON —
-tags found, requirements found, orphans, dangling references, counts. The command
-becomes the layer that *interprets* that JSON: which gaps matter, what to do about them.
-That is the same shape as `/pr-tokens` reading the ledger rather than estimating usage,
-and it makes the check runnable from a hook or from CI (finding E2), which a prompt
-never can be.
+## G3 — Generated files are generated by nothing declared *(replacement)*
 
-## F3 — Verification is one manual gate where the method wants phase gates *(inclusion)*
+`dot-cursor/bin/migrate-to-cursor.sh` generates `.cursor/rules/*.mdc` from guidelines.
+`dot-cursor/bin/sync-from-dot-claude.sh` and `dot-droid/bin/sync-from-dot-claude.sh`
+propagate content. But **no file declares itself generated, names its sources, or names
+the procedure that produces it.** So a hand-edit to a `.mdc` is indistinguishable from an
+authored one until the next run silently overwrites it — and `dot-copilot/CLAUDE.md`
+responds to that risk by forbidding sync entirely ("`copilot/` is the source of truth; do
+not treat any other repo as upstream"), which is how it ended up with the stale doctrine
+block in B1.
 
-The SDD discipline validates each intermediate artifact **as it is produced** —
-requirements, then design, then scenarios, then code — so that errors are caught before
-the next phase compounds them, rather than concentrating all checking after
-implementation.
+The method's three rules are the fix, and the third is the one worth stealing:
 
-These repos have the checkers: `/trace-check`, `/design-review`, `/arch-review`,
-`/doc-review`. All four are human-invoked, at whatever moment someone remembers. Nothing
-fires them at a phase boundary. Combined with E2 — no `.github/workflows/` in any of the
-five — every quality gate in a spec-driven toolkit depends on a person recalling that it
-exists.
+1. A change request against a generated file routes to its **Dependencies** — or to its
+   **Instructions** file when the generation procedure itself is what's wrong.
+2. Never *read* a generated file except while regenerating it. Reading generated output
+   invites reasoning from a stale rendering instead of the source.
+3. Regeneration is **manual and explicit**, topologically ordered by the dependency graph,
+   with the plan presented for approval before anything is written.
 
-The hook infrastructure to fix this already exists and is already used for smaller
-things: `hooks/session-end-reminder.sh` nudges `/session-logger` and `/handoff` on file-
-count thresholds, and the same file reminds about `/lint-action-items` when an
-`ACTION_ITEMS.md` is stale.
+That last one is what makes generation safe to adopt: nothing is regenerated as a side
+effect of unrelated work, so a sync script stops being a thing you're afraid to run.
 
-**Recommend:** extend that hook with SDD triggers — when `docs/requirements/*.feature`
-or a `FR-###` requirements document changes, remind about `/trace-check`; when
-`docs/design/**` changes, remind about `/design-review`. Once F2 gives `/trace-check` a
-deterministic core, promote it from a reminder to a real gate in the E2 CI job. That
-sequence — F2 then F3 — is what turns the toolkit from documentation into the
-"protocols enforced automatically" that the method is built around.
+**Recommend:** declare the Cursor `.mdc` files and the Droid skills `generated`, with the
+guidelines as Dependencies and the sync script as Instructions. Then `dot-copilot` can
+rejoin the propagation graph instead of opting out of it — which resolves the A2/B1 cluster
+at its root rather than per-incident.
+
+## G4 — The conflict rule has the principle and none of the machinery *(inclusion)*
+
+`dot-claude/CLAUDE.md` states:
+
+> **Surface conflicts; don't average them.** When two patterns in the codebase contradict
+> … pick one — usually the more recent or more tested — explain why, and flag the other
+> for cleanup. Blending two patterns produces a third that nobody intended.
+
+That is the right rule, and Part I found it is the single most-violated one in these repos
+(C4's two skill-description styles, C5's two `allowed-tools` styles, five instruction-file
+dialects). The method supplies what the sentence lacks:
+
+- **A definition that excludes false positives** — overlap is not conflict; only genuine
+  incompatibility triggers the protocol. Without this a conflict rule fires constantly and
+  gets ignored.
+- **A stop condition** — halt *before* producing anything that depends on the conflicting
+  rules, rather than deciding and explaining afterwards.
+- **An append-only log with stable `RC###` ids**, carrying the triggering input verbatim,
+  both rules quoted with their source files and sections, why they cannot both hold, the
+  options offered, and the decision.
+- **At least three options**, one of which is always "stop".
+
+The log is the part that matters most here. Without it the same conflict is re-litigated
+every session and the resolution is lost — which is precisely what "pick one and flag the
+other for cleanup" produces when nobody records the flag.
+
+**Recommend:** add `logs/rule-conflict-log.md` and a `rule-conflict-protocol.md` to
+`dot-claude`, and narrow the existing rule to genuine incompatibility. The four SDLC
+skills already carry the harder half of this discipline; the conflict log is cheap.
+
+## G5 — Rationale lives in a different directory from the decision *(inclusion)*
+
+`specs/errata-flow.md` carries a **Rationale** block beside nearly every decision — why a
+single entry point rather than per-chapter buttons, why the TOC is always expanded, why
+the explanation is required and the correction optional, why drafts are discarded on
+cancel, why submission is a `mailto:` handoff rather than a server endpoint. An agent
+regenerating that page cannot reach the decision without reading why it holds.
+
+These repos put rationale in ADRs under `docs/decisions/`, linked by FR-###. That is the
+right convention for *architectural* decisions and `guidelines/adr.md` is well specified.
+But it means the day-to-day reasons — why `allowed-tools` is bare-comma, why session logs
+carry a `tool:` field, why `settings.json` is gitignored — are either absent or a long way
+from the thing they explain. `guidelines/karpathy-principles.md` already reaches for this
+instinct ("mention, don't delete, pre-existing dead code"); inline Rationale is the
+stronger form.
+
+**Recommend:** keep ADRs for architectural decisions, and add Rationale blocks to the
+guidelines and commands for local ones. Where a rule reverses an earlier one, record the
+supersession inline rather than silently replacing the text — category F of the Guarded
+Edits check exists because contradictory rationales are otherwise invisible.
+
+## G6 — A glossary with anti-meanings, and two cheap checks *(inclusion)*
+
+The method's glossary carries an **Anti-meanings** column — what the term explicitly does
+*not* mean here — populated when a project meaning collides with an entrenched default.
+The reference project needs exactly one row:
+
+| Term | Meaning | Anti-meanings |
+|---|---|---|
+| `page` | A printed-book page number. | Not a URL; not a site-page identifier. |
+
+Entry changes run a **closure check** (every project term used inside a definition is
+itself defined) and a **circularity check** (no chain of definitions loops back on itself).
+
+These repos have no global glossary, and they have live vocabulary collisions that one
+would catch. *Knowledge base* means the `okf-knowledge` bundle in `dot-claude` and the
+`HomeAssistant`/`home-ops` repo in the other four (B1). *Skill* means a `SKILL.md` in
+`dot-claude` and `dot-droid`, a `.mdc` rule in `dot-cursor`, and an `.instructions.md` in
+`dot-copilot`. *Command*, *rule*, and *instruction* are each used for two different things
+across the set — which is category **C (vocabulary mismatch)** of the Guarded Edits check,
+and a direct cause of C3, where seven commands ended up filed as rules.
+
+**Recommend:** a short glossary in the shared doctrine block — `knowledge base`, `skill`,
+`command`, `rule`, `guideline`, `deliverable` — with anti-meanings where the tools disagree.
+Six rows would remove a standing source of miscategorization.
+
+## G7 — A correction to Part I on context budget
+
+Part I finding **D1** flagged `dot-claude/CLAUDE.md` at 231 lines / 19.5 KB as too large
+for a file loaded on every turn. The reference project's `CLAUDE.md` is **292 lines /
+33 KB** — half again as large.
+
+So size was the wrong measure, and D1's framing needs correcting. The method spends its
+whole budget on durable rules and a structured registry: every line is either enforceable
+behavior or a routing table an agent uses to decide where to read and write.
+`dot-claude/CLAUDE.md` spends roughly 60% of its lines on annotated catalogues of files the
+model can enumerate with `ls` and must open anyway to use.
+
+**The recommendation is unchanged and the reasoning is stronger.** Cut the annotated
+indexes; then spend the reclaimed budget on a File Registry (G1) rather than banking it.
+A large always-loaded file is not the problem. A large always-loaded file that carries
+prose instead of enforceable structure is.
+
+## G8 — Rule formatting conventions worth adopting wholesale *(inclusion)*
+
+`rule-analysis.md` states six conventions for durable rules. Five are already roughly
+honored across these repos. The other is not, and is the most useful:
+
+> (d) Pair every prohibition with the recommended alternative.
+
+Spot-checking the guidelines, most prohibitions stand alone — "never commit to main",
+"no `fmt.Fprintf` for JSON responses", "don't use pandoc". Each has an intended
+alternative that a reader has to already know. The other five are worth stating explicitly
+anyway, since they double as the acceptance criteria for E2's validator: group under H2,
+one requirement per rule, MUST/SHOULD/MAY markers, long detail moved to a referenced file,
+and files cited by registered name rather than by description or alias.
+
+**Recommend:** adopt all six in `guidelines/`, and add the pair-every-prohibition rule to
+the checks in E2. It is mechanically detectable: a MUST NOT with no adjacent alternative.
 
 ## Revised order of work
 
-F1 folds into steps 2–4 of the ordering above; the two additions go at the end:
+Part I's ordering holds for the format defects. G1 changes what comes after them:
 
-8. **F2** — deterministic `trace-check` core, prompt keeps the interpretation.
-9. **F3** — phase-boundary triggers in the session hook, then the CI gate from E2.
+1. **B1** — replace the four stale doctrine blocks. Still first; still an active wrong answer.
+2. **C1, C2** — the two frontmatter fixes that make dead config live.
+3. **G1 (first pass)** — a File Registry in `dot-claude` covering the doctrine blocks, the
+   generated Cursor/Droid output, the hooks, and the token ledger. Everything below depends
+   on it.
+4. **G2, G3** — mark the doctrine blocks `guarded` and the tool output `generated`; E1's
+   sync tool becomes the Instructions file rather than a bolt-on. Supersedes Part I's E1.
+5. **C3, C4, C5** — frontmatter and placement normalization, now with registered paths to
+   normalize *to*.
+6. **G6, G8** — the glossary and the six rule-formatting conventions. Both are inputs to E2.
+7. **D1 + G7** — trim the catalogue; the registry from step 3 replaces it.
+8. **E2** — CI, validating the registry and the formatting conventions rather than an
+   ad-hoc list of frontmatter keys.
+9. **G4, G5** — the conflict log and inline Rationale. Lowest urgency, longest payoff.
+10. **A1** — the `AGENTS.md` consolidation, last, once there is a registry to consolidate.
