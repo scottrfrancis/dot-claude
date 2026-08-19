@@ -117,22 +117,77 @@ Hooks         ←  validate quality    ←  data enforcement
 | **session-cleanup** | `/session-cleanup` | Kill stale processes, validate device access, clean shared memory |
 | **validate-hw-env** | `/validate-hw-env` | Pre-check hardware environment safety before testing |
 
+### Also Available
+
+Every remaining command in `~/.claude/commands/`.
+
+| Command | Invocation | Purpose |
+| ------- | --------- | ------- |
+| **assumptions** | `/assumptions` | Track hypothesis-driven assumptions (if-true/if-false/fallback) in ASSUMPTIONS-TRACKER.md |
+| **b** | `/b` | Drive the local `b` time tracker (start/stop/status/log); project-aware, syncs to hasami via the `time-push` agent |
+| **babysit-pr** | `/babysit-pr` | Monitor a PR for check results, reviews, and merge readiness; pairs with `/loop` |
+| **build-pdf** | `/build-pdf` | Build a PDF from ordered markdown sections via the `md2pdf` CLI and a `report.yaml` manifest |
+| **constitution** | `/constitution` | Generate CONSTITUTION.md + WORKFLOWS.md (principles, Definition of Done, quality gates) |
+| **design-review** | `/design-review` | Review design deliverables for consistency, terminology alignment, cross-document reference integrity |
+| **discovery-init** | `/discovery-init` | Scaffold a Spec-Driven Development project: artifact templates, glossary, constitution, traceability chain |
+| **export-prompts** | `/export-prompts` | Python: export AI agent prompt history (Droid + Claude Code sessions) to markdown, by date or range |
+| **gherkin** | `/gherkin` | Draft Gherkin acceptance scenarios from a requirement or FR-### |
+| **interview-to-spec** | `/interview-to-spec` | Convert interview notes into readout, FR-### requirements, Gherkin scenarios, and tracker updates |
+| **link-sweep** | `/link-sweep` | One target per invocation of the federation link audit; designed to run under `/loop` |
+| **pr-tokens** | `/pr-tokens` | Python: format the current branch's token usage as a PR-description snippet (see `guidelines/pr-token-tracking.md`) |
+| **review-pr** | `/review-pr` | PR code review: bugs, security, missing tests, style; works with PR numbers or branches |
+| **trace-check** | `/trace-check` | Validate bidirectional traceability across requirements, feature files, scenarios, and tests |
+
 ## Guidelines Reference
+
+On-demand reference standards in `~/.claude/guidelines/`. Read the relevant one *before* the matching task — they are not auto-loaded.
 
 | Guideline | When to Apply |
 | --------- | ------------ |
-| **project-setup.md** | Starting any new project — tiered checklist (Foundation → Tracked → Domain-Specific) |
-| **shell-scripts.md** | Writing any bash script — directory detection, `set -euo pipefail`, cleanup traps |
-| **conventional-commits.md** | Every git commit — `type(scope): description` format |
-| **readme-documentation.md** | Organizing project documentation — README as central hub |
-| **session-safety.md** | **CRITICAL** — hardware systems only. Prevents device contention across sessions |
-| **ai-patterns.md** | Building LLM integrations — 17 patterns: structured prompting, caching, routing, RAG, security |
+| **2x2-status-report.md** | Quad-chart format for short weekly status reports (Last week / This week / Risks / Asks); SA-org tradition, not the canonical Amazon WBR |
+| **C4-diagramming.md** | PlantUML file organization for C4 diagrams (modular includes, C1/C2/C3 layout, boundary conflicts) |
+| **adr.md** | Canonical Architecture Decision Record convention: docs/decisions/ADR-NNNN, numbering, status lifecycle, FR-### traceability |
+| **ai-cron-tool-delegation.md** | When a cron skill must produce a number, build a deterministic helper and wire it via cron payload — not via SKILL.md or AGENTS.md |
+| **ai-patterns.md** | LLM integration patterns: caching, routing, guardrails, RAG |
+| **architecture-diagrams.md** | AWS reference-diagram visual conventions (numbered flow, icon/color rules, boundaries, critique rubric, reference assets); GCP/multi-cloud adaptation; companion to C4-diagramming.md |
+| **central-ops-knowledge.md** | The vision + doctrine for the central, authoritative, dynamic+archival ops-knowledge state (`okf-knowledge` bundle + wiki, served live via the `kb-mcp` filesystem MCP + `kb-static` browse on mini; Hazel/OpenWebUI is one client); consult-before-acting, write-back. Propagated to all AI tools. |
+| **ci-local-parity.md** | Run exact CI commands locally before pushing; install all scanners; budget for pre-existing issues |
+| **conventional-commits.md** | Standardized commit message format |
+| **data-diode-list-control.md** | Black/white/gray list pattern for one-way egress boundaries (scrub/allow/pending-promotable); the gray list discovers unknowns before they leak |
+| **docker.md** | Multi-stage builds, security, layer optimization |
+| **docx-conversion.md** | python-docx over pandoc; color palette, typography, hyperlinks |
+| **git-workflow.md** | Branch + PR discipline; never commit/push main; stacked-PR handling |
+| **golang.md** | JSON response safety (no fmt.Fprintf), gosec patterns, G104 triage |
+| **karpathy-principles.md** | Deltas not already covered: surface assumptions before implementing; match existing style; mention don't delete pre-existing dead code; read before you write |
+| **markdown-formatting.md** | Spacing rules for generated Markdown: blank lines around lists, paragraph separation, consistent bullet markers |
+| **pr-token-tracking.md** | Include AI token usage in PR descriptions, read from the branch-keyed ledger |
+| **project-setup.md** | Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling |
+| **prose-style.md** | Anti-AI-smell rules for narrative writing: punctuation, sentence variation, transitions, word choice |
+| **prototype-hygiene.md** | Ship clean from day one: config over code, stable docs over stale state, PRs over branches |
+| **python.md** | Type hints, error handling, testing patterns |
+| **readme-documentation.md** | Organizing project documentation with README as central hub |
+| **security-hardening.md** | Defense-in-depth patterns grounded in real-world breach analysis |
+| **session-safety.md** | **CRITICAL** - Prevent session hangs and context loss on hardware systems |
 | **shell-escaping.md** | Complex shell commands — quoting rules, heredocs, VS Code terminal escaping |
-| **C4-diagramming.md** | Architecture diagrams — modular PlantUML with C4 Model levels |
-| **markdown-formatting.md** | All markdown files — blank line rules, list spacing |
-| **prose-style.md** | Narrative writing — anti-AI-smell rules: punctuation, sentence variation, transitions |
-| **prototype-hygiene.md** | Prototypes and early-stage projects — config over code, stable docs, PRs over branches |
-| **security-hardening.md** | Web applications — defense-in-depth patterns grounded in real-world breach analysis |
+| **shell-scripts.md** | Directory management, error handling, and portability |
+| **terraform.md** | Module structure, state management, security |
+| **testing.md** | Test pyramid, mocking, CI integration, framework-specific notes |
+| **typescript.md** | Strict types, functional components, error boundaries |
+
+## Skills
+
+Global skills in `~/.claude/skills/<name>/SKILL.md`, available in every project.
+
+| Skill | Purpose |
+| ----- | ------- |
+| **explain-diff-html** | Rich, interactive HTML explanation of a code change, diff, branch, or PR |
+| **explain-diff-md** | The same as a single self-contained Markdown file (fits the wiki / OKF knowledge base) |
+
+## Onboarding Guides
+
+| Guide | For |
+| ----- | --- |
+| [copilot-to-claude-code.md](./guides/copilot-to-claude-code.md) | GitHub Copilot users: mental model shift, setup, session lifecycle, permissions, commands |
 
 ## Hooks System
 
@@ -147,7 +202,12 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
 | ----- | ---- | ------------ |
 | **SessionStart** | `load-handoff-context.sh` | Auto-injects the most recent `handoff-*.md` as context on new session startup. Checks project-local `.claude/session-logs/` first, then global. Skips files >7 days old. |
 | **PreToolUse** | `pre-tool-safety.sh` | Blocks (exit 2) destructive operations: `git reset --hard`, `git push --force`, `git worktree remove --force`, `rm -rf`, and redirects to sensitive config files. Prompts for user confirmation before proceeding. |
-| **Stop** | `session-end-reminder.sh` | Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) when neither has been run today. |
+| **SessionStart** | `account-mismatch-warn.sh` | Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) does not match the logged-in oauth account. Advisory only; silent on match; needs `jq`. |
+| **Stop** | `session-end-reminder.sh` | Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) when neither has been run today. Also reminds about `/lint-action-items` when an outline-format `ACTION_ITEMS.md` has items past the 7-day prune window. |
+
+**Not currently registered:** `hooks/log-session-tokens`, a `SessionEnd` hook appending token usage to `~/.factory/token-ledger.json` keyed by `project:branch`. It is the ledger writer that `guidelines/pr-token-tracking.md` and `/pr-tokens` read from — both are inert until it is wired into `settings.json`.
+
+**`settings.json` is deliberately gitignored** (per-host and account state), so a fresh clone has the hook *scripts* but no registration. Register them after cloning or the hooks silently never fire.
 
 ### Project Hook Types
 
@@ -187,6 +247,16 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
   }
 }
 ```
+
+## Contributing to Guidelines
+
+1. Update guidelines when you discover new patterns or best practices
+2. Include both positive examples (do this) and negative examples (avoid this)
+3. Explain the reasoning behind each guideline
+4. Keep guidelines concise but comprehensive
+
+Durable behavioral rules belong in `CLAUDE.md`, which is loaded on every turn. Reference
+detail, indexes, and anything addressed to a human belong here.
 
 ## Setting Up a New Project
 
