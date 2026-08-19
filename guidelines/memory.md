@@ -7,11 +7,32 @@ permanent.
 `dot-opencode`, `dot-cursor`, `dot-droid` and `dot-copilot` all defer to this convention
 rather than restating it. It is authored here.
 
-## Location
+## Segments
 
-- A project's memory lives in `<project>/.claude/memory/MEMORY.md`.
-- This config repo's own memory lives in `memory/MEMORY.md`.
+Work spans several clients and personal projects. They share some facts and not most, and a
+fact learned for one client MUST NOT be loaded while working for another. Memory is
+therefore segmented, narrowest last:
+
+| File | Scope | Committed? |
+|---|---|---|
+| `memory/MEMORY.md` | universal — true regardless of who the work is for | **yes, and public** |
+| `memory/local/MEMORY.md` | personal, across all of Scott's work | no — gitignored |
+| `memory/local/<segment>/MEMORY.md` | one client or account | no — gitignored |
+| `<project>/.claude/memory/MEMORY.md` | one project | in that project's repo |
+
+The segment is resolved by `bin/memory-scope.sh`, which uses the same rule as
+`scripts/account-context.sh`: a `.account-context` marker found by walking up from the
+working directory, falling back to the git remote. One resolver, so the segment a fact is
+filed under always matches the account the work is billed to.
+
+- A client segment loads **only** when the working context resolves to that client. An
+  unknown context loads no client memory at all rather than guessing.
+- Default to the narrowest segment that fits. Promote upward only when a fact is genuinely
+  true regardless of client — and remember that promoting to `memory/MEMORY.md` publishes it.
 - Detail too long for one line goes in a sibling file that MEMORY.md links to.
+
+Run `bin/memory-scope.sh --project .` to see what the current context loads, and
+`--segment` to see which segment resolved.
 
 ## What belongs
 
@@ -46,6 +67,15 @@ knowledge base, or a gitignored location — and read it from there.
 
 This applies whether or not the repository is currently public. `dot-claude` is public, and
 history is not erased by a later edit.
+
+`bin/check-public-memory.sh` enforces this on the committed files and runs in CI. It is a
+gate, not a nudge: a leak is an error. It rejects email addresses, private IPv4 ranges, LAN
+hostnames, key and token shapes, and home paths carrying a username. A deliberate, reviewed
+exception carries an inline `<!-- public-ok: reason -->` marker on the same line, so the
+decision leaves a visible trace rather than a silent one.
+
+Private segments under `memory/local/` are gitignored and are not scanned — that is where
+this content is supposed to live.
 
 ## Decay
 

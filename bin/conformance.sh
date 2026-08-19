@@ -20,10 +20,12 @@
 set -euo pipefail
 
 PROJECT="$PWD"
+HOME_DIR=""
 QUIET=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --project) PROJECT="$2"; shift 2 ;;
+    --home)    HOME_DIR="$2"; shift 2 ;;
     --quiet)   QUIET=1; shift ;;
     -h|--help) sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) printf 'conformance.sh: unknown argument: %s\n' "$1" >&2; exit 2 ;;
@@ -97,12 +99,12 @@ fi
 # A fact that only accretes becomes a fact that lies, and a confidently wrong one is worse
 # than a missing one because it gets acted on. Flag anything unverified for too long, and
 # anything carrying no verification date at all.
-MEMORY=""
-for m in "$PROJECT/memory/MEMORY.md" "$PROJECT/.claude/memory/MEMORY.md"; do
-  [ -f "$m" ] && { MEMORY="$m"; break; }
-done
+SCOPE_BIN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/memory-scope.sh"
+scope_args=(--project "$PROJECT")
+[ -n "$HOME_DIR" ] && scope_args+=(--home "$HOME_DIR")
+mapfile -t MEMORIES < <([ -x "$SCOPE_BIN" ] && "$SCOPE_BIN" "${scope_args[@]}" 2>/dev/null || true)
 
-if [ -n "$MEMORY" ]; then
+for MEMORY in "${MEMORIES[@]}"; do
   now="$(date +%s)"
   stale=0; undated=0; oldest=""
   while IFS= read -r line; do
@@ -126,14 +128,14 @@ if [ -n "$MEMORY" ]; then
       !retired && /^- / { print }
     ' "$MEMORY")
 
-  rel="${MEMORY#"$PROJECT"/}"
+  rel="$(basename "$(dirname "$MEMORY")")/$(basename "$MEMORY")"
   if [ "$stale" -gt 0 ]; then
     findings+=("$stale memory fact(s) unverified since $oldest — re-verify or retire in \`$rel\`.")
   fi
   if [ "$undated" -gt 0 ]; then
     findings+=("$undated undated memory fact(s) in \`$rel\` — an undated fact is unverified.")
   fi
-fi
+done
 
 # --- output --------------------------------------------------------------
 if [ "${#findings[@]}" -eq 0 ]; then

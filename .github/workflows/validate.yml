@@ -49,3 +49,6 @@ jobs:
 
       - name: Conformance probe runs clean
         run: bash bin/conformance.sh --project . --quiet
+
+      - name: No private detail in public memory
+        run: bash bin/check-public-memory.sh

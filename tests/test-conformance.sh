@@ -26,8 +26,8 @@ conflict() { # $1 id, $2 decision (blank = pending)
   printf '\n**%s — 2026-08-19 ~10:00 EDT — Scott**\n\n**Kind:** rule\n\n**Decision:** %s\n' "$1" "$2" \
     >> "$WORK/p/logs/rule-conflict-log.md"; }
 
-run() { "$PROBE" --project "$WORK/p" 2>&1; }
-rc()  { "$PROBE" --project "$WORK/p" >/dev/null 2>&1; echo $?; }
+run() { "$PROBE" --project "$WORK/p" --home "$WORK/p" 2>&1; }
+rc()  { "$PROBE" --project "$WORK/p" --home "$WORK/p" >/dev/null 2>&1; echo $?; }
 
 echo "test-conformance.sh"
 if [ ! -x "$PROBE" ]; then
