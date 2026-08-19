@@ -1,0 +1,45 @@
+name: validate
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  shell:
+    name: shell syntax and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse every shell script
+        run: |
+          set -euo pipefail
+          find bin hooks scripts commands tests -type f \
+            \( -name '*.sh' -o -name '*.bash' \) -print0 2>/dev/null \
+            | xargs -0 -r -n1 bash -n
+          # Extensionless hook and command scripts are shell too — check the ones that say so.
+          find bin hooks scripts commands -type f ! -name '*.*' -print0 2>/dev/null \
+            | while IFS= read -r -d '' f; do
+                head -1 "$f" | grep -qE '^#!.*(ba)?sh' && bash -n "$f" || true
+              done
+
+      - name: shellcheck
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          find bin tests -type f -name '*.sh' -print0 \
+            | xargs -0 -r shellcheck --severity=warning
+
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the test suite
+        run: |
+          set -euo pipefail
+          for t in tests/test-*.sh; do
+            printf '\n=== %s ===\n' "$t"
+            bash "$t"
+          done

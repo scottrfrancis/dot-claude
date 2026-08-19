@@ -87,6 +87,38 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - `~/.claude/commands/assumptions.md` - Track hypothesis-driven assumptions (if-true/if-false/fallback) in ASSUMPTIONS-TRACKER.md
 - `~/.claude/commands/gherkin.md` - Draft Gherkin acceptance scenarios from a requirement or FR-###
 
+## Downstream Repos
+
+**This repo is primary.** `dot-copilot`, `dot-cursor`, `dot-droid`, and `dot-opencode` are
+downstream: shared doctrine is authored here and propagated outward. They are never read
+back as a source of truth for it.
+
+Shared doctrine lives between HTML-comment markers — `<!-- <block>: begin -->` … `<!-- <block>: end -->`.
+Two blocks propagate today: `central-ops-knowledge` and `design-patterns`. Targets are
+listed in `doctrine/targets.conf`.
+
+- Edit a shared block **here**, in `CLAUDE.md`, and never in a downstream copy — a
+  downstream edit is overwritten on the next sync, silently.
+- Run from the workspace holding the sibling checkouts:
+  - `dot-claude/bin/doctrine.sh check` — report every downstream block that differs, is
+    missing, or has malformed markers. Exits non-zero on any finding.
+  - `dot-claude/bin/doctrine.sh sync` — rewrite downstream blocks from this file.
+- A block that must legitimately differ downstream records why, inline, next to the
+  divergence. Undocumented divergence reads as drift — which is how the ops-knowledge
+  block went seven weeks stale in four repos.
+- Introducing a block to a new file means adding its marker pair there first; the tool
+  refuses to guess placement.
+
+## Repo Checks
+
+Run before pushing (`guidelines/ci-local-parity.md` — these are exactly what CI runs):
+
+```bash
+bash tests/test-doctrine.sh                       # test suite
+find bin tests -name '*.sh' -print0 | xargs -0 shellcheck --severity=warning
+find bin hooks scripts commands tests -name '*.sh' -print0 | xargs -0 -n1 bash -n
+```
+
 ## Cross-Tool Session Protocol
 
 Session logs are written to `session-logs/` at the project root — a shared location accessible by Claude Code, Cursor, Copilot, and Droid. Legacy locations (`.claude/session-logs/`, `.factory/logs/`) are searched as fallbacks.
@@ -187,7 +219,7 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - 2026-05-21: Add 2x2-status-report guideline (quad-chart weekly status; disambiguates from canonical Amazon WBR)
 - 2026-08-13: Completeness audit — index 8 previously undocumented guidelines/commands, add a Skills section, document the `account-mismatch-warn` hook and the unregistered `log-session-tokens`, note that gitignored `settings.json` means a fresh clone has no hook registration
 - 2026-06-30: Add `/b` command + time-tracking touchpoints in `/lets-go`, `/session-logger`, `/handoff` (remind-don't-auto policy); local `b` time-tool on studio-3 → `time-push` → hasami ingest (`bronze.time_entry`, `task_raw`)
-<\!-- central-ops-knowledge: begin -->
+<!-- central-ops-knowledge: begin -->
 ## Central Ops Knowledge (shared doctrine — all my AI tools)
 
 I maintain ONE central, authoritative **ops-knowledge state** for my homelab/home: **dynamic**
@@ -213,8 +245,9 @@ Operating rules for every agent (Claude, OpenCode, Codex, Cursor, Droid, Copilot
 3. **OKF form** — plain markdown + YAML, **no secrets** (pointers only), conformant for any tool.
 4. **Local-first / WAN-tolerant** — prefer local LLM/files/Kiwix; must work with the internet down.
 5. **Respect boundaries** — household surfaces LAN-only; don't touch non-Scott tailnet hosts.
-<\!-- central-ops-knowledge: end -->
+<!-- central-ops-knowledge: end -->
 
+<!-- design-patterns: begin -->
 ## Design-pattern discipline
 
 Before designing a non-trivial component, or coining a new mechanism/abstraction:
@@ -229,3 +262,4 @@ Before designing a non-trivial component, or coining a new mechanism/abstraction
 - **If you coin something reusable, flag it for capture** rather than letting it evaporate.
 - Prefer the GoF house stances (composition over inheritance; Strategy over if-ladders;
   avoid Singleton/Visitor) unless there's a stated reason.
+<!-- design-patterns: end -->
