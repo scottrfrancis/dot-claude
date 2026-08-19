@@ -94,6 +94,7 @@ Hooks         ←  validate quality    ←  data enforcement
 | **lets-go** | `/lets-go [role with task]` | Initialize a session: read project docs, run git sync protocol (fetch, compare ahead/behind, recommend pull/push/branch), check recent session logs |
 | **session-logger** | `/session-logger [topic]` | Create structured session summary with: activities, decisions, reusable insights, effectiveness assessment. Cross-links to previous session log automatically |
 | **handoff** | `/handoff [topic notes]` | Generate forward-looking continuation prompt for the next session. Use when context window is filling up or when pausing work mid-task. Saves to `session-logs/handoff-*.md` |
+| **memorialize** | `/memorialize [topic]` | Close out a thread at a context shift: sort durable from transient, propose dated MEMORY.md entries, name promotion candidates (guideline / ADR / `okf-knowledge`), then confirm whether it is safe to clear |
 | **mine-sessions** | `/mine-sessions [days:N] [save]` | Analyze session logs for patterns, metrics, and process improvement recommendations. Extracts reusable insights, tracks decision evolution, identifies process friction |
 | **pickup** | `/pickup` | Resume from the most recent handoff: load handoff file, quick git sync, archive the handoff so it isn't re-injected next session |
 
@@ -162,6 +163,7 @@ On-demand reference standards in `~/.claude/guidelines/`. Read the relevant one 
 | **markdown-formatting.md** | Spacing rules for generated Markdown: blank lines around lists, paragraph separation, consistent bullet markers |
 | **pr-token-tracking.md** | Include AI token usage in PR descriptions, read from the branch-keyed ledger |
 | **project-setup.md** | Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling |
+| **memory.md** | Recording durable non-obvious context — one dated fact per line, no personal data, decay and promotion rules |
 | **prose-style.md** | Anti-AI-smell rules for narrative writing: punctuation, sentence variation, transitions, word choice |
 | **prototype-hygiene.md** | Ship clean from day one: config over code, stable docs over stale state, PRs over branches |
 | **python.md** | Type hints, error handling, testing patterns |

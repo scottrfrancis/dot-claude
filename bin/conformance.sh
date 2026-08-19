@@ -16,6 +16,7 @@
 #
 #   MINE_STALE_SESSIONS   sessions since last mine before flagging   (default 10)
 #   MINE_STALE_DAYS       days since last mine before flagging       (default 30)
+#   MEMORY_STALE_DAYS     days before a memory fact needs re-verifying (default 180)
 set -euo pipefail
 
 PROJECT="$PWD"
@@ -31,6 +32,13 @@ done
 
 STALE_SESSIONS="${MINE_STALE_SESSIONS:-10}"
 STALE_DAYS="${MINE_STALE_DAYS:-30}"
+MEMORY_DAYS="${MEMORY_STALE_DAYS:-180}"
+
+# Epoch seconds for a YYYY-MM-DD date. GNU and BSD date disagree on flags; try both, per
+# the macOS-safety note in memory. Prints nothing when the date will not parse.
+date_epoch() {
+  date -d "$1" +%s 2>/dev/null || date -j -f '%Y-%m-%d' "$1" +%s 2>/dev/null || true
+}
 
 # Session records live in the shared cross-tool location first, then legacy paths.
 LOGDIR=""
@@ -80,7 +88,51 @@ if [ -f "$CONFLICT_LOG" ]; then
       if (id != "" && rest == "") print id
       id = ""
     }' "$CONFLICT_LOG" | paste -sd' ' -)"
-  [ -n "$pending" ] && findings+=("conflict(s) awaiting a decision: $pending — see \`logs/rule-conflict-log.md\`.")
+  if [ -n "$pending" ]; then
+    findings+=("conflict(s) awaiting a decision: $pending — see \`logs/rule-conflict-log.md\`.")
+  fi
+fi
+
+# --- memory decay --------------------------------------------------------
+# A fact that only accretes becomes a fact that lies, and a confidently wrong one is worse
+# than a missing one because it gets acted on. Flag anything unverified for too long, and
+# anything carrying no verification date at all.
+MEMORY=""
+for m in "$PROJECT/memory/MEMORY.md" "$PROJECT/.claude/memory/MEMORY.md"; do
+  [ -f "$m" ] && { MEMORY="$m"; break; }
+done
+
+if [ -n "$MEMORY" ]; then
+  now="$(date +%s)"
+  stale=0; undated=0; oldest=""
+  while IFS= read -r line; do
+    # pipefail makes a no-match grep abort the assignment; an absent date is normal here.
+    d="$(printf '%s' "$line" | grep -oE '\[[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1 | tr -d '[' || true)"
+    if [ -z "$d" ]; then
+      undated=$((undated+1)); continue
+    fi
+    e="$(date_epoch "$d")"
+    [ -n "$e" ] || { undated=$((undated+1)); continue; }
+    age=$(( (now - e) / 86400 ))
+    if [ "$age" -ge "$MEMORY_DAYS" ]; then
+      stale=$((stale+1))
+      [ -z "$oldest" ] && oldest="$d"
+      [ "$d" \< "$oldest" ] && oldest="$d"
+    fi
+  done < <(awk '
+      /^```/ { fenced = !fenced; next }
+      fenced { next }
+      /^## / { retired = ($0 ~ /[Rr]etired/) }
+      !retired && /^- / { print }
+    ' "$MEMORY")
+
+  rel="${MEMORY#"$PROJECT"/}"
+  if [ "$stale" -gt 0 ]; then
+    findings+=("$stale memory fact(s) unverified since $oldest — re-verify or retire in \`$rel\`.")
+  fi
+  if [ "$undated" -gt 0 ]; then
+    findings+=("$undated undated memory fact(s) in \`$rel\` — an undated fact is unverified.")
+  fi
 fi
 
 # --- output --------------------------------------------------------------
