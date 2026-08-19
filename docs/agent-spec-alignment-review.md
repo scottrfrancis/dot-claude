@@ -631,3 +631,109 @@ Part I's ordering holds for the format defects. G1 changes what comes after them
    ad-hoc list of frontmatter keys.
 9. **G4, G5** — the conflict log and inline Rationale. Lowest urgency, longest payoff.
 10. **A1** — the `AGENTS.md` consolidation, last, once there is a registry to consolidate.
+
+---
+
+# Part III — Verdict
+
+Part II mapped eight Part I defects onto the missing File Registry (G1). That
+overweighted it. Re-checking each against the cheapest mechanism that would actually
+have caught it:
+
+| Part I defect | Cheapest thing that catches it | Registry needed? |
+|---|---|---|
+| B1 doctrine stale in 4 repos | marker-block byte-compare in CI | no |
+| A2 doctrine absent from deliverables | target list in the sync tool | no |
+| C1 Skill frontmatter in a Copilot file | frontmatter validator | no |
+| C3 commands filed as Cursor rules | validator: no `globs`/`alwaysApply` ⇒ not a rule | no |
+| C5 `allowed-tools: Git, Gh` | validator against the real tool list | no |
+| D1 19.5 KB catalogue every turn | delete the catalogue | **registry makes it worse** |
+| E1 hand-propagation across repos | declare generated-from **in the file** | no |
+| `log-session-tokens` unregistered | — | marginal |
+
+Six of eight are frontmatter plus a validator. G1 is downgraded accordingly.
+
+## Reject: the File Registry as a table
+
+The registry is load-bearing in the reference project because of an assumption that does
+not hold here: **one agent, one repo, every write mediated by explicit approval.** Under
+that assumption the table cannot drift, so other rules may safely depend on it — and the
+**Reference resolution** rule does exactly that, requiring resolution against the registry
+and forbidding a disk check.
+
+These five repos are edited by hand, by five different tools, across several machines,
+and — decisively — they are *templates installed into other projects*. A registry
+describing `dot-claude`'s own inventory does not travel with the install. It would become
+a second source of truth that nothing enforces, and a stale registry under a
+don't-check-disk rule produces confidently wrong behavior. That is a worse failure mode
+than the present one.
+
+It is also the same object Part I recommended deleting. D1 says: remove the annotated
+catalogue from the always-loaded file because it goes stale and duplicates `ls`. The File
+Registry is that catalogue with more columns.
+
+**Frontmatter is a distributed registry that cannot drift, because it lives in the file it
+describes** — and the tools already read it. Prefer it wherever the two overlap. Type,
+Extension, and Subfolder are derivable from the path; Description is already a frontmatter
+field.
+
+## Adopt
+
+1. **`Protocol` as a frontmatter field** — the one idea in the registry that is not
+   derivable from the filesystem, and the one worth taking. Two values carry nearly all
+   the value:
+   - `generated: {from: [...], via: <script>}` — settles G3. Makes it visible that a
+     `.mdc` is output, names its sources, and lets `dot-copilot` rejoin the propagation
+     graph instead of opting out of it.
+   - `guarded: <group>` — settles G2/B1. The doctrine blocks declare their group; CI
+     compares them.
+2. **The rule-conflict log** — `logs/rule-conflict-log.md`, append-only, stable `RC###`
+   ids. Cheap, and it repairs a rule already present and already violated (G4): without a
+   log, "pick one and flag the other for cleanup" loses the flag between sessions.
+3. **The rule-formatting conventions** — all six, especially *pair every prohibition with
+   the recommended alternative*. Free, and mechanically checkable in the E2 validator.
+
+## Adapt
+
+4. **Guarded Edits — as CI, not as an interactive loop.** Categories A and B
+   (contradiction, duplicate) are a byte-compare of marker blocks. C (vocabulary) needs the
+   glossary below. D (reference integrity) the validator already does. E and F (scope
+   drift, rationale conflict) are human judgment — skip them. Keep the *inline override
+   comment*: it is the part that distinguishes deliberate variation from drift, which is
+   why B1 survived seven weeks.
+5. **Glossary with anti-meanings — a table, not a protocol.** About six rows in the shared
+   doctrine block: `knowledge base`, `skill`, `command`, `rule`, `guideline`, `deliverable`.
+   Drop the closure and circularity checks; at six rows they are ceremony.
+6. **Inline Rationale — for local rules only.** ADRs stay for architectural decisions.
+   Rationale blocks go next to guideline and command rules, where a separate ADR would be
+   overkill and the "why" is currently absent.
+
+## Reject
+
+7. **The File Registry table** — above.
+8. **Intake logging** (every input verbatim, append-only, AI output excluded). It exists to
+   reconstruct why a spec says what it says. `session-logs/` are deliberately summaries,
+   and that is the right choice for cross-tool handoff. Different problem.
+9. **The approval gates** — "MUST be recorded only after explicit user approval" on rule
+   changes, glossary changes, inventory changes, description changes. The method earns that
+   friction because the spec *is* the product and a defect ships. These guidelines are
+   advisory prose read by an LLM; a wrong one costs a bad suggestion. Git review is the
+   approval gate.
+10. **The input-relevance gate** (refuse off-intent work until relevance is established).
+    Correct for a single-purpose website project. Wrong for a general-purpose base class
+    whose whole job is to apply across unrelated projects.
+
+## Where these repos are already ahead
+
+The reference project has **no traceability mechanism at all** — no requirement IDs, no
+coverage check, nothing resembling `/trace-check` or the FR-### chain. It has no
+cross-tool story, having only ever had one tool. It has no prose or formatting standards.
+The SDLC toolkit and the ADR convention are more rigorous than anything in the archive;
+they are just, per Part I finding F1, not wired in.
+
+## Net
+
+Take `Protocol` in frontmatter, the conflict log, the six formatting conventions, the
+glossary table, and the override comment. Leave the registry, the intake log, and the
+approval ceremony. The ordering in Part II stands with step 3 replaced: instead of a File
+Registry, add `generated:` and `guarded:` frontmatter to the files that already hurt.
