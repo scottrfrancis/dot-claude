@@ -158,6 +158,7 @@ On-demand reference standards in `~/.claude/guidelines/`. Read the relevant one 
 | **docker.md** | Multi-stage builds, security, layer optimization |
 | **docx-conversion.md** | python-docx over pandoc; color palette, typography, hyperlinks |
 | **git-workflow.md** | Branch + PR discipline; never commit/push main; stacked-PR handling |
+| **glossary.md** | Terms that mean something specific here — seeded from real collisions, anti-meanings, segmented like memory |
 | **golang.md** | JSON response safety (no fmt.Fprintf), gosec patterns, G104 triage |
 | **karpathy-principles.md** | Deltas not already covered: surface assumptions before implementing; match existing style; mention don't delete pre-existing dead code; read before you write |
 | **markdown-formatting.md** | Spacing rules for generated Markdown: blank lines around lists, paragraph separation, consistent bullet markers |
@@ -205,6 +206,7 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
 | ----- | ---- | ------------ |
 | **SessionStart** | `load-handoff-context.sh` | Auto-injects the most recent `handoff-*.md` as context on new session startup. Checks project-local `.claude/session-logs/` first, then global. Skips files >7 days old. |
 | **PreToolUse** | `pre-tool-safety.sh` | Blocks (exit 2) destructive operations: `git reset --hard`, `git push --force`, `git worktree remove --force`, `rm -rf`, and redirects to sensitive config files. Prompts for user confirmation before proceeding. |
+| **PreCompact** | `pre-compact-memorialize.sh` | Snapshots branch, outstanding conformance items and uncommitted files before context is compacted, and steers what the summary preserves. Advisory. |
 | **SessionStart** | `conformance-report.sh` | Surfaces overdue maintenance at session start — conflicts still awaiting a decision, and whether `/mine-sessions` is overdue. Runs `bin/conformance.sh`, which is deterministic and costs no tokens. Advisory; silent when nothing is overdue. |
 | **SessionStart** | `account-mismatch-warn.sh` | Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) does not match the logged-in oauth account. Advisory only; silent on match; needs `jq`. |
 | **Stop** | `session-end-reminder.sh` | Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) when neither has been run today. Also reminds about `/lint-action-items` when an outline-format `ACTION_ITEMS.md` has items past the 7-day prune window. |

@@ -29,7 +29,7 @@ is **not** loaded into context. Keep them there.
 `2x2-status-report` · `C4-diagramming` · `adr` · `ai-cron-tool-delegation` · `ai-patterns` ·
 `architecture-diagrams` · `central-ops-knowledge` · `ci-local-parity` ·
 `conventional-commits` · `data-diode-list-control` · `docker` · `docx-conversion` ·
-`git-workflow` · `golang` · `karpathy-principles` · `markdown-formatting` · `memory` ·
+`git-workflow` · `glossary` · `golang` · `karpathy-principles` · `markdown-formatting` · `memory` ·
 `pr-token-tracking` · `project-setup` · `prose-style` · `prototype-hygiene` · `python` ·
 `readme-documentation` ·
 `rule-conflict-protocol` · `security-hardening` · `session-safety` · `shell-escaping` ·
@@ -111,6 +111,13 @@ All session logs and handoff files include YAML frontmatter with a `tool:` field
   undated: a confidently wrong fact is worse than a missing one. When a fact hardens,
   promote it — to a guideline, an ADR, or the `okf-knowledge` bundle — and leave a pointer.
   See `guidelines/memory.md`.
+- **Read glossary terms as the glossary defines them — and ask when another reading fits.**
+  `glossary/GLOSSARY.md` and the segments `bin/memory-scope.sh --kind glossary` resolves list
+  terms that mean something specific here. When a prompt uses one, take the glossary meaning;
+  but where a different reading is genuinely plausible in that prompt's context, ask before
+  acting rather than assuming. When writing, use the glossary's term for the concept it
+  covers, and avoid it when meaning something else. Add a row only when a term has actually
+  caused a misunderstanding. See `guidelines/glossary.md`.
 - **Architecture decisions get an ADR.** `guidelines/adr.md` is the single canonical
   convention — `docs/decisions/ADR-NNNN`, sequential numbering, status lifecycle, FR-###
   traceability. Read it before writing, extracting, or reviewing a decision record; do not

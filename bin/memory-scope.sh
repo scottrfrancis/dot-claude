@@ -18,19 +18,25 @@
 # when the working context resolves to that client. An unknown context loads no client
 # memory at all rather than guessing.
 #
-#   memory-scope.sh [--project DIR] [--home DIR] [--segment]
+# Glossary entries are segmented for the same reason and by the same resolver: a term can
+# mean one thing for one client and another elsewhere. `--kind glossary` resolves
+# GLOSSARY.md under glossary/ instead of MEMORY.md under memory/.
+#
+#   memory-scope.sh [--project DIR] [--home DIR] [--segment] [--kind memory|glossary]
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOME_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROJECT="$PWD"
 SEGMENT_ONLY=0
+KIND="memory"
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --project) PROJECT="$2"; shift 2 ;;
     --home)    HOME_DIR="$2"; shift 2 ;;
     --segment) SEGMENT_ONLY=1; shift ;;
+    --kind)    KIND="$2"; shift 2 ;;
     -h|--help) sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) printf 'memory-scope.sh: unknown argument: %s\n' "$1" >&2; exit 2 ;;
   esac
@@ -72,10 +78,17 @@ fi
 # --- emit the applicable files, narrowest last ---------------------------
 emit() { [ -f "$1" ] && printf '%s\n' "$1"; return 0; }
 
-emit "$HOME_DIR/memory/MEMORY.md"
-emit "$HOME_DIR/memory/local/MEMORY.md"
-# No segment means no client memory. Guessing here is how one client's facts reach another.
-[ -n "$segment" ] && emit "$HOME_DIR/memory/local/$segment/MEMORY.md"
-emit "$PROJECT/.claude/memory/MEMORY.md"
+case "$KIND" in
+  memory)   dir="memory";   file="MEMORY.md" ;;
+  glossary) dir="glossary"; file="GLOSSARY.md" ;;
+  *) printf 'memory-scope.sh: unknown --kind: %s (expected memory or glossary)\n' "$KIND" >&2; exit 2 ;;
+esac
+
+emit "$HOME_DIR/$dir/$file"
+emit "$HOME_DIR/$dir/local/$file"
+# No segment means no client-specific file. Guessing here is how one client's vocabulary or
+# facts reach another.
+[ -n "$segment" ] && emit "$HOME_DIR/$dir/local/$segment/$file"
+emit "$PROJECT/.claude/$dir/$file"
 
 exit 0

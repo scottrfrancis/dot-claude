@@ -80,5 +80,19 @@ has   "but still loads the universal segment"  "$out" "h/memory/MEMORY.md"
 setup; echo ailab > "$WORK"/p/.account-context; rm "$WORK"/h/memory/local/ailab/MEMORY.md
 hasnt "skips a segment file that does not exist" "$(run)" "local/ailab"
 
+# --- glossary uses the same segmentation ---------------------------------
+# A term can mean different things for different clients, which is the same reason facts
+# are segmented. One resolver serves both rather than two that can disagree.
+setup; echo ailab > "$WORK"/p/.account-context
+mkdir -p "$WORK"/h/glossary/local/ailab "$WORK"/h/glossary/local/brightsign
+echo x > "$WORK"/h/glossary/GLOSSARY.md
+echo x > "$WORK"/h/glossary/local/ailab/GLOSSARY.md
+echo x > "$WORK"/h/glossary/local/brightsign/GLOSSARY.md
+out="$(run --kind glossary)"
+has   "resolves the universal glossary"        "$out" "h/glossary/GLOSSARY.md"
+has   "resolves the matching client glossary"  "$out" "local/ailab/GLOSSARY.md"
+hasnt "NEVER resolves another client glossary" "$out" "brightsign"
+hasnt "does not mix memory into a glossary scope" "$out" "MEMORY.md"
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

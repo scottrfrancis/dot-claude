@@ -26,6 +26,11 @@ every overlap gets ignored, which costs more than not having it.
 
 **One-off ambiguity is not conflict.** If the instructions are merely unclear, ask.
 
+**A vocabulary mismatch is a glossary trigger.** When two instructions appear to contradict
+but are in fact using one word for two things, the fix is a glossary row, not a dropped
+rule. Record it per `guidelines/glossary.md` and log the conflict as resolved by
+disambiguation, citing the term.
+
 ## Procedure
 
 ### 1. Stop

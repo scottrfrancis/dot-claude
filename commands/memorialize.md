@@ -63,7 +63,17 @@ Name the candidates; do not promote unprompted. The last row is the one most oft
 the central-ops doctrine requires writing back what you learn about the ops state, and a
 fact left in MEMORY.md has not been written back.
 
-## 4. Check nothing is left dangling
+## 4. Note any term that was read two ways
+
+If a term caused a misunderstanding during the thread — a request read one way and meant
+another, a file filed wrongly because two things share a name — propose a glossary row:
+term, what it means here, and what it explicitly does not mean. Target the narrowest scope
+that fits, per `guidelines/glossary.md`; client vocabulary does not go in the universal file.
+
+Propose only terms that actually collided. A term that was merely unfamiliar belongs in
+documentation, not the glossary.
+
+## 5. Check nothing is left dangling
 
 ```bash
 ~/.claude/bin/conformance.sh --project .
@@ -72,7 +82,7 @@ fact left in MEMORY.md has not been written back.
 Report anything it prints. A conflict still awaiting a decision is the one blocker that
 should stop a clear — the thread ended with a question the user never answered.
 
-## 5. Confirm
+## 6. Confirm
 
 State plainly: what was written, what was proposed for promotion, and whether it is safe to
 clear. If a conflict is undecided, say it is **not** safe to clear and name the `RC###`.
