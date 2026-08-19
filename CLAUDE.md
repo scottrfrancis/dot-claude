@@ -31,7 +31,8 @@ is **not** loaded into context. Keep them there.
 `conventional-commits` · `data-diode-list-control` · `docker` · `docx-conversion` ·
 `git-workflow` · `golang` · `karpathy-principles` · `markdown-formatting` ·
 `pr-token-tracking` · `project-setup` · `prose-style` · `prototype-hygiene` · `python` ·
-`readme-documentation` · `security-hardening` · `session-safety` · `shell-escaping` ·
+`readme-documentation` ·
+`rule-conflict-protocol` · `security-hardening` · `session-safety` · `shell-escaping` ·
 `shell-scripts` · `terraform` · `testing` · `typescript`
 
 **Commands** (`~/.claude/commands/`) — invoke as `/<name>`:
