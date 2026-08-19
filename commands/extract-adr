@@ -12,23 +12,50 @@ steps:
   - name: "Find log file"
     run: |
       if [ -z "$logfile" ]; then
-        # Find most recent log with ADR markers (check all cross-tool locations)
+        # Most recent session log carrying ADR markers (check all cross-tool locations)
         LOGFILE=$(grep -l "ADR-worthy" session-logs/*.md .claude/session-logs/*.md .factory/logs/*.md 2>/dev/null | tail -1)
-        if [ -z "$LOGFILE" ]; then
-          echo "No session logs found with ADR markers"
-          exit 1
-        fi
       else
         LOGFILE="$logfile"
       fi
-      
-      cat "$LOGFILE"
+
+      # The conflict log is a first-class ADR source and often a better one: an RC entry was
+      # written at the moment of contention, not reconstructed from a summary that had to
+      # flag itself "ADR-worthy" at write time to survive.
+      CONFLICT_LOG=""
+      for CL in logs/rule-conflict-log.md "$HOME/.claude/logs/rule-conflict-log.md"; do
+        [ -f "$CL" ] && { CONFLICT_LOG="$CL"; break; }
+      done
+
+      if [ -z "$LOGFILE" ] && [ -z "$CONFLICT_LOG" ]; then
+        echo "No session logs with ADR markers and no conflict log found"
+        exit 1
+      fi
+
+      if [ -n "$LOGFILE" ]; then
+        echo "--- Session log: $LOGFILE ---"
+        cat "$LOGFILE"
+      fi
+
+      if [ -n "$CONFLICT_LOG" ]; then
+        echo "--- Conflict log: $CONFLICT_LOG ---"
+        cat "$CONFLICT_LOG"
+      fi
 
   - name: "Extract and format ADR"
     ask_claude: |
-      From the session log above, extract the architectural decisions and format them as
-      proper ADRs following the **adr guideline** (~/.claude/guidelines/adr.md) — the
-      canonical convention. One decision per ADR. Use this exact template:
+      From the material above — session log and, when present, the runtime conflict log —
+      extract the architectural decisions and format them as proper ADRs following the
+      **adr guideline** (~/.claude/guidelines/adr.md) — the canonical convention. One
+      decision per ADR.
+
+      A resolved conflict-log entry maps almost directly onto an ADR, and the two share a
+      discipline: permanent sequential ids, immutable once settled, superseded rather than
+      edited, rejected options kept because the reasoning is the value. Map it as:
+      Context <- **Conflict explanation**; Considered options <- **Options presented**
+      (keep the ones not chosen); Decision <- **Decision**; Consequences <- what the
+      decision changed. Cite the source entry as `RC###` in the ADR's Context so the two
+      records stay linked. Skip entries whose Decision is still blank — the decision has
+      not been made yet. Do not re-extract a conflict that an existing ADR already cites. Use this exact template:
 
       # ADR-NNNN: <short imperative title>
 

@@ -121,6 +121,12 @@ Run these checks in order:
 
 Run only if the corresponding project tooling exists; **skip silently otherwise**. These are token-cheap freshness checks, never LLM ingestion.
 
+- **Conformance probe** — run `~/.claude/bin/conformance.sh --project . --quiet`. It is
+  deterministic and costs no tokens. It reports conflicts still awaiting a decision and
+  whether `/mine-sessions` is overdue. Surface anything it prints in the Ready Output;
+  say nothing when it is silent. Do not run `/mine-sessions` unprompted — it spends
+  tokens; offer it.
+
 - **Gemini meeting transcripts** — if `tools/pull-gemini-notes.sh` exists in the project, run the `fetch-meeting-notes` skill (or the script directly:
   `GOOGLE_WORKSPACE_CLI_CONFIG_DIR=$HOME/.config/gws/ail tools/pull-gemini-notes.sh Catalyst`).
   This pulls any new "Notes by Gemini" Docs from Drive (free — no model tokens). Report newly pulled transcripts in the Ready Output. If new files landed, **suggest** `/harvest-action-items` (do not auto-run — it spends tokens). If `gws auth status` shows expired/no auth, note it briefly and continue. Setup/troubleshooting: the project's `tools/SETUP-gemini-notes.md`.

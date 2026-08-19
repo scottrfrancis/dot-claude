@@ -46,3 +46,6 @@ jobs:
 
       - name: Validate the conflict log
         run: bash bin/check-conflict-log.sh
+
+      - name: Conformance probe runs clean
+        run: bash bin/conformance.sh --project . --quiet

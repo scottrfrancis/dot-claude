@@ -48,7 +48,9 @@ is **not** loaded into context. Keep them there.
 
 **Hooks** (`~/.claude/hooks/`) — registered in `~/.claude/settings.json`, which is
 gitignored, so a fresh clone has the scripts but no registration and they silently never
-fire. `log-session-tokens` is not registered at all, which leaves `/pr-tokens` and
+fire. `conformance-report.sh` (SessionStart) surfaces overdue mining and undecided
+conflicts; `/lets-go` runs the same probe directly, so the deliberate path works even
+unregistered. `log-session-tokens` is not registered at all, which leaves `/pr-tokens` and
 `guidelines/pr-token-tracking.md` inert until it is wired in.
 
 ## Precedence
