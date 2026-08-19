@@ -98,6 +98,11 @@ All session logs and handoff files include YAML frontmatter with a `tool:` field
 ## Global Behavioral Rules
 
 - **Red-Green-Refactor TDD is REQUIRED for ALL code changes.** Always write a failing test first (RED), then the minimum production code to pass (GREEN), then refactor with tests green. No production code without a failing test. No retroactive tests. See [Testing Strategies](./guidelines/testing.md) for the full cycle, non-negotiable rules, and the (narrow) exceptions.
+- **Architecture decisions get an ADR.** `guidelines/adr.md` is the single canonical
+  convention — `docs/decisions/ADR-NNNN`, sequential numbering, status lifecycle, FR-###
+  traceability. Read it before writing, extracting, or reviewing a decision record; do not
+  invent a local format. Nine commands depend on it. Local reasoning that does not warrant
+  an ADR goes inline, next to what it explains.
 - **Surface conflicts; don't average them.** When two patterns in the codebase contradict (two error-handling styles, two test idioms, two of these guidelines pointing different directions), pick one — usually the more recent or more tested — explain why, and flag the other for cleanup. Blending two patterns produces a third that nobody intended.
 - Create temporary test scripts and programs in `/tmp`, not in the project directory
 - When the user reports a PR has been merged, prompt them to update the local repository (pull, delete merged branch)
