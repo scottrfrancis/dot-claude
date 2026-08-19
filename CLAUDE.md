@@ -103,7 +103,15 @@ All session logs and handoff files include YAML frontmatter with a `tool:` field
   traceability. Read it before writing, extracting, or reviewing a decision record; do not
   invent a local format. Nine commands depend on it. Local reasoning that does not warrant
   an ADR goes inline, next to what it explains.
-- **Surface conflicts; don't average them.** When two patterns in the codebase contradict (two error-handling styles, two test idioms, two of these guidelines pointing different directions), pick one — usually the more recent or more tested — explain why, and flag the other for cleanup. Blending two patterns produces a third that nobody intended.
+- **Surface conflicts; don't average them.** Blending two contradictory patterns produces a
+  third nobody intended. When two instructions or two established codebase patterns require
+  incompatible things and you cannot satisfy both, **stop before producing anything that
+  depends on them**, follow `guidelines/rule-conflict-protocol.md`, and log the conflict to
+  `logs/rule-conflict-log.md`. Present the conflicting text verbatim with its sources and at
+  least three options, one of which is to stop; do not infer a resolution. Check the log
+  first — if the same conflict is already recorded, apply its decision instead of
+  re-litigating. Overlap is not conflict: several rules applying to one operation without
+  contradicting each other is the normal case.
 - Create temporary test scripts and programs in `/tmp`, not in the project directory
 - When the user reports a PR has been merged, prompt them to update the local repository (pull, delete merged branch)
 - When asked to push to a repo, suggest a new branch if the current branch is the default (main/master)

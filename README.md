@@ -166,6 +166,7 @@ On-demand reference standards in `~/.claude/guidelines/`. Read the relevant one 
 | **prototype-hygiene.md** | Ship clean from day one: config over code, stable docs over stale state, PRs over branches |
 | **python.md** | Type hints, error handling, testing patterns |
 | **readme-documentation.md** | Organizing project documentation with README as central hub |
+| **rule-conflict-protocol.md** | Two instructions or two codebase patterns requiring incompatible things — stop, log to `logs/rule-conflict-log.md`, present at least three options |
 | **security-hardening.md** | Defense-in-depth patterns grounded in real-world breach analysis |
 | **session-safety.md** | **CRITICAL** - Prevent session hangs and context loss on hardware systems |
 | **shell-escaping.md** | Complex shell commands — quoting rules, heredocs, VS Code terminal escaping |
