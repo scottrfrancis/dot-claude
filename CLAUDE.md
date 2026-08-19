@@ -101,10 +101,13 @@ All session logs and handoff files include YAML frontmatter with a `tool:` field
 ## Global Behavioral Rules
 
 - **Red-Green-Refactor TDD is REQUIRED for ALL code changes.** Always write a failing test first (RED), then the minimum production code to pass (GREEN), then refactor with tests green. No production code without a failing test. No retroactive tests. See [Testing Strategies](./guidelines/testing.md) for the full cycle, non-negotiable rules, and the (narrow) exceptions.
-- **Durable facts get recorded, dated, and promoted.** Non-obvious context that the repo
-  does not already capture goes in `memory/MEMORY.md` — one fact per line, ending with the
-  date it was last verified. Never record credentials, addresses, or personal detail there;
-  point at `kb-mcp` instead. Re-verify or retire a fact rather than letting it stand
+- **Durable facts get recorded, dated, segmented, and promoted.** Non-obvious context the
+  repo does not already capture goes in memory — one fact per line, ending with the date it
+  was last verified. Memory is segmented by client: `bin/memory-scope.sh` resolves which
+  files the current context loads, and a client's facts are never loaded for another client.
+  File a fact in the narrowest segment that fits. `memory/MEMORY.md` is **public**: never put
+  credentials, addresses, hostnames, or personal detail there — point at `kb-mcp`, or use a
+  gitignored segment under `memory/local/`. Re-verify or retire a fact rather than letting it stand
   undated: a confidently wrong fact is worse than a missing one. When a fact hardens,
   promote it — to a guideline, an ADR, or the `okf-knowledge` bundle — and leave a pointer.
   See `guidelines/memory.md`.
