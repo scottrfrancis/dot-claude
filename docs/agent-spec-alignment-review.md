@@ -373,3 +373,124 @@ line in each, since these configs are explicitly designed to be extended per pro
 6. **A1, A2, A3** — the `AGENTS.md` consolidation. Largest change, and cheapest
    once E1 exists to do the propagation.
 7. **E2** — CI, once there is a settled shape to validate against.
+
+---
+
+# Addendum — reviewed against `agentic-spec.com` (Agentic Spec-Driven Development)
+
+**Added 2026-08-19**, after the intended source was identified as `agentic-spec.com`
+rather than `agent-spec.com`.
+
+## The site is also unreachable
+
+`agentic-spec.com` returns the same `CONNECT tunnel failed, response 403` from this
+session's egress proxy, as do the author's other properties (`anatoly.com`,
+`medium.com`, `ai.gopubby.com`). Nothing on that domain family is readable here.
+
+What is established from search indexing: the site is the companion to **Anatoly
+Volkhover's *Agentic Spec-Driven Development*** — a *method* for building complete
+specifications that autonomous agents execute, not a file-format standard. Indexed
+summaries describe a spec that fuses product and technical judgment into one artifact
+that is **complete and consistent, leaving the agent no guesswork**, held as an
+**ontology graph linking ground truths, decisions, and preview artifacts**, with
+**protocols enforced by agentic AI** to keep every part consistent.
+
+**Treat the characterization below as second-hand.** It rests on search summaries of
+the site and on the broader SDD literature, not on the site's own text. The three
+findings are nonetheless grounded in the repositories themselves and stand on their
+own. If the site's contents are supplied, this section can be redone against them.
+
+This reframes the review above. That was a *format* audit — frontmatter, file
+placement, context cost. This is a *method* question: **how well do these five repos
+implement spec-driven development?** They already ship a toolkit for it —
+`/discovery-init`, `/interview-to-spec`, `/constitution`, `/gherkin`, `/trace-check`,
+`/assumptions`, `/design-review`, plus the ADR convention and FR-### traceability —
+harvested from the airgapped engagement fork. Coverage is near-complete:
+
+| Command | claude | cursor | droid | opencode | copilot |
+|---|:-:|:-:|:-:|:-:|:-:|
+| discovery-init · interview-to-spec · constitution · gherkin · trace-check · assumptions · design-review | ✓ | ✓ | ✓ | ✓ | ✓ |
+| adr | — | ✓ | ✓ | — | ✓ |
+
+Three findings follow.
+
+## F1 — The spec-driven toolkit is present everywhere and wired in nowhere *(replacement)*
+
+Every frontmatter defect in section C above lands on an SDLC file. That is not
+coincidence — it is one event with three symptoms:
+
+- **C5**: 9 `dot-claude` commands ship with no frontmatter. Seven are SDLC:
+  `assumptions`, `constitution`, `design-review`, `discovery-init`, `gherkin`,
+  `interview-to-spec`, `trace-check`. (`link-sweep` and `security-audit` are the only
+  non-SDLC members.)
+- **C3**: 7 `dot-cursor` `.mdc` files have neither `globs` nor `alwaysApply`. **All
+  seven are the same commands**, and they are in the rules directory rather than
+  `.cursor/commands/`.
+- **C4**: in `dot-droid`, the skills with *good* trigger-bearing descriptions are the
+  SDLC ones — `adr`, `assumptions`, `constitution`, `gherkin`. The ~20 label-only
+  descriptions are the older language and process skills.
+
+So the toolkit was harvested wholesale, its content is the best-written material in the
+repos, and the wiring was never finished. A spec-driven method that no agent can invoke
+without being told its name by hand is a filing cabinet, not a method.
+
+**Recommend:** finish the harvest as one unit of work — frontmatter on the seven
+`dot-claude` commands, relocation of the seven Cursor files to `.cursor/commands/`, and
+a check that each of the five tools can actually reach all eight. C3, C4 and C5 are one
+task, not three.
+
+## F2 — `/trace-check` asks an LLM to do arithmetic *(replacement)*
+
+`/trace-check` is the most methodologically serious artifact in these repos. It walks
+four phases — discover artifacts, forward traceability (requirements → features →
+scenarios → tests), reverse traceability (tags → requirements), cross-reference
+integrity — and it is exactly the consistency protocol an agentic spec needs.
+
+It is also a **prompt**. Every step is "search for `FR-` patterns", "report: covered
+count, uncovered count", "report: valid references, dangling references". An LLM is
+asked to grep a repository by reading and then produce counts.
+
+`guidelines/ai-cron-tool-delegation.md` — in this repository — already states the rule
+this breaks: when a skill must produce a number, build a deterministic helper and wire
+it in, rather than asking the model to compute it in prose. Coverage counts and dangling-
+reference lists are numbers. A missed `@fr-###` tag is a silent false green, and a
+traceability report that is quietly wrong is worse than none.
+
+**Recommend:** split it. A deterministic `bin/trace-check` emits the matrix as JSON —
+tags found, requirements found, orphans, dangling references, counts. The command
+becomes the layer that *interprets* that JSON: which gaps matter, what to do about them.
+That is the same shape as `/pr-tokens` reading the ledger rather than estimating usage,
+and it makes the check runnable from a hook or from CI (finding E2), which a prompt
+never can be.
+
+## F3 — Verification is one manual gate where the method wants phase gates *(inclusion)*
+
+The SDD discipline validates each intermediate artifact **as it is produced** —
+requirements, then design, then scenarios, then code — so that errors are caught before
+the next phase compounds them, rather than concentrating all checking after
+implementation.
+
+These repos have the checkers: `/trace-check`, `/design-review`, `/arch-review`,
+`/doc-review`. All four are human-invoked, at whatever moment someone remembers. Nothing
+fires them at a phase boundary. Combined with E2 — no `.github/workflows/` in any of the
+five — every quality gate in a spec-driven toolkit depends on a person recalling that it
+exists.
+
+The hook infrastructure to fix this already exists and is already used for smaller
+things: `hooks/session-end-reminder.sh` nudges `/session-logger` and `/handoff` on file-
+count thresholds, and the same file reminds about `/lint-action-items` when an
+`ACTION_ITEMS.md` is stale.
+
+**Recommend:** extend that hook with SDD triggers — when `docs/requirements/*.feature`
+or a `FR-###` requirements document changes, remind about `/trace-check`; when
+`docs/design/**` changes, remind about `/design-review`. Once F2 gives `/trace-check` a
+deterministic core, promote it from a reminder to a real gate in the E2 CI job. That
+sequence — F2 then F3 — is what turns the toolkit from documentation into the
+"protocols enforced automatically" that the method is built around.
+
+## Revised order of work
+
+F1 folds into steps 2–4 of the ordering above; the two additions go at the end:
+
+8. **F2** — deterministic `trace-check` core, prompt keeps the interpretation.
+9. **F3** — phase-boundary triggers in the session hook, then the CI gate from E2.
