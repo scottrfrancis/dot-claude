@@ -17,8 +17,15 @@ The SessionStart hook auto-injects handoff context, but verify it loaded and che
    - **Workspace-wide fallback** — when cwd is *not* a git repo (e.g. launched from `~`), the
      paths above miss handoffs written into each project's `session-logs/`. Also scan:
      ```bash
-     find /Volumes/workspace -maxdepth 3 -path '*/session-logs/handoff-*.md' -mtime -7 2>/dev/null \
-       -exec stat -f '%Sm %N' -t '%Y-%m-%d %H:%M' {} \; | sort -r | head -8
+     CUTOFF=$(date -d '7 days ago' +%F 2>/dev/null || date -v-7d +%F)
+     find /Volumes/workspace -maxdepth 3 -path '*/session-logs/handoff-????-??-??-*.md' 2>/dev/null \
+       | while IFS= read -r f; do
+           fd=$(basename "$f"); fd=${fd#handoff-}; fd=${fd:0:10}
+           [ "$fd" \< "$CUTOFF" ] || echo "$fd  $f"
+         done | sort -r | head -8
+     # Freshness comes from the date in the FILENAME, never mtime -- git rewrites mtime, so a
+     # checkout makes every archived handoff look new. This scan used to use `-mtime -7` and
+     # surfaced five 2026-07-06..08 Catalyst handoffs as "recent" on 2026-08-20.
      ```
      If several candidates across different repos, list the top few (repo + timestamp) and ask
      which to resume rather than assuming the newest — or just note them and continue.
