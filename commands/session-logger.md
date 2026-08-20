@@ -51,6 +51,37 @@ Find the most recent session log in `session-logs/` (then `.claude/session-logs/
 
 This creates a browsable chain across sessions. If no previous session log exists, omit this field.
 
+**Do not link a log written earlier the same session** — see "Same-Day Log Check" below. The
+chain is meant to step back one *session*, not one invocation.
+
+## Same-Day Log Check (do this before writing anything)
+
+This command does not know whether it has already run this session. Invoked twice in one
+day it will happily write a second log, which fragments the record and breaks the
+`Previous Session` chain — the newer entry links to one written an hour earlier rather
+than to the previous *session*.
+
+Check for an existing log from today first:
+
+```bash
+DIR=session-logs; [ -d "$DIR" ] || DIR=.claude/session-logs
+ls -t "$DIR"/session-$(date +%F)-*.md 2>/dev/null | head -3
+```
+
+- **Nothing today** → normal path, write a new log.
+- **A log from today exists** → default to **extending it**, not adding a second file.
+  Read it, work out what has happened since it was written (usually by diffing your
+  memory of the session against its `## Key Activities`), and add only the delta:
+  append to `Key Activities`, add any new `Decisions & Rationale` / `Reusable Insights`,
+  and refresh `Session Effectiveness` — especially `Carry-forward items`, which go stale
+  fastest. Keep one entry per session.
+- **Genuinely a distinct session on the same day** (different project, or a real break with
+  unrelated work) → a second file is right. Give it a distinguishing `-topic` suffix so the
+  two are told apart at a glance, and link the earlier one as `Previous Session`.
+
+When extending, say so plainly in the response ("the log was already current; added X")
+rather than implying a fresh log was generated.
+
 ## Generate Session Summary
 
 Save to: `session-logs/session-YYYY-MM-DD-HHMM[-topic].md` (or `.claude/session-logs/` if `session-logs/` is unavailable).
@@ -124,7 +155,9 @@ If `/handoff` hasn't been run yet and 5+ files were changed, remind the user to 
 
 ## Rules
 
+- **One log per session.** If today already has one, extend it — see "Same-Day Log Check"
 - Only include sections that have content — do not generate empty sections
 - File paths must be relative to the project root
-- Keep the summary compact (~150 lines)
+- Keep the summary compact (~150 lines) — an extended log may exceed this; prefer refreshing
+  stale content over appending indefinitely
 - The effectiveness assessment should be honest — partial completion or blockers are valuable data
