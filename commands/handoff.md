@@ -76,20 +76,25 @@ The YAML frontmatter is required — it identifies the source tool so any receiv
 
 ## Time Tracking (opportunistic)
 
-If the local `b` time tracker is installed and a timer is still open, note it in
-`## Blockers / Risks` so the next session (or the user) closes it. **Skip
-silently if `b` is absent.**
+If the local `punch` time tracker is installed and a timer is still open, note it
+in `## Blockers / Risks` so the next session (or the user) closes it. **Skip
+silently if `punch` is absent** — but only claim absence when `$P` is genuinely
+empty, not when the home lookup failed (see `/punch`).
 
 ```bash
-B="$(command -v b 2>/dev/null)"
-if [ -z "$B" ]; then
-  RH="$(dscl . -read "/Users/$(whoami)" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
-  [ -x "$RH/bin/b" ] && B="$RH/bin/b"
+P="$(command -v punch 2>/dev/null || command -v b 2>/dev/null)"
+if [ -z "$P" ]; then
+  U="$(id -un 2>/dev/null || echo "${USER:-}")"
+  RH="$( { getent passwd "$U" | cut -d: -f6; } 2>/dev/null )"        # Linux
+  [ -z "$RH" ] && RH="$( { dscl . -read "/Users/$U" NFSHomeDirectory | awk '{print $2}'; } 2>/dev/null )"  # macOS
+  for c in "$RH/bin/punch" "$RH/.local/bin/punch" "$RH/bin/b" "$RH/.local/bin/b"; do
+    [ -z "$P" ] && [ -x "$c" ] && P="$c"
+  done
 fi
-[ -n "$B" ] && "$B" list-open
+[ -n "$P" ] && "$P" list-open
 ```
 
-- **Open timer** → add to Blockers / Risks: "⏱ TR-NNN still running since HH:MM — `/b stop`."
+- **Open timer** → add to Blockers / Risks: "⏱ TR-NNN still running since HH:MM — `/punch stop`."
 
 ## Reminder
 
