@@ -165,22 +165,32 @@ Run only if the corresponding project tooling exists; **skip silently otherwise*
 
 ## Time Tracking Check (opportunistic)
 
-If the local `b` time tracker is installed, surface its state so billable work
-gets clocked. **Skip silently if `b` is not present on this device.** See the
-`/b` command and [[beaufort-time-tracking]] for the full surface.
+If the local `punch` time tracker is installed, surface its state so billable work
+gets clocked. **Skip silently if `punch` is not present on this device.** See the
+`/punch` command and [[beaufort-time-tracking]] for the full surface.
 
 ```bash
-B="$(command -v b 2>/dev/null)"
-if [ -z "$B" ]; then
-  RH="$(dscl . -read "/Users/$(whoami)" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
-  [ -x "$RH/bin/b" ] && B="$RH/bin/b"
+P="$(command -v punch 2>/dev/null || command -v b 2>/dev/null)"
+if [ -z "$P" ]; then
+  U="$(id -un 2>/dev/null || echo "${USER:-}")"
+  RH="$( { getent passwd "$U" | cut -d: -f6; } 2>/dev/null )"        # Linux
+  [ -z "$RH" ] && RH="$( { dscl . -read "/Users/$U" NFSHomeDirectory | awk '{print $2}'; } 2>/dev/null )"  # macOS
+  for c in "$RH/bin/punch" "$RH/.local/bin/punch" "$RH/bin/b" "$RH/.local/bin/b"; do
+    [ -z "$P" ] && [ -x "$c" ] && P="$c"
+  done
 fi
-[ -n "$B" ] && "$B" list-open
+[ -n "$P" ] && "$P" list-open
 ```
 
 - **A timer is open** → note it in the Ready Output: "⏱ tracking: TR-NNN customer/project (elapsed Xm)". Don't start another.
-- **No open timer** + this looks like billable project work → nudge once, advisory: "No active timer — `/b start` to clock this session." Do not auto-start.
-- **`b` absent** → say nothing.
+- **No open timer** + this looks like billable project work → nudge once, advisory: "No active timer — `/punch start` to clock this session." Do not auto-start.
+- **`punch` absent** → say nothing.
+
+**Only claim it's absent when `$P` is genuinely empty.** The old version of this
+check used the macOS-only `dscl`, which returns empty under a sandbox and made
+`$RH/bin/b` resolve to `/bin/b` — so on 2026-08-14 a session reported the tracker
+missing on a host where it was installed and on PATH, and that wrong claim reached
+two committed documents. If `command -v` found it, it is installed.
 
 ## Ready Output
 
