@@ -54,3 +54,6 @@ session-logs/
 
 # release build output — regenerate with scripts/release/make-release.sh
 scripts/release/out/
+
+# macOS
+.DS_Store
