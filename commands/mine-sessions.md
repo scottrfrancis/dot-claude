@@ -22,6 +22,7 @@ Read all `.md` files modified within the lookback period from these locations (c
 1. `session-logs/` (shared cross-tool location)
 2. `.claude/session-logs/` (Claude Code legacy location)
 3. `.factory/logs/` (Droid legacy location)
+4. `logs/rule-conflict-log.md` (project) and `~/.claude/logs/rule-conflict-log.md` (global) — the runtime conflict log
 
 If files have YAML frontmatter with a `tool:` field, track which tool generated each log — this enables per-tool metrics. Use file timestamps and `**Date**:` frontmatter. Count total sessions, list topics by filename keywords.
 
@@ -49,6 +50,8 @@ If `docs/guidelines/` exists, read all guideline files to know the current rule 
 Cross-reference each "Reusable Insight" and "Reinforced Pattern" from Step 3 against the guidelines:
 
 - If an insight appears in 2+ sessions but is NOT in any guideline file — **flag as candidate rule** with the recommended guideline file to add it to
+- If the same conflict appears 2+ times in the conflict log — **flag as a rule defect**, naming every `RC###` involved. This outranks every other signal in this step: a repeated conflict is direct evidence that two durable rules genuinely contradict, whereas a repeated insight depends on the summarizer having phrased it the same way twice
+- If a conflict-log entry's `Decision:` is still blank — **flag as blocked**; work stopped for an answer that never came
 - If an insight IS already in a guideline file — note as "already codified"
 - If a decision appears significant but isn't in `docs/adr/` — **flag as ADR candidate**
 
