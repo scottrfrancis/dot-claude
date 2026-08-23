@@ -17,8 +17,15 @@ The SessionStart hook auto-injects handoff context, but verify it loaded and che
    - **Workspace-wide fallback** — when cwd is *not* a git repo (e.g. launched from `~`), the
      paths above miss handoffs written into each project's `session-logs/`. Also scan:
      ```bash
-     find /Volumes/workspace -maxdepth 3 -path '*/session-logs/handoff-*.md' -mtime -7 2>/dev/null \
-       -exec stat -f '%Sm %N' -t '%Y-%m-%d %H:%M' {} \; | sort -r | head -8
+     CUTOFF=$(date -d '7 days ago' +%F 2>/dev/null || date -v-7d +%F)
+     find /Volumes/workspace -maxdepth 3 -path '*/session-logs/handoff-????-??-??-*.md' 2>/dev/null \
+       | while IFS= read -r f; do
+           fd=$(basename "$f"); fd=${fd#handoff-}; fd=${fd:0:10}
+           [ "$fd" \< "$CUTOFF" ] || echo "$fd  $f"
+         done | sort -r | head -8
+     # Freshness comes from the date in the FILENAME, never mtime -- git rewrites mtime, so a
+     # checkout makes every archived handoff look new. This scan used to use `-mtime -7` and
+     # surfaced five 2026-07-06..08 Catalyst handoffs as "recent" on 2026-08-20.
      ```
      If several candidates across different repos, list the top few (repo + timestamp) and ask
      which to resume rather than assuming the newest — or just note them and continue.
@@ -164,22 +171,32 @@ Run only if the corresponding project tooling exists; **skip silently otherwise*
 
 ## Time Tracking Check (opportunistic)
 
-If the local `b` time tracker is installed, surface its state so billable work
-gets clocked. **Skip silently if `b` is not present on this device.** See the
-`/b` command and [[beaufort-time-tracking]] for the full surface.
+If the local `punch` time tracker is installed, surface its state so billable work
+gets clocked. **Skip silently if `punch` is not present on this device.** See the
+`/punch` command and [[beaufort-time-tracking]] for the full surface.
 
 ```bash
-B="$(command -v b 2>/dev/null)"
-if [ -z "$B" ]; then
-  RH="$(dscl . -read "/Users/$(whoami)" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
-  [ -x "$RH/bin/b" ] && B="$RH/bin/b"
+P="$(command -v punch 2>/dev/null || command -v b 2>/dev/null)"
+if [ -z "$P" ]; then
+  U="$(id -un 2>/dev/null || echo "${USER:-}")"
+  RH="$( { getent passwd "$U" | cut -d: -f6; } 2>/dev/null )"        # Linux
+  [ -z "$RH" ] && RH="$( { dscl . -read "/Users/$U" NFSHomeDirectory | awk '{print $2}'; } 2>/dev/null )"  # macOS
+  for c in "$RH/bin/punch" "$RH/.local/bin/punch" "$RH/bin/b" "$RH/.local/bin/b"; do
+    [ -z "$P" ] && [ -x "$c" ] && P="$c"
+  done
 fi
-[ -n "$B" ] && "$B" list-open
+[ -n "$P" ] && "$P" list-open
 ```
 
 - **A timer is open** → note it in the Ready Output: "⏱ tracking: TR-NNN customer/project (elapsed Xm)". Don't start another.
-- **No open timer** + this looks like billable project work → nudge once, advisory: "No active timer — `/b start` to clock this session." Do not auto-start.
-- **`b` absent** → say nothing.
+- **No open timer** + this looks like billable project work → nudge once, advisory: "No active timer — `/punch start` to clock this session." Do not auto-start.
+- **`punch` absent** → say nothing.
+
+**Only claim it's absent when `$P` is genuinely empty.** The old version of this
+check used the macOS-only `dscl`, which returns empty under a sandbox and made
+`$RH/bin/b` resolve to `/bin/b` — so on 2026-08-14 a session reported the tracker
+missing on a host where it was installed and on PATH, and that wrong claim reached
+two committed documents. If `command -v` found it, it is installed.
 
 ## Ready Output
 

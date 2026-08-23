@@ -37,11 +37,11 @@ is **not** loaded into context. Keep them there.
 
 **Commands** (`~/.claude/commands/`) — invoke as `/<name>`:
 
-`arch-review` · `assumptions` · `autocommit` · `b` · `babysit-pr` · `build-pdf` ·
+`arch-review` · `assumptions` · `autocommit` · `babysit-pr` · `build-pdf` ·
 `checkpoint-progress` · `commit-manual` · `constitution` · `design-review` ·
 `discovery-init` · `doc-review` · `editorial-review` · `export-prompts` · `extract-adr` ·
 `gherkin` · `handoff` · `interview-to-spec` · `lets-go` · `link-sweep` · `memorialize` · `mine-sessions` ·
-`pickup` · `pr-tokens` · `review-pr` · `security-audit` · `session-cleanup` ·
+`pickup` · `pr-tokens` · `punch` · `review-pr` · `security-audit` · `session-cleanup` ·
 `session-logger` · `trace-check` · `validate-hw-env`
 
 **Skills** (`~/.claude/skills/<name>/SKILL.md`) — `explain-diff-html` · `explain-diff-md`.
@@ -135,7 +135,7 @@ All session logs and handoff files include YAML frontmatter with a `tool:` field
 - Create temporary test scripts and programs in `/tmp`, not in the project directory
 - When the user reports a PR has been merged, prompt them to update the local repository (pull, delete merged branch)
 - When asked to push to a repo, suggest a new branch if the current branch is the default (main/master)
-- **Time tracking** — the local `b` tool (beaufort time-tool) tracks billable/work time; records accumulate in `~/.beaufort/data/time.db` and sync to hasami via the `time-push` launchd agent (local-first, no runtime SSH). `/lets-go` surfaces any open timer and nudges (advisory) when none is running on project work; `/session-logger` and `/handoff` remind to `/b stop`. **Remind, never auto-start/stop** — starting a timer posts real billable state. Use `/b` to drive it. Skip silently on devices where `b` isn't installed.
+- **Time tracking** — the local `punch` tool (beaufort time-tool) tracks billable/work time; records accumulate in `~/.beaufort/data/time.db` and sync to hasami via a push agent — `time-push` launchd on macOS, `beaufort-time-push` systemd user timer on Linux (local-first, no runtime SSH). `/lets-go` surfaces any open timer and nudges (advisory) when none is running on project work; `/session-logger` and `/handoff` remind to `/punch stop`. **Remind, never auto-start/stop** — starting a timer posts real billable state. Use `/punch` to drive it. Skip silently on devices where `punch` isn't installed — but **verify before claiming absence**: the old macOS-only `dscl` detection returned empty under a sandbox and reported the tracker missing on a host that had it (2026-08-14). Installed on studio-3 and dev.local; `b` still works as a symlink.
 
 <!-- central-ops-knowledge: begin -->
 ## Central Ops Knowledge (shared doctrine — all my AI tools)

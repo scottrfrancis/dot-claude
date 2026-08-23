@@ -15,7 +15,26 @@ Search for the most recent `handoff-*.md` file across all tool locations:
 3. Then `.factory/logs/` (Droid legacy location)
 4. Then `~/.claude/session-logs/` (global fallback)
 
-Take the most recently modified file across all locations (must be less than 7 days old).
+Take the newest across all locations, **ordering and judging freshness by the date in the
+filename, never by mtime** (must be less than 7 days old by that date).
+
+mtime is a property of the file on this disk, not of the handoff: git rewrites it, so a clone
+or checkout stamps every handoff with the same instant and archived ones look brand new.
+Observed 2026-08-20 — five Catalyst-RCM handoffs from 2026-07-06..08 all carried a 2026-08-14
+mtime, so every one of them passed a "modified in the last 7 days" filter. Ordering by mtime
+also put this command at odds with the `load-handoff-context.sh` SessionStart hook, which
+orders by name. Both now read the filename.
+
+```bash
+CUTOFF=$(date -d '7 days ago' +%F 2>/dev/null || date -v-7d +%F)
+for d in session-logs .claude/session-logs .factory/logs "$HOME/.claude/session-logs"; do
+  [ -d "$d" ] || continue
+  ls -1 "$d"/handoff-????-??-??-*.md 2>/dev/null | sort -r | while IFS= read -r f; do
+    fd=$(basename "$f"); fd=${fd#handoff-}; fd=${fd:0:10}
+    [ "$fd" \< "$CUTOFF" ] || echo "$fd  $f"
+  done
+done | sort -r | head -5
+```
 
 ### Workspace-wide fallback (when launched from home / not in a project)
 
@@ -25,9 +44,17 @@ repo. Handoffs are actually written into each project's `session-logs/` under
 repo, or when steps 1–4 found nothing**:
 
 ```bash
-find /Volumes/workspace -maxdepth 3 -path '*/session-logs/handoff-*.md' -mtime -7 2>/dev/null \
-  -exec stat -f '%Sm %N' -t '%Y-%m-%d %H:%M' {} \; | sort -r | head -8
+CUTOFF=$(date -d '7 days ago' +%F 2>/dev/null || date -v-7d +%F)
+find /Volumes/workspace -maxdepth 3 -path '*/session-logs/handoff-????-??-??-*.md' 2>/dev/null \
+  | while IFS= read -r f; do
+      fd=$(basename "$f"); fd=${fd#handoff-}; fd=${fd:0:10}
+      [ "$fd" \< "$CUTOFF" ] || echo "$fd  $f"
+    done | sort -r | head -8
 ```
+
+Same rule as above: the date comes from the filename. The previous version of this scan used
+`-mtime -7` plus `stat`, which is what surfaced six-week-old Catalyst handoffs as "recent"
+during a 2026-08-20 `/lets-go`.
 
 Because multiple projects are usually in flight, **do not blindly grab the newest**:
 - If exactly one candidate, use it.

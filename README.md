@@ -125,7 +125,6 @@ Every remaining command in `~/.claude/commands/`.
 | Command | Invocation | Purpose |
 | ------- | --------- | ------- |
 | **assumptions** | `/assumptions` | Track hypothesis-driven assumptions (if-true/if-false/fallback) in ASSUMPTIONS-TRACKER.md |
-| **b** | `/b` | Drive the local `b` time tracker (start/stop/status/log); project-aware, syncs to hasami via the `time-push` agent |
 | **babysit-pr** | `/babysit-pr` | Monitor a PR for check results, reviews, and merge readiness; pairs with `/loop` |
 | **build-pdf** | `/build-pdf` | Build a PDF from ordered markdown sections via the `md2pdf` CLI and a `report.yaml` manifest |
 | **constitution** | `/constitution` | Generate CONSTITUTION.md + WORKFLOWS.md (principles, Definition of Done, quality gates) |
@@ -136,6 +135,7 @@ Every remaining command in `~/.claude/commands/`.
 | **interview-to-spec** | `/interview-to-spec` | Convert interview notes into readout, FR-### requirements, Gherkin scenarios, and tracker updates |
 | **link-sweep** | `/link-sweep` | One target per invocation of the federation link audit; designed to run under `/loop` |
 | **pr-tokens** | `/pr-tokens` | Python: format the current branch's token usage as a PR-description snippet (see `guidelines/pr-token-tracking.md`) |
+| **punch** | `/punch` | Drive the local `punch` time tracker (start/stop/status/log); project-aware, syncs to hasami via the time-push agent. Renamed from `/b` on 2026-08-14; `b` remains a symlink |
 | **review-pr** | `/review-pr` | PR code review: bugs, security, missing tests, style; works with PR numbers or branches |
 | **trace-check** | `/trace-check` | Validate bidirectional traceability across requirements, feature files, scenarios, and tests |
 

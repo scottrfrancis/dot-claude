@@ -1,0 +1,137 @@
+================================================================================
+ @@BASE@@ - chunk 1 of @@NCHUNKS@@
+================================================================================
+
+ WHAT THIS IS
+   A zip archive of the dot-claude repository, base64-encoded and split across
+   @@NCHUNKS@@ plain-text attachment(s) so it survives email filters.
+
+   source commit : @@SHAFULL@@
+   branch        : @@BRANCH@@  (committed @@DATE@@)
+   tracked files : @@FILECOUNT@@
+   zip size      : @@ZIPBYTES@@ bytes
+   zip sha256    : @@ZIPSHA@@
+
+ HOW TO REASSEMBLE (Windows / PowerShell)
+   1. Save ALL @@NCHUNKS@@ attachment(s) into one empty folder. Keep their
+      filenames exactly as sent - the script sorts on the partNNofMM suffix.
+   2. Copy the lines between BEGIN-POWERSHELL and END-POWERSHELL below into a
+      file named Assemble-DotClaude.ps1 in that same folder.
+   3. Run it:
+         powershell -ExecutionPolicy Bypass -File .\Assemble-DotClaude.ps1
+      Add -Expand to unzip after verifying:
+         powershell -ExecutionPolicy Bypass -File .\Assemble-DotClaude.ps1 -Expand
+
+   The script refuses to write the zip unless the SHA256 matches the value
+   above, so a truncated or mangled attachment fails loudly rather than
+   producing a corrupt archive.
+
+ DO NOT edit, re-wrap, reflow, or reformat the base64 lines. If your mail
+ client shows them wrapped differently than 64 characters, download the
+ attachment to disk rather than copying from the preview pane.
+
+--------------------------------- BEGIN-POWERSHELL ---------------------------------
+<#
+  Assemble-DotClaude.ps1
+  Reassembles @@BASE@@.zip from base64 .txt chunks and verifies its SHA256.
+  Requires PowerShell 5.1 or later. No external tools.
+#>
+[CmdletBinding()]
+param(
+    [string] $Path    = $PSScriptRoot,
+    [string] $OutFile = $null,
+    [switch] $Expand
+)
+
+$ErrorActionPreference = 'Stop'
+
+$BaseName     = '@@BASE@@'
+$ExpectedSha  = '@@ZIPSHA@@'
+$ExpectedSize = @@ZIPBYTES@@
+$ChunkCount   = @@NCHUNKS@@
+
+if (-not $Path)    { $Path = (Get-Location).Path }
+if (-not $OutFile) { $OutFile = Join-Path $Path "$BaseName.zip" }
+
+# --- Collect chunks, ordered by the NN in partNNofMM -------------------------
+$parts = Get-ChildItem -Path $Path -Filter "$BaseName-part*.txt" -File |
+         Sort-Object {
+             if ($_.Name -match 'part(\d+)of(\d+)\.txt$') { [int]$Matches[1] } else { [int]::MaxValue }
+         }
+
+if ($parts.Count -eq 0) {
+    throw "No chunks matching '$BaseName-part*.txt' found in '$Path'."
+}
+if ($parts.Count -ne $ChunkCount) {
+    throw "Expected $ChunkCount chunk(s) but found $($parts.Count). Missing: check the sender's manifest."
+}
+
+Write-Host "Found $($parts.Count) chunk(s) in $Path" -ForegroundColor Cyan
+
+# --- Extract payload lines between the BEGIN/END markers ---------------------
+$sb       = New-Object System.Text.StringBuilder
+$expected = 1
+
+foreach ($p in $parts) {
+    if ($p.Name -match 'part(\d+)of(\d+)\.txt$') {
+        $n = [int]$Matches[1]
+        if ($n -ne $expected) { throw "Chunk sequence break: expected part $expected but found part $n ($($p.Name))." }
+        $expected++
+    }
+
+    $inPayload = $false
+    $sawBegin  = $false
+    $sawEnd    = $false
+
+    foreach ($line in [System.IO.File]::ReadLines($p.FullName)) {
+        if ($line -like '-----BEGIN DOT-CLAUDE CHUNK*') { $inPayload = $true;  $sawBegin = $true; continue }
+        if ($line -like '-----END DOT-CLAUDE CHUNK*')   { $inPayload = $false; $sawEnd   = $true; break }
+        if ($inPayload) {
+            $t = $line.Trim()
+            if ($t.Length -gt 0) { [void]$sb.Append($t) }
+        }
+    }
+
+    if (-not $sawBegin) { throw "$($p.Name): no BEGIN marker - file is not a valid chunk." }
+    if (-not $sawEnd)   { throw "$($p.Name): no END marker - the attachment is truncated." }
+
+    Write-Host ("  {0,-44} ok" -f $p.Name)
+}
+
+# --- Decode ------------------------------------------------------------------
+Write-Host "Decoding..." -ForegroundColor Cyan
+try   { $bytes = [Convert]::FromBase64String($sb.ToString()) }
+catch { throw "Base64 decode failed - a chunk was altered in transit. $($_.Exception.Message)" }
+
+if ($bytes.Length -ne $ExpectedSize) {
+    throw "Size mismatch: got $($bytes.Length) bytes, expected $ExpectedSize."
+}
+
+# --- Verify BEFORE writing ---------------------------------------------------
+$sha256   = [System.Security.Cryptography.SHA256]::Create()
+$hash     = ($sha256.ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') }) -join ''
+$sha256.Dispose()
+
+if ($hash -ne $ExpectedSha) {
+    throw "SHA256 mismatch.`n  expected $ExpectedSha`n  got      $hash`nArchive NOT written."
+}
+
+[System.IO.File]::WriteAllBytes($OutFile, $bytes)
+Write-Host "SHA256 verified: $hash" -ForegroundColor Green
+Write-Host "Wrote $OutFile ($($bytes.Length) bytes)" -ForegroundColor Green
+
+if ($Expand) {
+    $dest = Join-Path $Path $BaseName
+    Write-Host "Expanding to $dest ..." -ForegroundColor Cyan
+    Expand-Archive -LiteralPath $OutFile -DestinationPath $dest -Force
+    Write-Host "Done. $((Get-ChildItem -Path $dest -Recurse -File).Count) file(s) extracted." -ForegroundColor Green
+}
+---------------------------------- END-POWERSHELL ----------------------------------
+
+ FALLBACK (no PowerShell, or the script is blocked)
+   Strip every line outside the BEGIN/END markers from each chunk, concatenate
+   the remainder in part order into one file, then:
+     certutil -decode combined.txt @@BASE@@.zip          (Windows, built in)
+     base64 -d combined.txt > @@BASE@@.zip               (macOS / Linux)
+   Then check: certutil -hashfile @@BASE@@.zip SHA256
+

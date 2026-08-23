@@ -22,18 +22,44 @@ fi
 
 CWD=$(echo "$HOOK_INPUT" | jq -r '.cwd // empty' 2>/dev/null)
 
-# Find most recent handoff file, checking shared cross-tool location first, then legacy paths
+# Freshness cutoff, as a plain ISO date. GNU date first, then BSD/macOS.
+# If neither works we cannot judge staleness, so inject nothing rather than risk
+# resurfacing an old handoff -- this hook is advisory and silence is the safe default.
+CUTOFF=$(date -d '7 days ago' +%F 2>/dev/null || date -v-7d +%F 2>/dev/null || true)
+if [[ -z "$CUTOFF" ]]; then
+  exit 0
+fi
+
+# Find the most recent handoff, checking shared cross-tool location first, then legacy paths.
+#
+# Both the ordering and the freshness test read the date out of the FILENAME, never mtime.
+# mtime is not a property of the handoff, it is a property of the file on this disk, and git
+# rewrites it: a clone or checkout stamps every file with the same instant. That made archived
+# handoffs look brand new (observed 2026-08-20 -- five Catalyst-RCM handoffs from 2026-07-06..08
+# all carrying an 2026-08-14 mtime, so all five passed a "modified in the last 7 days" filter),
+# and it made this hook disagree with /pickup, which ordered by mtime while this ordered by name.
+# The filename date is stamped once at write time and survives checkouts, so it is authoritative.
 HANDOFF_FILE=""
 for search_dir in "${CWD}/session-logs" "${CWD}/.claude/session-logs" "${CWD}/.factory/logs" "${HOME}/.claude/session-logs"; do
   if [[ ! -d "$search_dir" ]]; then
     continue
   fi
 
-  # Find handoff files modified within 7 days, most recent first
-  # -mtime -7 is POSIX/BSD-safe (days); sort -r picks the most recent by name (YYYY-MM-DD prefix)
-  CANDIDATE=$(find "$search_dir" -maxdepth 1 -name "handoff-*.md" -type f -mtime -7 2>/dev/null \
-    | sort -r \
-    | head -1)
+  CANDIDATE=""
+  # Process substitution, not a pipe: `break` here would SIGPIPE the upstream sort and
+  # pipefail would then kill the whole hook.
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    base=${f##*/}
+    fdate=${base#handoff-}
+    fdate=${fdate:0:10}
+    # Ignore anything whose name does not carry a real ISO date.
+    [[ "$fdate" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || continue
+    # ISO dates compare correctly as strings.
+    [[ "$fdate" < "$CUTOFF" ]] && continue
+    CANDIDATE="$f"
+    break
+  done < <(find "$search_dir" -maxdepth 1 -name "handoff-*.md" -type f 2>/dev/null | sort -r)
 
   if [[ -n "$CANDIDATE" ]]; then
     HANDOFF_FILE="$CANDIDATE"

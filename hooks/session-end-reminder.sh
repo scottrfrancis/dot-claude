@@ -28,12 +28,18 @@ if [[ "$TOTAL_CHANGES" -lt 3 ]]; then
   exit 0
 fi
 
+# Today, for the "was one written this session" checks below. Both of them read the date out
+# of the FILENAME rather than mtime: git rewrites mtime, so after a clone or checkout every
+# archived log looks like it was written today and these reminders go silent exactly when a
+# fresh checkout means they are most needed. (Observed 2026-08-20 in Catalyst-RCM: five
+# handoffs from 2026-07-06..08 all carrying a 2026-08-14 mtime.)
+TODAY=$(date +%F)
+
 # --- Check 1: Session log reminder ---
-# Look for a session log created recently (check shared + legacy locations)
+# Look for a session log written today (check shared + legacy locations)
 RECENT_LOG=""
 for log_dir in session-logs .claude/session-logs; do
-  RECENT_LOG=$(find "$log_dir" -maxdepth 1 -name "session-*.md" \
-    -mtime -1 -type f 2>/dev/null | head -1 || true)
+  RECENT_LOG=$(ls -1 "$log_dir"/session-"$TODAY"-*.md 2>/dev/null | head -1 || true)
   [[ -n "$RECENT_LOG" ]] && break
 done
 
@@ -45,8 +51,7 @@ fi
 if [[ "$TOTAL_CHANGES" -ge 5 ]]; then
   RECENT_HANDOFF=""
   for log_dir in session-logs .claude/session-logs; do
-    RECENT_HANDOFF=$(find "$log_dir" -maxdepth 1 -name "handoff-*.md" \
-      -mtime -1 -type f 2>/dev/null | head -1 || true)
+    RECENT_HANDOFF=$(ls -1 "$log_dir"/handoff-"$TODAY"-*.md 2>/dev/null | head -1 || true)
     [[ -n "$RECENT_HANDOFF" ]] && break
   done
 
