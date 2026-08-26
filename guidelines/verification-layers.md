@@ -94,7 +94,31 @@ explained why*, and the guard flagged the explanation.
 - **Never let a test suite reach a production host by default.** Any deployed target must be
   named explicitly and fail closed; a default value is the whole risk.
 
-## 5. Non-deterministic tiers
+## 5. `$HOME` is not where you think (profile-based setups)
+
+On a machine using Claude Code profiles, **`$HOME` is profile-scoped** — e.g.
+`/Users/<you>/.claude-profiles/<profile>` rather than `/Users/<you>`. Two consequences, both
+of which silently broke a startup check on 2026-08-26:
+
+- **`$HOME/.claude` is a different real directory from the dot-repo.** Not a symlink to it —
+  a separate directory whose subdirectories are mostly symlinked *into* the real one. So it
+  looks right, contains the right files, and is **not a git repository**. A sync check probing
+  it concludes there is no dot-repo and skips. The session then edited global config for hours
+  believing it was unversioned.
+- **`~/.ssh` resolves under the profile**, so git-over-ssh fails with
+  `no such identity: <profile>/.ssh/id_rsa`. Set `HOME=/Users/$(id -un)` for git operations
+  that need ssh.
+
+**Rules**
+
+- Resolve dot-repos by looking for `.git`, across candidates — a known workspace symlink
+  (`/Volumes/workspace/dot-claude`), `readlink -f "$HOME/.claude"`, `/Users/$(id -un)/.claude`
+  — rather than trusting `$HOME`.
+- Never write a path check as "does `$HOME/x` exist"; check what you actually need (here: a
+  `.git`).
+- The same trap applies to any `~`-relative assumption: `~/.aws`, `~/.ssh`, `~/.config`.
+
+## 6. Non-deterministic tiers
 
 Tests that assert single-sample LLM (or any stochastic) behaviour cannot give a stable
 pass/fail.
@@ -114,3 +138,4 @@ pass/fail.
 - [ ] Verified by querying the **running** system, not the repo
 - [ ] The end-user-visible value is correct (read the actual output, not a status field)
 - [ ] Rollback path exists and was captured *before* deploying
+- [ ] Any `~`/`$HOME` path in the check resolves where you think (see §5)
