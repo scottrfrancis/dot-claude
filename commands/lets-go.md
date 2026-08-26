@@ -77,24 +77,54 @@ This is advisory only — continue the session regardless.
 
 ## Git Sync Protocol
 
-### Dot-Repo Sync Check (`~/.claude`)
+### Dot-Repo Sync Check (dot-claude)
 
 Run this check first, before any project-specific work. Consistent with `/pickup`, `/handoff`, and `/session-logger`.
 
+⚠️ **Do not use `~/.claude` or `$HOME/.claude` for this.** On profile-based setups `$HOME` is
+profile-scoped (e.g. `/Users/<you>/.claude-profiles/<profile>`), so `$HOME/.claude` is a
+**different real directory** from the dot-repo — with near-identical contents, because most
+subdirectories are symlinked into the real one. Probing it returns "not a git repository",
+which reads as "there is no dot-repo here" and silently skips this entire check. That happened
+on 2026-08-26, and the session went on to spend hours editing global config believing it was
+unversioned.
+
 ```bash
-git -C ~/.claude fetch origin
-git -C ~/.claude rev-list --count HEAD..origin/main   # behind
-git -C ~/.claude rev-list --count origin/main..HEAD   # ahead
-git -C ~/.claude status --porcelain
+# 1. Resolve the REAL dot-repo. First candidate containing a .git wins.
+DOTC=""
+for c in /Volumes/workspace/dot-claude "$(readlink -f "$HOME/.claude" 2>/dev/null)" \
+         "/Users/$(id -un)/.claude" "$HOME/.claude"; do
+  [ -n "$c" ] && [ -d "$c/.git" ] && DOTC="$c" && break
+done
+if [ -z "$DOTC" ]; then echo "dot-claude repo not found — skipping"; else
+
+# 2. git over ssh needs the REAL home, or it looks for keys under the profile dir and
+#    fails with: no such identity: <profile>/.ssh/id_rsa
+REALHOME="/Users/$(id -un)"
+
+# 3. Fetch, and CHECK IT WORKED. Counts after a failed fetch are stale refs.
+if HOME="$REALHOME" git -C "$DOTC" fetch origin 2>&1 \
+     | grep -qiE "no such identity|could not read|permission denied|fatal"; then
+  echo "⚠ dot-claude fetch FAILED — ahead/behind would be stale; NOT reporting sync state"
+else
+  echo "dot-claude: $DOTC"
+  echo "  behind: $(git -C "$DOTC" rev-list --count HEAD..origin/main)"
+  echo "  ahead:  $(git -C "$DOTC" rev-list --count origin/main..HEAD)"
+fi
+git -C "$DOTC" status --porcelain
+fi
 ```
 
 Alert the user prominently if out of sync:
 
-- **Behind**: "⚠ ~/.claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C ~/.claude pull`."
-- **Ahead**: "~/.claude has {N} unpushed commits — consider pushing to back up your config."
-- **Dirty**: "~/.claude has uncommitted changes."
+- **Behind**: "⚠ dot-claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C {DOTC} pull`."
+- **Ahead**: "dot-claude has {N} unpushed commits — consider pushing to back up your config."
+- **Dirty**: "dot-claude has uncommitted changes."
 
-Skip silently if `~/.claude` has no remote or the fetch fails.
+**Never report "in sync" from a fetch that failed.** A fetch error leaves the remote-tracking
+refs untouched, so `rev-list` cheerfully prints `0` and `0` — an answer that looks like success
+and means nothing. Say the fetch failed instead. Skip silently *only* when no dot-repo is found
+at all.
 
 ### Other Dot-Repos (Opportunistic)
 
