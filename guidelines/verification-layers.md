@@ -33,7 +33,9 @@ Fixing only the Dockerfile would have been worse than useless: `COPY` of a missi
   script and asserts every runtime directory appears in both is cheap and catches this class
   permanently.
 - **Verify in the running container, not the repo.** `docker exec … ls /app/config` is the
-  only assertion that means anything. Same for prod: query the deployed thing.
+  only assertion that means anything. Same for prod: query the deployed thing — and prove
+  *which* system answered, since a port check cannot tell yours from a colleague's (see
+  [testing.md § Corollary: prove which system you tested](testing.md)).
 - **A deploy that cannot ship what it was asked to ship must fail.** The same script ended its
   `tar` in `2>/dev/null || true`, so a missing path produced a short tarball and a deploy that
   looked like it worked.
@@ -67,7 +69,10 @@ the exact behaviour the prompt had asked for — the model declined an invalid c
 explained why*, and the guard flagged the explanation.
 
 - **A gate that refuses correct output is worse than the defect it guards.** It blocks the
-  deliverable and teaches everyone to bypass the gate, after which it catches nothing.
+  deliverable and teaches everyone to bypass the gate, after which it catches nothing. The
+  test-design rule underneath — every gate needs a **must-not-fire corpus** of real valid
+  output — is owned by [testing.md § A Gate Can Be Wrong](testing.md). This section is the
+  operational half: what to measure, and what to do with an uncertain detector.
 - **Measure both directions after every change**: findings on known-good output *and* on
   known-bad. Target zero on good, unchanged on bad. Write both numbers into the commit.
 - **Similarity/distance heuristics rarely separate signal from noise.** "A wrong figure sits

@@ -56,6 +56,46 @@ This is also the discipline that protects the RED step. A test that would have p
 
 See [verification-layers.md](verification-layers.md) for the layers past the suite — image, deploy artefact, running system — and for detector/guardrail tests, whose fixtures must be verbatim real output.
 
+## A Gate Can Be Wrong (the subject-drift rule)
+
+The section above protects against a test that *cannot fail*. This one protects against a test that **fails for the wrong reason, or passes on the wrong subject** — a more expensive failure, because it looks like diligence.
+
+Every instance has the same shape: **the assertion's subject drifted from the property it names, and nothing checks the proxy still tracks the property.**
+
+| The gate names | The subject actually was |
+|---|---|
+| "column X does not exist" | that *a prompt says so* — never the table |
+| "external access is closed" | a connection the test built, not the one the app builds |
+| "the attack did not succeed" | `'--' in string` — which also matches the *defence* |
+| "the user can see it" | a DOM node exists (`count() >= 1`) |
+| "the model performs" | a model configuration that was never shipped |
+| "no login required" | a bare framework app with none of the real middleware |
+
+Four rules, in the order they catch things:
+
+**1. Ground truth, never restatement.** A gate about the data must query the data; a gate about the product must run the product's own path. *If the assertion would still pass with the product replaced by a text file, it is testing prose.* The worst case: a gate that asserts a claim **locks the claim in**. One test demanded that the rules say a real column did not exist — a hypothesis from an issue, written into a gate before anyone queried the table — and that gate is why the falsehood outlived every review of it.
+
+**2. Both directions, always.** We are disciplined about "can this fail?" and undisciplined about "can this *wrongly* fail?" Every gate needs a **must-not-fire corpus**: real, valid outputs it has to accept, taken from actual product output rather than imagined. An adversarial gate once failed a model that had correctly neutralised an injection *and written a comment explaining how* — the comment contained the forbidden token. The attack failed; the gate called it a success.
+
+**3. Verify on the shipped path.** A fix or a check verified in isolation is not verified. One flag was recorded as "verified, ordinary queries unaffected" — true of the queries tested, false of the ones the app actually issues, and following it would have taken the site down. Ask what the check ran *against*, not just what it returned. The full chain — code, image,
+deploy artefact, running system — is owned by
+[verification-layers.md §1](verification-layers.md); this rule is only the drift it causes.
+
+**4. Hypotheses must declare themselves.** When a gate encodes a theory rather than a measurement, say so in the test and carry the one command that settles it:
+
+```python
+# GH #26 THEORY, not measured. Settle with:
+#   SELECT COUNT(DISTINCT plan_type) FROM last_12_months
+```
+
+Anyone who reads it once runs it. The cheapest of the four, and the one that stops a guess hardening into a fact.
+
+**The short version:** *a gate that has never been shown to wrongly fail is half-tested, and a gate that asserts a document is not a gate.*
+
+### Corollary: prove which system you tested
+
+A suite can be green against the wrong server entirely. Port checks cannot catch this — a colleague's server, or your own from a different worktree, answers identically. Have the system state its own identity (commit, tree, pid) on an unauthenticated endpoint, and have the harness assert it **before the first assertion**. The same endpoint answers "is the fix actually deployed?", which is usually a harder question than it sounds.
+
 ## Test Pyramid
 
 Prioritize by speed and reliability:
