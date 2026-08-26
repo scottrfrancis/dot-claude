@@ -52,6 +52,10 @@ Tests must encode **why** the behavior matters, not just **what** the function d
 
 This is also the discipline that protects the RED step. A test that would have passed against an empty function body wasn't a real RED — and the GREEN code that follows isn't anchored to anything.
 
+**A skip is not a pass.** A guarded test on an unavailable dependency reports "skipped" and the suite reports success. Live-integration tests have skipped for months on a VM memory cap, and a never-executed test has contained an assertion that could never have passed. Check *why* anything skips before trusting a green run.
+
+See [verification-layers.md](verification-layers.md) for the layers past the suite — image, deploy artefact, running system — and for detector/guardrail tests, whose fixtures must be verbatim real output.
+
 ## Test Pyramid
 
 Prioritize by speed and reliability:
@@ -59,6 +63,30 @@ Prioritize by speed and reliability:
 1. **Unit tests** — Fast, isolated, no I/O. Cover pure logic, transformations, and edge cases. Aim for ≥85% line coverage on business logic.
 2. **Integration tests** — Verify component boundaries: database queries, API endpoints, service interactions. Use real dependencies where practical (testcontainers, in-memory DBs).
 3. **E2E tests** — Validate critical user flows only. Keep the count low — these are slow and flaky. Reserve for smoke tests and regression guards.
+4. **UX tests** — REQUIRED as the final tier. See below. E2E asks "did the system do the right thing?"; UX asks "could the user perceive it?" Those are different questions and the second one is not implied by the first.
+
+## UX Testing Is a Required Final Tier
+
+**Every user-facing feature ships with a test that asserts what the user can actually perceive, driven through the real browser.** This is not optional and it is not covered by the tier above it.
+
+The distinction that makes it necessary: a test can confirm the system behaved correctly and still miss that the user cannot see the result. Presence in the DOM is not visibility. `locator(sel).count()` counts nodes regardless of scroll position, viewport clipping, `overflow: hidden`, zero height, `opacity: 0`, or a covering element — so a count-based assertion **passes against a visibly broken page**.
+
+**This was learned expensively.** A chat tool answered every follow-up question correctly in 10–15s, and the user reported *"the question just disappears but nothing is returned."* The transcript was a fixed-height scroll box that nothing ever scrolled, so answers rendered ~790px below the fold. Every functional test passed. Every count assertion passed. The bug reached the client. **It was catchable — a single Playwright assertion on scroll geometry would have caught it before the deploy**, and it existed for months before anyone looked.
+
+### What a UX test asserts
+
+- **Visibility, not existence** — `getBoundingClientRect()` against the container's rect, or `expect(locator).toBeInViewport()`
+- **Nothing stranded** — `scrollHeight - clientHeight - scrollTop ≈ 0` after content that should bring itself into view
+- **Reachability** — the control can be tabbed to, is not covered, and is inside the clickable area
+- **The real gesture** — press Enter if that's what users press; don't click the button when the keyboard path runs different code
+- **Perceptible state change** — after an action, something the user can see is different
+
+### Rules
+
+- **Drive the actual control.** Injecting state or calling the handler directly tests the layer beneath the bug.
+- **Assert on geometry and visibility, never on element counts,** whenever the complaint is "nothing happened" or "it disappeared."
+- **Test the second interaction, not just the first.** Most UX defects live past turn one — a first action starts from an empty, unscrolled, uncluttered state that the second never sees. If your harness only ever builds the first interaction, it cannot see this class of bug at all.
+- **When output size changes materially, re-run the UX tier.** Making a response *complete* can make it tall enough to push the next thing off-screen. A correctness fix can create a UX regression.
 
 ## What to Test
 

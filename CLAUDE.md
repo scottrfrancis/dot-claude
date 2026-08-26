@@ -45,6 +45,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [ADR Format](./guidelines/adr.md) - Canonical Architecture Decision Record convention: docs/decisions/ADR-NNNN, numbering, status lifecycle, FR-### traceability
 - [Testing Strategies](./guidelines/testing.md) - Test pyramid, mocking, CI integration, framework-specific notes
 - [CI Local Parity](./guidelines/ci-local-parity.md) - Run exact CI commands locally before pushing; install all scanners; budget for pre-existing issues
+- [Verification Layers](./guidelines/verification-layers.md) - The gap between "tests pass" and "the system does the thing": code → image → deploy artefact → running system; checks that cannot fail; detector fixtures must be real output; suite self-consistency; non-deterministic tiers as advisory
 - [DOCX Conversion](./guidelines/docx-conversion.md) - python-docx over pandoc; color palette, typography, hyperlinks
 - [Karpathy Principles](./guidelines/karpathy-principles.md) - Deltas not already covered: surface assumptions before implementing; match existing style; mention don't delete pre-existing dead code; read before you write
 - [2x2 Status Report](./guidelines/2x2-status-report.md) - Quad-chart format for short weekly status reports (Last week / This week / Risks / Asks); SA-org tradition, not the canonical Amazon WBR
