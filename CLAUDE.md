@@ -45,6 +45,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [ADR Format](./guidelines/adr.md) - Canonical Architecture Decision Record convention: docs/decisions/ADR-NNNN, numbering, status lifecycle, FR-### traceability
 - [Testing Strategies](./guidelines/testing.md) - Test pyramid, mocking, CI integration, framework-specific notes
 - [CI Local Parity](./guidelines/ci-local-parity.md) - Run exact CI commands locally before pushing; install all scanners; budget for pre-existing issues
+- [Environments and the LLM Spend Gate](./guidelines/environments-and-llm-spend.md) - Work on Studio, deploy to dev.local (dev AND staging), prod only on explicit promotion; dev-ai.local for ALL smoke/functional tests, cloud LLMs only when asked
 - [Verification Layers](./guidelines/verification-layers.md) - The gap between "tests pass" and "the system does the thing": code → image → deploy artefact → running system; checks that cannot fail; detector fixtures must be real output; suite self-consistency; non-deterministic tiers as advisory
 - [DOCX Conversion](./guidelines/docx-conversion.md) - python-docx over pandoc; color palette, typography, hyperlinks
 - [Karpathy Principles](./guidelines/karpathy-principles.md) - Deltas not already covered: surface assumptions before implementing; match existing style; mention don't delete pre-existing dead code; read before you write
@@ -171,12 +172,16 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 
 - **Red-Green-Refactor TDD is REQUIRED for ALL code changes.** Always write a failing test first (RED), then the minimum production code to pass (GREEN), then refactor with tests green. No production code without a failing test. No retroactive tests. See [Testing Strategies](./guidelines/testing.md) for the full cycle, non-negotiable rules, and the (narrow) exceptions.
 - **Surface conflicts; don't average them.** When two patterns in the codebase contradict (two error-handling styles, two test idioms, two of these guidelines pointing different directions), pick one — usually the more recent or more tested — explain why, and flag the other for cleanup. Blending two patterns produces a third that nobody intended.
+- **LLM spend gate.** `dev-ai.local` is the LLM for ALL smoke tests and functional tests. Use Bedrock, the Anthropic API, or any other cloud/paid LLM **only when I specifically ask**. Test functionality, not output quality — a local model's weak prose is not a finding. See [Environments and the LLM Spend Gate](./guidelines/environments-and-llm-spend.md).
+- **Deploy to `dev.local`, promote to prod only when asked.** We work on Studio (sometimes razer); `dev.local` is both the dev and the staging environment and is where testing and evaluation happen. A green `dev.local` run is not authorisation to deploy.
 - Create temporary test scripts and programs in `/tmp`, not in the project directory
 - When the user reports a PR has been merged, prompt them to update the local repository (pull, delete merged branch)
 - When asked to push to a repo, suggest a new branch if the current branch is the default (main/master)
 - **Time tracking** — the local `punch` tool (beaufort time-tool) tracks billable/work time; records accumulate in `~/.beaufort/data/time.db` and sync to hasami via a push agent — `time-push` launchd on macOS, `beaufort-time-push` systemd user timer on Linux (local-first, no runtime SSH). `/lets-go` surfaces any open timer and nudges (advisory) when none is running on project work; `/session-logger` and `/handoff` remind to `/punch stop`. **Remind, never auto-start/stop** — starting a timer posts real billable state. Use `/punch` to drive it. Skip silently on devices where `punch` isn't installed — but **verify before claiming absence**: the old macOS-only `dscl` detection returned empty under a sandbox and reported the tracker missing on a host that had it (2026-08-14). Installed on studio-3 and dev.local; `b` still works as a symlink.
 
 ## Version History
+
+- 2026-08-31: House style for environments + the LLM spend gate — Studio works, dev.local is dev AND staging, prod only on explicit promotion; dev-ai.local for all smoke/functional tests, cloud LLMs gated on an explicit ask
 
 - 2025-01-31: Initial setup with shell script guidelines
 - 2026-02-17: Establish as pure base class — remove project-specific content, document extension pattern
