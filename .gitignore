@@ -49,6 +49,13 @@ remote-settings.json
 scheduled_tasks.lock
 settings.local.json
 
+# agent daemon runtime state (2026-09-01) — control keys, dispatch, per-job scratch
+daemon/
+daemon.lock
+daemon.log
+daemon.status.json
+jobs/
+
 # local session records — not committed (also keeps internal logs out of the public repo)
 session-logs/
 
