@@ -30,7 +30,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [AI Systems Engineering Patterns](./guidelines/ai-patterns.md) - LLM integration patterns: caching, routing, guardrails, RAG
 - [Tool Delegation for LLM Cron Skills](./guidelines/ai-cron-tool-delegation.md) - When a cron skill must produce a number, build a deterministic helper and wire it via cron payload — not via SKILL.md or AGENTS.md
 - [Project Setup](./guidelines/project-setup.md) - Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling
-- [Prose Style](./guidelines/prose-style.md) - Anti-AI-smell rules for narrative writing: punctuation, sentence variation, transitions, word choice
+- [Prose Style](./guidelines/prose-style.md) - **Always on, all written output.** Anti-AI-smell rules: em-dash discipline, sentence variation, state-what-is (never narrate the document's own edits), bold discipline, word choice
 - [Markdown Formatting](./guidelines/markdown-formatting.md) - Spacing rules for generated Markdown: blank lines around lists, paragraph separation, consistent bullet markers
 - [PR Token Tracking](./guidelines/pr-token-tracking.md) - Include AI token usage in PR descriptions, read from the branch-keyed ledger
 - [Prototype Hygiene](./guidelines/prototype-hygiene.md) - Ship clean from day one: config over code, stable docs over stale state, PRs over branches
@@ -170,6 +170,7 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 
 ## Global Behavioral Rules
 
+- **Write to the prose style by default, everywhere.** [Prose Style](./guidelines/prose-style.md) is **always on** and applies to anything a human reads: knowledge-base pages, analysis documents, READMEs, ADRs, PR descriptions, commit bodies, and chat responses. Do not wait to be asked, and do not treat "it's technical documentation" as an exemption. The three that cost the most to fix afterwards: **em-dashes** (if it can be a period, colon or comma, make it one), **documents narrating their own edit history** ("this previously said…" belongs in a changelog, not the page), and **bold used as a highlighter** rather than a spotlight.
 - **Red-Green-Refactor TDD is REQUIRED for ALL code changes.** Always write a failing test first (RED), then the minimum production code to pass (GREEN), then refactor with tests green. No production code without a failing test. No retroactive tests. See [Testing Strategies](./guidelines/testing.md) for the full cycle, non-negotiable rules, and the (narrow) exceptions.
 - **Surface conflicts; don't average them.** When two patterns in the codebase contradict (two error-handling styles, two test idioms, two of these guidelines pointing different directions), pick one — usually the more recent or more tested — explain why, and flag the other for cleanup. Blending two patterns produces a third that nobody intended.
 - **LLM spend gate.** `dev-ai.local` is the LLM for ALL smoke tests and functional tests. Use Bedrock, the Anthropic API, or any other cloud/paid LLM **only when I specifically ask**. Test functionality, not output quality — a local model's weak prose is not a finding. See [Environments and the LLM Spend Gate](./guidelines/environments-and-llm-spend.md).
@@ -180,6 +181,8 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - **Time tracking** — the local `punch` tool (beaufort time-tool) tracks billable/work time; records accumulate in `~/.beaufort/data/time.db` and sync to hasami via a push agent — `time-push` launchd on macOS, `beaufort-time-push` systemd user timer on Linux (local-first, no runtime SSH). `/lets-go` surfaces any open timer and nudges (advisory) when none is running on project work; `/session-logger` and `/handoff` remind to `/punch stop`. **Remind, never auto-start/stop** — starting a timer posts real billable state. Use `/punch` to drive it. Skip silently on devices where `punch` isn't installed — but **verify before claiming absence**: the old macOS-only `dscl` detection returned empty under a sandbox and reported the tracker missing on a host that had it (2026-08-14). Installed on studio-3 and dev.local; `b` still works as a symlink.
 
 ## Version History
+
+- 2026-09-02: Prose style becomes **always on, all written output**, and the "does not apply to technical documentation" exemption is removed. That exemption let one knowledge bundle reach 2,190 em-dashes across 56 files before it was noticed. Adds a testable em-dash threshold, a **state-what-is** rule (documents do not narrate their own edit history), and bold discipline
 
 - 2026-08-31: House style for environments + the LLM spend gate — Studio works, dev.local is dev AND staging, prod only on explicit promotion; dev-ai.local for all smoke/functional tests, cloud LLMs gated on an explicit ask
 
