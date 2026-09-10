@@ -8,6 +8,8 @@
 
 **Write to this standard the first time.** These rules exist to avoid the editing pass, not to describe it.
 
+**Each rule names a move, and rewording the move keeps the tell.** Readers learn to recognize the move itself. A model tuned away from "it's not X, it's Y" writes "X doesn't do it. Y does." instead, and the reader who spotted the first form spots the second. An em-dash swapped for a colon is the same failure. When a rule fires, rewrite the sentence so the move is gone. Swapping the punctuation or the wording leaves it in place.
+
 ## Punctuation Discipline
 
 - **Em-dashes**: The single most reliable AI tell. **Maximum two per piece of narrative prose.**
@@ -33,10 +35,72 @@
 - **Vary openers.** Never start three consecutive sentences with the same word, especially "The", "This", or "It". Read the paragraph aloud as a sequence of first words; if a pattern emerges, break it.
 - **Vary length.** Alternate between short declarative sentences and longer compound ones. A paragraph of uniformly mid-length sentences reads as generated.
 - **Avoid symmetrical constructions.** Phrases like "deliberately X, and deliberately Y" or "not only A but also B" are AI-favored patterns. Break the symmetry. Use a period instead: "Deliberately X. Also Y."
-- **Kill the "not X, it is Y" reflex.** "This is not a penalty, it is the other half of a bargain." State the positive and drop the negation: "This is the other half of a bargain." Reach for the contrast only when the reader genuinely expects X.
+- **Kill the corrective frame.** "This is not a penalty, it is the other half of a bargain." State the positive and drop the negation: "This is the other half of a bargain." The frame has many disguises, listed under [The Corrective Frame](#the-corrective-frame).
 - **Limit tricolons.** Three-item parallel lists (A, B, and C) are fine occasionally. More than two per piece starts sounding formulaic.
 - **Use active verbs, imperative mood.** "Decompose problems" not "Decomposing problems." "Pick the right model" not "Selecting the right model." Gerund-heavy sentences read as generated outlines, not prose.
 - **Be economical.** If a sentence works without a word, cut the word. Prefer short punches over compound clauses joined by commas. "API budgets are a rounding error against salaries" not "making API budgets a rounding error compared to fully-loaded engineering salaries."
+
+## The Corrective Frame
+
+The corrective frame raises a claim nobody made so the sentence can knock it down. It reads as insight, and it spends the reader's attention on the wrong idea first. Models were tuned away from the literal "it's not X, it's Y", and the move now arrives in other forms. A reader described it in September 2026: "now models seem to be avoiding that exact form but it shows up in a slightly different way."
+
+| Disguise | Example |
+|---|---|
+| Split across two sentences | "Cost is not a property of a row. It is a property of the row's position in the window." |
+| Subject swap | "Money does not stop the work. The usage window does." |
+| Trailing negation | "A timestamp, not an amount." "Share a schema, not a table." |
+| Fronted "not … but" | "Not what this token cost, but whether this seat is producing." |
+| "Was never" | "The gap was never capability." "The question was never why. It was which." |
+| Verdict pair | "Right instinct. Wrong clock." |
+| Paired definitions | "Zero says measured. Null says not applicable." "Pricing asks X. Allocation asks Y." |
+| Denial, then reveal | "This is not an expensive mistake. It is a cheap success I could not audit." |
+| Negated heading | "## Allocation is not pricing" |
+| "Easy part" setup | "Those are easy fixes. This one is not." |
+| "The real X" | "The real cost is headroom." "The money is in the nodes you were never offered." |
+
+**The test is to delete the negated half.** If the sentence still tells the reader everything they need, the negated half was a strawman, so leave it deleted. Keep a contrast only when this audience actually holds the rejected view, and then say who holds it: "Most token dashboards report dollars. On a subscription, the limit that stops work is the five-hour cap."
+
+Headings state what the section establishes. One corrective frame in a piece is a choice. Two in adjacent paragraphs, or more than one per 500 words, is a habit.
+
+Candidate finder. It over-matches, so read each hit:
+
+```bash
+grep -nE "\b(not|never|isn't|wasn't|aren't|doesn't|don't)\b[^.]*\. (It|This|That|The [a-z]+) (is|was|does|did)\b|, not (a |an |the )?[a-z]+|\bNot [^.]*, but\b|\bwas never\b|\brather than\b|^#+ .*\bis not\b" FILE
+```
+
+## Plain Register
+
+Technical readers come for the information. Dramatic staging makes them wait for it and then asks them to admire the delivery. Write the way you would explain the work to a colleague at a whiteboard.
+
+- **The epigram kicker.** A paragraph that closes on a quotable metaphor restating itself: "a rumor with a schema", "It is a metronome." The paragraph already made the point. Cut the line, or, if it really is the thesis, say it literally and move it to the front of the paragraph.
+- **The staged reveal.** A one-sentence paragraph held back for effect: "The second does everything right." Fold it into the paragraph it belongs to. Allow one single-sentence paragraph per piece at most.
+- **Verbless fragment runs.** "Components kept, total derived, provenance retained." "Two components, one workspace, no join." Write the sentence, with its verb.
+- **Personified data.** "A notional figure walks into a margin conversation." "The ledger asserts precision." Name the person and the action: "Whoever builds the margin report will read it as a real charge."
+- **Stakes inflation.** "Forever", "nobody", "every", "the only", "confidently wrong". Check each absolute against the evidence. Most become a count, a qualifier, or nothing.
+- **The drumbeat close.** Two short imperatives to finish: "Build the gauge. Then reconcile it." End on the last useful instruction, stated once, in an ordinary sentence.
+
+The test is to read the sentence aloud to that colleague. If you would not say it that way, write it the way you would.
+
+## Concrete Nouns
+
+Some abstract nouns sound precise and point at nothing. Models lean on a short list of them, and a reader who notices one starts counting. The watch list: *edge, surface, layer, shape, axis, space, lens, seam, spine, primitive, load-bearing, unlock, leverage, friction, signal*, and the stand-ins *the thing, the move, the story, the question, the point, the line, the far side*.
+
+Each one stands in for a noun the writer did not name. Name it.
+
+| Abstract | Concrete |
+|---|---|
+| "take the cheapest edge into the claim" | "run the cheapest check that can prove the claim" |
+| "building around it puts you on the wrong axis" | "a cost column is empty for most of this ledger" |
+| "which work sat on the far side" | "which jobs ran after the allowance ran out" |
+| "the doctrine failed to travel" | "the other project never got the script" |
+
+Technical terms keep their technical meaning. A graph edge in a piece that defines the graph, an edge device, and an edge case are all fine, because the reader can point at the thing. A technical word repeated through a piece still turns into a verbal tic. Past three uses of any word on the list, replace some of them with the object they refer to.
+
+Candidate counter:
+
+```bash
+grep -oiwE "edges?|surfaces?|layers?|shape|axis|lens|seams?|spine|primitives?|load-bearing|unlock|leverage|friction|signal" FILE | sort | uniq -c | sort -rn
+```
 
 ## Transitions and Connective Tissue
 
@@ -47,7 +111,7 @@
 
 ## Word Choice
 
-- **Prefer concrete over abstract.** "Subscription seats replacing headcount requisitions" is better than "a fundamental shift in resource allocation paradigms."
+- **Prefer concrete over abstract.** "Subscription seats replacing headcount requisitions" is better than "a fundamental shift in resource allocation paradigms." The abstract nouns models favor are listed under [Concrete Nouns](#concrete-nouns).
 - **Avoid AI-favored adverbs.** "Fundamentally," "essentially," "ultimately," "importantly," "significantly". Cut these unless they carry genuine meaning. They rarely do.
 - **Watch for hollow intensifiers.** "Incredibly," "extremely," "absolutely," "truly". If the noun or verb needs propping up, choose a stronger noun or verb.
 - **Limit "landscape/ecosystem/paradigm" language.** These words have become AI markers. Use them only when the technical meaning is precise (e.g., "threat landscape" in security writing).
@@ -90,3 +154,6 @@ Read the piece and ask:
 5. **Count the em-dashes.** Over one per 40 lines, or over two in an essay, go back and convert them.
 6. **Search for "previously", "earlier", "corrected", "no longer".** Each hit is the document talking about itself. Delete or move it.
 7. **Scan the bold.** If more than a couple of phrases per paragraph are bold, the emphasis has stopped meaning anything.
+8. **Delete the negated half of every contrast**, headings included. If nothing is lost, leave it deleted. Run the candidate finder above.
+9. **Read the last sentence of each paragraph.** If it restates the paragraph as a quotable metaphor, cut it.
+10. **Count the watch-list nouns.** For each one, could the reader point at the thing it names? If not, name the thing.
