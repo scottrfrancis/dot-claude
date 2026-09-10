@@ -28,6 +28,8 @@ Interpret the argument as a voice, tone, or style directive. Examples of how to 
 
 Read `~/.claude/guidelines/prose-style.md` for the structural and mechanical checklist. These rules apply regardless of voice selection. The voice parameter adjusts *tone and style*; the guidelines govern *craft and anti-AI hygiene*.
 
+Each rule names a move. When an earlier edit reworded a move instead of removing it, report it as the original finding: a colon standing in for an em-dash still counts, and so does "X doesn't do it. Y does." standing in for "not X but Y".
+
 ## Audit Pass
 
 Read the target file and perform the following audit. Track findings as you go.
@@ -36,6 +38,8 @@ Read the target file and perform the following audit. Track findings as you go.
 - Count em-dashes. Flag if more than 2.
 - Check for consecutive sentences starting with the same word.
 - Identify symmetrical constructions ("not only X but also Y", "deliberately A, and deliberately B").
+- Find the corrective frame in every disguise the guideline lists: split across two sentences, subject swap, trailing "not an X", "was never", verdict pairs, paired definitions, negated headings. Run the guideline's candidate finder, then delete the negated half of each hit. If nothing is lost, flag it.
+- Run the guideline's abstract-noun counter (edge, surface, layer, shape, axis, the question, the line, load-bearing and the rest of the watch list). Flag any word used more than three times, and any use where the reader could not point at the thing it names.
 - Count tricolons (three-item parallel lists). Flag if more than 2.
 - Flag AI-favored adverbs: fundamentally, essentially, ultimately, importantly, significantly, incredibly.
 - Flag hollow landscape/ecosystem/paradigm language.
@@ -59,6 +63,7 @@ Read the target file and perform the following audit. Track findings as you go.
 - Flag question-then-answer patterns ("What does this mean? It means...").
 - Flag "to be sure" sandwiches (counterpoint raised only to be immediately dismissed without engagement).
 - Check whether the conclusion restates the introduction or advances beyond it.
+- Flag dramatic staging: a paragraph closing on a quotable metaphor that restates it, one-sentence paragraphs held back for effect, verbless fragment runs, personified data ("the ledger asserts"), absolutes the evidence does not support, and a close built from two short imperatives.
 
 ### 5. Voice Alignment (target style)
 - Compare the draft's tone against the target voice/style.
@@ -85,5 +90,8 @@ Read the revised file once more against the self-check from prose-style.md:
 2. Do more than two paragraphs start with the same structural pattern?
 3. Is there a sentence included only because it "sounds professional"?
 4. Does the conclusion say something the introduction didn't?
+5. Does any contrast survive deleting its negated half?
+6. Does any paragraph end on an epigram?
+7. Could the reader point at the thing every watch-list noun names?
 
 Report the final status to the user.
