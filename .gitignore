@@ -57,3 +57,6 @@ scripts/release/out/
 
 # macOS
 .DS_Store
+
+# Installed and overwritten by herdr; per-machine integration, not authored here
+hooks/herdr-agent-state.sh
