@@ -48,6 +48,7 @@ dependencies:
 - [ ] Create conda environment (see Environment Management above)
 - [ ] Create `CLAUDE.md` at project root with: role definition, tone guidance, repository structure overview, key commands or workflows
 - [ ] Create `.claude/memory/MEMORY.md` as a context index — even a 5-line file linking to key docs saves context in future sessions
+- [ ] **Set `git config core.hooksPath tools/hooks`** if the repo ships hooks — this is *local* config and does not propagate, so every fresh clone starts unprotected and nothing announces it. Verify with `git config --get core.hooksPath`; empty means the secret scan is not running. See [Automated Ingest Hygiene](./ingest-hygiene.md)
 - [ ] Create `.claude/session-logs/` directory — needed for handoff context auto-loading (global SessionStart hook looks here)
 - [ ] Verify global commands work (`/lets-go`, `/session-logger`) — these are in `~/.claude/commands/` and require no per-project setup
 - [ ] Document branch policy in `CLAUDE.md` if different from the default (e.g., "always work on feature branches, never commit to main directly")
