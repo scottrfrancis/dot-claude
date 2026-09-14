@@ -1,0 +1,68 @@
+# wiki-mixin: begin v1.1
+#
+# v1.1 (2026-09-14) supersedes v1.0. If a repo's block still says v1.0, its
+# policy is unknown rather than old: three different policies shipped under that
+# one version string, so the marker could not answer "is this repo patched?".
+# `~/.claude/scripts/wiki-raw-audit.sh` answers it by inspection instead.
+#
+# WHY THIS BLOCK EXISTS
+#
+# wiki/raw holds incoming client mail verbatim, written by an automated ingest.
+# Tracking it keeps every wiki page's cited source resolvable in a fresh clone,
+# which is genuinely useful. It also means anything a client mails us is
+# committed and pushed without a human in the loop.
+#
+# Twice that went wrong through the same mechanism:
+#   2026-08-25  a client's plaintext MSSQL password, mailed to us, swept into a
+#               pushed branch by a broad `git add`.
+#   2026-08-17  ten operative reports with patient name, date of service and
+#               procedure IN THE FILENAME, auto-committed and pushed to a vendor
+#               we hold no BAA with. Found 24 days later.
+#
+# v1.0 excluded mp4/mov/zip — chosen for repository SIZE, and silent about the
+# formats clinical and contractual documents actually arrive in. That silence is
+# the gap.
+#
+# THE RULE: message bodies are tracked, attachments are not.
+#
+# A body is text, it is what a wiki page cites, and it is what the PHI screen
+# can read. An attachment is an opaque payload whose filename alone can disclose.
+# The cost is that a fresh clone cannot open an attachment a page cites — the
+# right trade against putting client documents in a vendor's storage.
+
+# Size (v1.0, retained)
+wiki/raw/**/*.mp4
+wiki/raw/**/*.mov
+wiki/raw/**/*.mp3
+wiki/raw/**/*.zip
+
+# Documents. The 2026-09-10 rule, now the default everywhere rather than a
+# patch applied to one repo during an incident.
+wiki/raw/**/*.pdf
+wiki/raw/**/*.doc
+wiki/raw/**/*.docx
+wiki/raw/**/*.xls
+wiki/raw/**/*.xlsx
+wiki/raw/**/*.xlsb
+wiki/raw/**/*.ppt
+wiki/raw/**/*.pptx
+wiki/raw/**/*.rtf
+wiki/raw/**/*.dat
+
+# Images: a screenshot of a record is a record.
+wiki/raw/**/*.jpg
+wiki/raw/**/*.jpeg
+wiki/raw/**/*.png
+wiki/raw/**/*.gif
+wiki/raw/**/*.tif
+wiki/raw/**/*.tiff
+
+# Whole mail objects carry their own attachments inside them.
+wiki/raw/**/*.eml
+wiki/raw/**/*.msg
+
+# For a repo that should not track raw at all — a public repo, or any bundle
+# whose sources are reproducible elsewhere — uncomment this instead of the above.
+# It is the safer default and two repos already use it.
+# wiki/raw/
+# wiki-mixin: end

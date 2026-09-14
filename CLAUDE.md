@@ -35,6 +35,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [PR Token Tracking](./guidelines/pr-token-tracking.md) - Include AI token usage in PR descriptions, read from the branch-keyed ledger
 - [Prototype Hygiene](./guidelines/prototype-hygiene.md) - Ship clean from day one: config over code, stable docs over stale state, PRs over branches
 - [Security Hardening](./guidelines/security-hardening.md) - Defense-in-depth patterns grounded in real-world breach analysis
+- [Automated Ingest Hygiene](./guidelines/ingest-hygiene.md) - What two disclosures through automated mail ingest cost, and the five rules they bought: bodies tracked/attachments not, audit reality not version markers, ask what a control would have seen, no fail-open default, "done" means on the remote's default branch
 - [Data-Diode List Control](./guidelines/data-diode-list-control.md) - Black/white/gray list pattern for one-way egress boundaries (scrub/allow/pending-promotable); the gray list discovers unknowns before they leak
 - [Go Code Standards](./guidelines/golang.md) - JSON response safety (no fmt.Fprintf), gosec patterns, G104 triage
 - [Python Code Standards](./guidelines/python.md) - Type hints, error handling, testing patterns
