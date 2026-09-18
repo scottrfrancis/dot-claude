@@ -132,6 +132,26 @@ grep -oiwE "edges?|surfaces?|layers?|shape|axis|lens|seams?|spine|primitives?|lo
 
 **Bold is a spotlight, not a highlighter.** If most sentences carry bold, none of them do. Reserve it for the load-bearing figure or the claim the section exists to make. One or two per paragraph at most.
 
+## Self-Impeaching Hedges
+
+**Never announce the virtue you are currently exercising.** "I'd rather be straightforward," "to be
+honest," "let me be clear," "candidly," "I want to be upfront with you," "full transparency" — each
+one implies the default is otherwise. **The phrase impeaches the writer it was meant to reassure.**
+
+| Cut | Keep |
+|---|---|
+| "I'd rather be straightforward about where this sits" | "Linda and I are reviewing this weekend." |
+| "To be honest, the hours don't work" | "The hours don't work." |
+| "Let me be clear:" | The claim |
+| "I want to be upfront that I haven't decided" | "I haven't decided." |
+| "I'm not raising this as a bargaining point" | Nothing. The content says what it is |
+
+**The test: delete the clause and read the sentence.** If it says the same thing, the clause was
+doing nothing but characterising the speaker. **A straightforward person writes the fact and stops.**
+
+**The same applies to explaining yourself.** "I did not want to write as though it were settled" is
+the writer narrating their own good intentions. State the position; the reader infers the intent.
+
 ## Voice and Ownership
 
 - **Take ownership.** "My title" not "the title." "I'll qualify" not "the title needs qualifying." First person signals the author stands behind the argument.
