@@ -36,6 +36,9 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [Prototype Hygiene](./guidelines/prototype-hygiene.md) - Ship clean from day one: config over code, stable docs over stale state, PRs over branches
 - [Security Hardening](./guidelines/security-hardening.md) - Defense-in-depth patterns grounded in real-world breach analysis
 - [Automated Ingest Hygiene](./guidelines/ingest-hygiene.md) - What two disclosures through automated mail ingest cost, and the five rules they bought: bodies tracked/attachments not, audit reality not version markers, ask what a control would have seen, no fail-open default, "done" means on the remote's default branch
+- [Rule Conflict Protocol](./guidelines/rule-conflict-protocol.md) - What to do when two rules genuinely contradict: log the conflict, decide once, record the decision rather than re-deciding each session
+- [Memory Scope](./guidelines/memory.md) - What belongs in memory, what never does, and the public/private split (`memory/local/` is gitignored)
+- [Glossary](./guidelines/glossary.md) - One term, one meaning; `glossary/GLOSSARY.md` is the shared vocabulary and `bin/check-glossary.sh` enforces it
 - [Data-Diode List Control](./guidelines/data-diode-list-control.md) - Black/white/gray list pattern for one-way egress boundaries (scrub/allow/pending-promotable); the gray list discovers unknowns before they leak
 - [Go Code Standards](./guidelines/golang.md) - JSON response safety (no fmt.Fprintf), gosec patterns, G104 triage
 - [Python Code Standards](./guidelines/python.md) - Type hints, error handling, testing patterns
@@ -71,6 +74,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - `~/.claude/commands/review-pr.md` - PR code review: bugs, security, missing tests, style; works with PR numbers or branches
 - `~/.claude/commands/babysit-pr.md` - Monitor a PR for check results, reviews, and merge readiness; pairs with `/loop`
 - `~/.claude/commands/checkpoint-progress` - Git checkpoint script: stages all changes and commits a WIP snapshot with timestamp
+- `~/.claude/commands/memorialize.md` - Close out a thread: promote what is durable to memory, then confirm it is safe to clear
 - `~/.claude/commands/extract-adr` - Extract architectural decisions from a session log into the canonical ADR format; saves to `docs/decisions/` with sequential numbering (see `guidelines/adr.md`)
 - `~/.claude/commands/punch.md` - Drive the local `punch` time tracker (start/stop/status/log); project-aware, syncs to hasami via the time-push agent. Renamed from `/b` on 2026-08-14; `b` remains a symlink
 - `~/.claude/commands/build-pdf.md` - Build a PDF from ordered markdown sections via the `md2pdf` CLI and a `report.yaml` manifest
@@ -96,6 +100,19 @@ Session logs are written to `session-logs/` at the project root — a shared loc
 
 All session logs and handoff files include YAML frontmatter with a `tool:` field (e.g., `tool: claude-code`) so any receiving tool knows the source. This enables cross-tool session continuity — a handoff written in Cursor can be picked up by Claude Code, and vice versa.
 
+## Conformance Tooling
+
+Deterministic shell checks under `bin/`, no model tokens. Each has a suite in `tests/`, and
+`.github/workflows/validate.yml` runs them on every push.
+
+- `bin/conformance.sh --project . --quiet` - the entry point: reports conflicts awaiting a
+  decision and whether `/mine-sessions` is overdue. `/lets-go` runs it as a session-start probe.
+- `bin/doctrine.sh check|sync` - propagate marker-delimited doctrine blocks from this repo to the
+  downstream `dot-*` repos listed in `doctrine/targets.conf`. dot-claude is primary; downstream
+  copies are replaced from it and are never a source.
+- `bin/check-glossary.sh`, `bin/check-conflict-log.sh`, `bin/check-public-memory.sh`,
+  `bin/memory-scope.sh` - the individual tiers.
+
 ## Global Hooks
 
 Registered in `~/.claude/settings.json`, these fire for every project automatically:
@@ -106,6 +123,12 @@ Registered in `~/.claude/settings.json`, these fire for every project automatica
 - **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run; checks both `session-logs/` and `.claude/session-logs/`. Also: if the cwd has an outline-format `ACTION_ITEMS.md` (see Catalyst-RCM's `lint-action-items` skill), reminds about `/lint-action-items` when items are past the 7-day prune window — reminder-only by design, no standing cron
 
 Project-local hooks in `.claude/settings.local.json` layer on top of these.
+
+Shipped by this repo but **not currently registered** either (same reason -- `settings.json` is
+gitignored, so registration is per-host):
+
+- `~/.claude/hooks/conformance-report.sh` - surfaces `bin/conformance.sh` output at session start
+- `~/.claude/hooks/pre-compact-memorialize.sh` - prompts `/memorialize` before context is compacted
 
 Also present but **not currently registered**: `~/.claude/hooks/log-session-tokens` — a `SessionEnd` hook that appends token usage to `~/.factory/token-ledger.json` keyed by `project:branch`. It is the ledger writer that `guidelines/pr-token-tracking.md` and `/pr-tokens` read from, so those two are inert until it is wired into `settings.json`.
 
@@ -182,6 +205,14 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - **Time tracking** — the local `punch` tool (beaufort time-tool) tracks billable/work time; records accumulate in `~/.beaufort/data/time.db` and sync to hasami via a push agent — `time-push` launchd on macOS, `beaufort-time-push` systemd user timer on Linux (local-first, no runtime SSH). `/lets-go` surfaces any open timer and nudges (advisory) when none is running on project work; `/session-logger` and `/handoff` remind to `/punch stop`. **Remind, never auto-start/stop** — starting a timer posts real billable state. Use `/punch` to drive it. Skip silently on devices where `punch` isn't installed — but **verify before claiming absence**: the old macOS-only `dscl` detection returned empty under a sandbox and reported the tracker missing on a host that had it (2026-08-14). Installed on studio-3 and dev.local; `b` still works as a symlink.
 
 ## Version History
+
+- 2026-09-19: Take the additive half of the agent-spec work (PR #12, open since 2026-08-18): the
+  conformance tooling under `bin/` with seven test suites and a CI workflow, the rule-conflict /
+  memory-scope / glossary guidelines, `/memorialize`, and two hooks. Its 245-line CLAUDE.md
+  restructure was dropped: it predated the always-on prose style and the ingest-hygiene
+  guideline, and replaying it would have fought newer work. Closed PR #11 (`/b` -> `/punch`) as
+  superseded -- that rename reached main another way
+
 
 - 2026-09-10: Prose style adds three sections from a reader's feedback on the eval-spend series: the corrective frame and its disguises, plain register (no epigram kickers, staged reveals or fragment runs), and concrete nouns (an abstract-noun watch list, with "edge" first). Adds the principle that a rule names a move, so rewording the move keeps the tell, plus a candidate-finder grep and a noun counter. `/editorial-review` audits for all three. Propagated to dot-cursor, dot-droid, dot-copilot and dot-opencode, which were still on the text from before 2026-09-02
 
