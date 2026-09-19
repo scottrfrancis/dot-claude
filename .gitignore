@@ -27,6 +27,7 @@ plugins/install-counts-cache.json
 plugins/plugin-catalog-cache.json
 plugins/known_marketplaces.json
 plugins/marketplaces/
+plugins/synced/
 
 # Nested claude install artifacts
 .claude/
