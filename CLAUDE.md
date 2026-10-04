@@ -122,6 +122,8 @@ Registered in `~/.claude/settings.json`, these fire for every project automatica
 - **PreToolUse** → `~/.claude/hooks/pre-tool-safety.sh` — Blocks destructive git operations (`reset --hard`, `push --force`), recursive deletes, and writes to sensitive config files; prompts for confirmation
 - **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run; checks both `session-logs/` and `.claude/session-logs/`. Also: if the cwd has an outline-format `ACTION_ITEMS.md` (see Catalyst-RCM's `lint-action-items` skill), reminds about `/lint-action-items` when items are past the 7-day prune window — reminder-only by design, no standing cron
 
+- **SessionStart / SessionEnd / PostToolUse** (`Bash|EnterWorktree|ExitWorktree`) → `~/.claude/hooks/herdr-follow-worktree.sh` — Inside herdr only (`HERDR_ENV=1`): opens each new git worktree of the session's repo as a herdr workspace without stealing focus, and closes it when the worktree is removed. Skips subagent worktrees (lock reason `claude agent …`). Silent, always exits 0; needs `git` and `python3`
+
 Project-local hooks in `.claude/settings.local.json` layer on top of these.
 
 Shipped by this repo but **not currently registered** either (same reason -- `settings.json` is
