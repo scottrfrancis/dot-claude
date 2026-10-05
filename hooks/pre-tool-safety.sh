@@ -25,11 +25,38 @@ fi
 # Heredoc bodies and commit message text start on line 2+; checking head -1 avoids
 # false positives on dangerous-sounding text inside quoted strings or message bodies.
 CMD_HEAD=$(echo "$COMMAND" | head -1 | sed 's/ -m .*//; s/ --message .*//' | head -c 200)
-GIT_CMD_HEAD="$CMD_HEAD"
+
+# git's global options come before the subcommand, and every rule below looks for
+# `git <subcommand>`, so `git -C repo push --force` used to pass unchecked. Collapse
+# -C/-c <value> (quoted or not), --git-dir/--work-tree/--namespace <value> and the
+# value-less globals to plain `git`. perl, because BSD and GNU sed disagree on loops.
+if command -v perl >/dev/null 2>&1; then
+  GIT_CMD_HEAD=$(printf '%s\n' "$CMD_HEAD" | perl -pe '1 while s/\bgit\s+(?:-[Cc]\s+(?:"[^"]*"|'"'"'[^'"'"']*'"'"'|\S+)|--(?:git-dir|work-tree|namespace)(?:=|\s+)\S+|--(?:no-pager|bare|no-replace-objects|literal-pathspecs))\s*/git /')
+else
+  GIT_CMD_HEAD="$CMD_HEAD"
+fi
+
+# A push that overwrites the remote unconditionally: a bare --force, -f alone or
+# inside combined short flags (-uf), or a +refspec. --force-with-lease (any form,
+# with or without --force-if-includes) is allowed: it overwrites only if the remote
+# is still where we last saw it, which is the safe way to push a rebased branch.
+force_push() {
+  local re='(^|[^[:alnum:]_.-])git[[:space:]]+push([[:space:]].*)?$'
+  [[ $1 =~ $re ]] || return 1
+  local args=" ${BASH_REMATCH[2]} "
+  [[ $args =~ [[:space:]]--force[[:space:]] ]] && return 0
+  [[ $args =~ [[:space:]]-[[:alpha:]]*f[[:alpha:]]*[[:space:]] ]] && return 0
+  [[ $args =~ [[:space:]]\+[^[:space:]] ]] && return 0
+  return 1
+}
 
 # --- Destructive git operations ---
-if echo "$GIT_CMD_HEAD" | grep -qE 'git\s+(reset\s+--hard|push\s+.*--force|push\s+-f\b|clean\s+-f|checkout\s+--\s|\brebase\s+.*--abort)'; then
-  echo "Safety check: destructive git operation detected — '$(echo "$GIT_CMD_HEAD" | head -c 120)'. Confirm this is intentional." >&2
+if force_push "$GIT_CMD_HEAD"; then
+  echo "Safety check: force push without a lease — '$(echo "$CMD_HEAD" | head -c 120)'. Use --force-with-lease=<branch>:<expected sha>, or confirm this is intentional." >&2
+  exit 2
+fi
+if echo "$GIT_CMD_HEAD" | grep -qE 'git\s+(reset\s+--hard|clean\s+-f|checkout\s+--\s|\brebase\s+.*--abort)'; then
+  echo "Safety check: destructive git operation detected — '$(echo "$CMD_HEAD" | head -c 120)'. Confirm this is intentional." >&2
   exit 2
 fi
 
