@@ -91,10 +91,12 @@ if [ -z "$P" ]; then
     [ -z "$P" ] && [ -x "$c" ] && P="$c"
   done
 fi
-[ -n "$P" ] && "$P" list-open
+# `punch` answers `list-open`; the older `b` capture CLI answers `open`.
+[ -n "$P" ] && { "$P" list-open 2>/dev/null || "$P" open; }
 ```
 
 - **Open timer** → add to Blockers / Risks: "⏱ TR-NNN still running since HH:MM — `/punch stop`."
+- **`list-open` rejected, `open` answered** → `$P` is the older `b` capture CLI, not `punch`. Report what it printed; do not call the tracker absent.
 
 ## Reminder
 

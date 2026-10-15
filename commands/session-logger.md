@@ -149,11 +149,14 @@ if [ -z "$P" ]; then
     [ -z "$P" ] && [ -x "$c" ] && P="$c"
   done
 fi
-[ -n "$P" ] && { "$P" list-open; "$P" yesterday 2>/dev/null; }
+# `punch` answers `list-open` and `yesterday`; the older `b` capture CLI answers
+# `open` and `today` instead.
+[ -n "$P" ] && { { "$P" list-open 2>/dev/null && "$P" yesterday 2>/dev/null; } || { "$P" open; "$P" today; }; }
 ```
 
 - **A timer is still open** → remind: "⏱ TR-NNN is still running — `/punch stop` to close it." (Don't stop it automatically.)
 - Note total tracked time for this session in the `## Session Effectiveness` section when a relevant entry exists.
+- **`list-open` rejected, `open` answered** → `$P` is the older `b` capture CLI, not `punch`. Report what it printed; do not call the tracker absent.
 
 ## Reminder
 
