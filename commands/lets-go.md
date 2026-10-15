@@ -215,12 +215,17 @@ if [ -z "$P" ]; then
     [ -z "$P" ] && [ -x "$c" ] && P="$c"
   done
 fi
-[ -n "$P" ] && "$P" list-open
+# `punch` answers `list-open`. On hosts where `b` is the older capture CLI
+# rather than a symlink to punch, the verb is `open`; the fallback covers it.
+[ -n "$P" ] && { "$P" list-open 2>/dev/null || "$P" open; }
 ```
 
 - **A timer is open** → note it in the Ready Output: "⏱ tracking: TR-NNN customer/project (elapsed Xm)". Don't start another.
 - **No open timer** + this looks like billable project work → nudge once, advisory: "No active timer — `/punch start` to clock this session." Do not auto-start.
 - **`punch` absent** → say nothing.
+- **`list-open` rejected, `open` answered** → `$P` is the older `b` capture CLI, not
+  `punch`. Report what it printed. Do not call the tracker absent: on 2026-10-15 a session
+  on hasami did exactly that because the probe only knew the `punch` verb.
 
 **Only claim it's absent when `$P` is genuinely empty.** The old version of this
 check used the macOS-only `dscl`, which returns empty under a sandbox and made
