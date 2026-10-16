@@ -28,6 +28,10 @@ plugins/plugin-catalog-cache.json
 plugins/known_marketplaces.json
 plugins/marketplaces/
 plugins/synced/
+skills/synced/
+/state/
+daemon-auth-cooldown
+daemon-auth-status.json
 
 # Nested claude install artifacts
 .claude/
