@@ -51,12 +51,21 @@ Corollaries:
 - **Test functionality, not output quality.** A local model's prose is irrelevant
   when the assertion is "the pipeline completes". Never report a local model's weak
   writing as a defect.
-- **Verify the model tag exists before the run.** The installed set drifts —
-  `curl -s http://dev-ai.local:11434/api/tags`. A missing tag is a 404 in the
+- **Name the local model by role and protocol, never by engine.** A consumer is
+  configured with a base URL ending in `/v1` and a logical model name (`workhorse`),
+  and speaks the OpenAI chat-completions protocol. vLLM, Ollama (under `/v1`),
+  llama.cpp and LM Studio all serve it, so the engine behind the URL can change
+  without touching a consumer. It did: dev-ai moved from Ollama to vLLM in October
+  2026, and every consumer that called Ollama's own API (`/api/chat`, `/api/tags`)
+  or named an Ollama tag broke, while those that named `vllm/workhorse` kept working.
+  No engine-named variables either (`OLLAMA_*`, a backend called `ollama`).
+- **Verify the model is served before the run:**
+  `curl -s http://dev-ai.local:8000/v1/models`. A missing name is a 404 in the
   middle of a run, not an error at startup. Two committed defaults and one
   remembered "primary model" were all absent on 2026-08-31.
 - **Where an agentic/MCP tool loop is involved, tool-calling capability is the
-  binding constraint** — not parameter count. Pick the tools-capable tag.
+  binding constraint**, not parameter count. `workhorse` is served with tool calling
+  enabled.
 - **A local model cannot prove a specific defect is fixed.** It will not reproduce
   a particular defective sentence on demand. So pair the generated tier with a
   **deterministic seeded tier**: real recorded input in, assert the artefact out.
