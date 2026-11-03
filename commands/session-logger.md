@@ -22,24 +22,45 @@ Review the conversation history to identify what was accomplished. Also check gi
 
 Arguments provided: $ARGUMENTS
 
-## Dot-Repo Sync Check (`~/.claude`)
+## Dot-Repo Sync Check (dot-claude)
 
-As part of end-of-session hygiene, verify the global Claude Code config at `~/.claude` is in sync with its GitHub origin. This is consistent with `/lets-go`, `/pickup`, and `/handoff`.
+As part of end-of-session hygiene, verify the global Claude Code config, the dot-claude repo, is in sync with its GitHub origin. This is consistent with `/lets-go`, `/pickup`, and `/handoff`.
+
+**Do not probe `~/.claude`.** On profile-based setups `$HOME` is the profile, so `~/.claude` is not the dot-repo and git over ssh cannot find its keys. This block is the one in `/lets-go`.
 
 ```bash
-git -C ~/.claude fetch origin
-git -C ~/.claude rev-list --count HEAD..origin/main   # behind
-git -C ~/.claude rev-list --count origin/main..HEAD   # ahead
-git -C ~/.claude status --porcelain
+# 1. Resolve the REAL dot-repo. First candidate containing a .git wins.
+DOTC=""
+for c in /Volumes/workspace/dot-claude "$(readlink -f "$HOME/.claude" 2>/dev/null)" \
+         "/Users/$(id -un)/.claude" "$HOME/.claude"; do
+  [ -n "$c" ] && [ -d "$c/.git" ] && DOTC="$c" && break
+done
+if [ -z "$DOTC" ]; then echo "dot-claude repo not found — skipping"; else
+
+# 2. git over ssh needs the REAL home, or it looks for keys under the profile dir and
+#    fails with: no such identity: <profile>/.ssh/id_rsa
+REALHOME="/Users/$(id -un)"
+
+# 3. Fetch, and CHECK IT WORKED. Counts after a failed fetch are stale refs.
+if HOME="$REALHOME" git -C "$DOTC" fetch origin 2>&1 \
+     | grep -qiE "no such identity|could not read|permission denied|fatal"; then
+  echo "⚠ dot-claude fetch FAILED — ahead/behind would be stale; NOT reporting sync state"
+else
+  echo "dot-claude: $DOTC"
+  echo "  behind: $(git -C "$DOTC" rev-list --count HEAD..origin/main)"
+  echo "  ahead:  $(git -C "$DOTC" rev-list --count origin/main..HEAD)"
+fi
+git -C "$DOTC" status --porcelain
+fi
 ```
 
 Alert the user prominently if out of sync, and note the state in the `## Session Effectiveness` section under `Process friction` if drift is detected:
 
-- **Behind**: "⚠ ~/.claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C ~/.claude pull`."
-- **Ahead**: "~/.claude has {N} unpushed commits — consider pushing to back up your config."
-- **Dirty**: "~/.claude has uncommitted changes."
+- **Behind**: "⚠ dot-claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C {DOTC} pull`."
+- **Ahead**: "dot-claude has {N} unpushed commits — consider pushing to back up your config."
+- **Dirty**: "dot-claude has uncommitted changes."
 
-Skip silently if `~/.claude` has no remote or the fetch fails.
+If the repo is not found, say so and move on. If the fetch fails, report that and do not report counts, which would be stale.
 
 ## Link to Previous Session
 
