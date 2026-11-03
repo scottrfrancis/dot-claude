@@ -21,7 +21,7 @@ The SessionStart hook auto-injects handoff context, but verify it loaded and che
      find /Volumes/workspace -maxdepth 3 -path '*/session-logs/handoff-????-??-??-*.md' 2>/dev/null \
        | while IFS= read -r f; do
            fd=$(basename "$f"); fd=${fd#handoff-}; fd=${fd:0:10}
-           [ "$fd" \< "$CUTOFF" ] || echo "$fd  $f"
+           [[ "$fd" < "$CUTOFF" ]] || echo "$fd  $f"
          done | sort -r | head -8
      # Freshness comes from the date in the FILENAME, never mtime -- git rewrites mtime, so a
      # checkout makes every archived handoff look new. This scan used to use `-mtime -7` and
