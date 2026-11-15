@@ -102,5 +102,35 @@ reset; mem "## Retired
 - ~~A retired fact~~ — no longer true [retired $old]"
 hasnt "does not flag facts under Retired" "$(run)" "memory fact"
 
+# --- portability: BSD find and stat (macOS) ------------------------------
+# macOS find has no -printf and macOS stat has no -c. Until 2026-11-15 the probe used both, so
+# on a Mac it exited 1 with no output whenever a mine report existed. These shims refuse the
+# GNU-only flags on any platform, so CI on Linux catches a regression too.
+BSDBIN="$WORK/bsdbin"; mkdir -p "$BSDBIN"
+REALFIND="$(command -v find)"; REALSTAT="$(command -v stat)"
+cat > "$BSDBIN/find" <<EOF
+#!/usr/bin/env bash
+for a in "\$@"; do [ "\$a" = "-printf" ] && { echo "find: -printf: unknown primary or operator" >&2; exit 1; }; done
+exec "$REALFIND" "\$@"
+EOF
+cat > "$BSDBIN/stat" <<EOF
+#!/usr/bin/env bash
+[ "\$1" = "-c" ] && { echo "stat: illegal option -- c" >&2; exit 1; }
+if [ "\$1" = "-f" ] && [ "\$2" = "%m" ]; then
+  "$REALSTAT" -c %Y "\$3" 2>/dev/null || "$REALSTAT" -f %m "\$3"; exit
+fi
+exec "$REALSTAT" "\$@"
+EOF
+chmod +x "$BSDBIN/find" "$BSDBIN/stat"
+bsd_run() { PATH="$BSDBIN:$PATH" "$PROBE" --project "$WORK/p" --home "$WORK/p" 2>&1; }
+bsd_rc()  { PATH="$BSDBIN:$PATH" "$PROBE" --project "$WORK/p" --home "$WORK/p" >/dev/null 2>&1; echo $?; }
+
+reset; mined 2026-07-01; sleep 0.01; for i in $(seq 1 12); do session "$i"; done
+check_rc "with BSD find and stat, still exits 0" "$(bsd_rc)" 0
+has "with BSD find and stat, still counts sessions since the last mine" "$(bsd_run)" "12"
+
+reset; for i in 1 2 3; do session "$i"; done; sleep 0.01; mined 2026-11-15
+hasnt "with BSD find and stat, quiet right after a mine report" "$(bsd_run)" "/mine-sessions now"
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
