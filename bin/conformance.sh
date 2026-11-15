@@ -42,6 +42,11 @@ date_epoch() {
   date -d "$1" +%s 2>/dev/null || date -j -f '%Y-%m-%d' "$1" +%s 2>/dev/null || true
 }
 
+# A file's modification time in epoch seconds. GNU stat takes -c %Y, BSD stat takes -f %m.
+mtime() {
+  stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || echo 0
+}
+
 # Session records live in the shared cross-tool location first, then legacy paths.
 LOGDIR=""
 for d in "$PROJECT/session-logs" "$PROJECT/.claude/session-logs" "$PROJECT/.factory/logs"; do
@@ -56,8 +61,13 @@ if [ -n "$LOGDIR" ]; then
   mapfile -t sessions < <(find "$LOGDIR" -maxdepth 1 -type f -name '*.md' \
     ! -name 'handoff-*' ! -name 'mine-report-*' 2>/dev/null | sort)
 
-  latest_mine="$(find "$LOGDIR" -maxdepth 1 -type f -name 'mine-report-*.md' \
-    -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)"
+  # Newest mine report by modification time. Plain bash: `find -printf` is GNU-only, and on
+  # macOS it made this whole probe exit 1 with no output (fixed 2026-11-15).
+  latest_mine=""
+  for f in "$LOGDIR"/mine-report-*.md; do
+    [ -f "$f" ] || continue
+    if [ -z "$latest_mine" ] || [ "$f" -nt "$latest_mine" ]; then latest_mine="$f"; fi
+  done
 
   if [ "${#sessions[@]}" -gt 0 ]; then
     if [ -z "$latest_mine" ]; then
@@ -65,7 +75,7 @@ if [ -n "$LOGDIR" ]; then
     else
       unmined=0
       for s in "${sessions[@]}"; do [ "$s" -nt "$latest_mine" ] && unmined=$((unmined+1)); done
-      age_days=$(( ( $(date +%s) - $(stat -c %Y "$latest_mine" 2>/dev/null || echo 0) ) / 86400 ))
+      age_days=$(( ( $(date +%s) - $(mtime "$latest_mine") ) / 86400 ))
       if [ "$unmined" -ge "$STALE_SESSIONS" ]; then
         findings+=("$unmined session(s) since the last mine report — run \`/mine-sessions now\`.")
       elif [ "$age_days" -ge "$STALE_DAYS" ]; then
