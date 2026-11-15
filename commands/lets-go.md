@@ -154,6 +154,56 @@ Run these checks in order:
    - If clean + behind: offer to pull automatically
 7. If on default branch (main/master) with uncommitted changes: suggest creating a feature branch
 
+### Nested repos and automation drift
+
+A project can hold other repos (submodules, client and wiki clones in subfolders), and background
+jobs commit into some of them without pushing. AILab's `tools/bump-kb-pointer.sh` (launchd
+`ai.ailab.kb-refresh`, every two hours) commits the corp KB pointer on local `main` and never
+pushes, while hasami pushes digests to origin `main`. On 2026-11-14 that left AILab `main` 2 ahead
+and 4 behind for a day before anyone noticed. The refresher also records nothing while AILab is off
+`main`. The project-repo check above sees only the current branch of the top repo, so it missed
+both.
+
+Check the project repo and every repo one level down. Run it unsandboxed: the sandbox denies writes
+to AILab's `.git`, so a sandboxed fetch fails, and counts after a failed fetch are stale.
+
+```bash
+REALHOME="/Users/$(id -un)"; [ -d "$REALHOME" ] || REALHOME="$HOME"
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+[ -n "$ROOT" ] && { echo "$ROOT"; find "$ROOT" -mindepth 2 -maxdepth 2 -name .git 2>/dev/null | sed 's#/\.git$##'; } |
+while IFS= read -r r; do
+  name="$(basename "$r")"
+  git -C "$r" remote get-url origin >/dev/null 2>&1 || { echo "$name: no origin remote, local only"; continue; }
+  def="$(git -C "$r" symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null)"; def="${def#origin/}"; def="${def:-main}"
+  if ! HOME="$REALHOME" git -C "$r" fetch -q origin 2>/dev/null; then
+    echo "$name: fetch FAILED, not reporting sync state"; continue
+  fi
+  br="$(git -C "$r" branch --show-current)"
+  ahead="$(git -C "$r" rev-list --count "origin/$def..$def" 2>/dev/null || echo '?')"
+  behind="$(git -C "$r" rev-list --count "$def..origin/$def" 2>/dev/null || echo '?')"
+  dirty="$(git -C "$r" status --porcelain --ignore-submodules=dirty 2>/dev/null | grep -c .)"
+  echo "$name: on ${br:-detached HEAD}; local $def ahead $ahead, behind $behind; $dirty uncommitted"
+  if [ "$ahead" != 0 ] && [ "$ahead" != '?' ]; then
+    git -C "$r" log --format="    local-only on $def: %h %s" "origin/$def..$def" | head -5
+  fi
+done
+true
+```
+
+The counts compare the local default branch with origin's, whatever branch is checked out, so a
+repo sitting on a feature branch still shows drift on its `main`. Report one line per repo that
+needs attention, and stay quiet about the rest:
+
+- **Local-only commits on the default branch** (ahead > 0): name them. If they are automation
+  commits such as `chore(kb): bump corp KB pointer`, suggest `git pull --rebase` and then a push,
+  and ask before pushing the default branch. Pushing `main` needs the user's go-ahead every time.
+- **Diverged** (ahead and behind): the same, rebase first. Never reset.
+- **Behind only, clean**: offer `git pull --ff-only`.
+- **Off the default branch**: say which branch. For AILab, add that the KB refresher records nothing
+  until it is back on `main`.
+- **Fetch failed**: say so, and give no counts.
+- **No origin remote**: say it is local only, once.
+
 ## Project Auto-Checks (opportunistic, cheap)
 
 Run only if the corresponding project tooling exists; **skip silently otherwise**. These are token-cheap freshness checks, never LLM ingestion.
@@ -240,7 +290,7 @@ I will confirm when I am ready with a simple "i am ready to claude" and a very s
 output-style: brief, bulleted points
 Structure the "ready" response with clear sections:
 
-- Current Status (git, branch, sync state with origin — e.g., "master: 2 behind origin, clean — pull recommended")
+- Current Status (git, branch, sync state with origin — e.g., "master: 2 behind origin, clean — pull recommended"), plus one line for each nested repo the drift check flagged
 - Session Context (role, recent work)
 - Project Context (from README, ARCHITECTURE.md, recent session logs)
 - Suggested Next Steps (based on TODOs, open issues, uncommitted changes)
