@@ -233,7 +233,7 @@ find ~/.claude/guidelines -name "*.md" -type f | sort
 - 2026-08-13: Completeness audit — index 8 previously undocumented guidelines/commands, add a Skills section, document the `account-mismatch-warn` hook and the unregistered `log-session-tokens`, note that gitignored `settings.json` means a fresh clone has no hook registration
 - 2026-06-30: Add `/b` command + time-tracking touchpoints in `/lets-go`, `/session-logger`, `/handoff` (remind-don't-auto policy); local `b` time-tool on studio-3 → `time-push` → hasami ingest (`bronze.time_entry`, `task_raw`)
 - 2026-08-14: Rename `b` → `punch` (`b` kept as a symlink); fix the tracker-detection snippet in all three commands — the macOS-only `dscl` lookup returned empty under a sandbox and reported "not installed" on a host that had it. Now tries `getent` then `dscl`, and treats an empty home as not-found rather than building `/bin/punch`. Installed on dev.local
-<\!-- central-ops-knowledge: begin -->
+<!-- central-ops-knowledge: begin -->
 ## Central Ops Knowledge (shared doctrine — all my AI tools)
 
 I maintain ONE central, authoritative **ops-knowledge state** for my homelab/home: **dynamic**
@@ -259,8 +259,9 @@ Operating rules for every agent (Claude, OpenCode, Codex, Cursor, Droid, Copilot
 3. **OKF form** — plain markdown + YAML, **no secrets** (pointers only), conformant for any tool.
 4. **Local-first / WAN-tolerant** — prefer local LLM/files/Kiwix; must work with the internet down.
 5. **Respect boundaries** — household surfaces LAN-only; don't touch non-Scott tailnet hosts.
-<\!-- central-ops-knowledge: end -->
+<!-- central-ops-knowledge: end -->
 
+<!-- design-patterns: begin -->
 ## Design-pattern discipline
 
 Before designing a non-trivial component, or coining a new mechanism/abstraction:
@@ -275,3 +276,4 @@ Before designing a non-trivial component, or coining a new mechanism/abstraction
 - **If you coin something reusable, flag it for capture** rather than letting it evaporate.
 - Prefer the GoF house stances (composition over inheritance; Strategy over if-ladders;
   avoid Singleton/Visitor) unless there's a stated reason.
+<!-- design-patterns: end -->
