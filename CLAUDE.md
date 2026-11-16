@@ -40,6 +40,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - [Memory Scope](./guidelines/memory.md) - What belongs in memory, what never does, and the public/private split (`memory/local/` is gitignored)
 - [Glossary](./guidelines/glossary.md) - One term, one meaning; `glossary/GLOSSARY.md` is the shared vocabulary and `bin/check-glossary.sh` enforces it
 - [Data-Diode List Control](./guidelines/data-diode-list-control.md) - Black/white/gray list pattern for one-way egress boundaries (scrub/allow/pending-promotable); the gray list discovers unknowns before they leak
+- [Beaufort TODO Announcements](./guidelines/beaufort-todo-announcements.md) - Project agents announce Scott's open action items to Beaufort (`todo_add` on the `beaufort` MCP): headline, summary and link only; `todo_update`/`todo_close` keep it current; stable item ids; the project keeps the details
 - [Go Code Standards](./guidelines/golang.md) - JSON response safety (no fmt.Fprintf), gosec patterns, G104 triage
 - [Python Code Standards](./guidelines/python.md) - Type hints, error handling, testing patterns
 - [TypeScript Standards](./guidelines/typescript.md) - Strict types, functional components, error boundaries
