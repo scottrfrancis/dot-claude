@@ -19,7 +19,8 @@ Leave out:
 
 - items owned only by someone else;
 - done and dropped items;
-- items the project file already links to Beaufort (it cites a `BL-` id);
+- items already in Beaufort by another route: the project file cites a `BL-` id that was not
+  created by `todo_add`. Leave those to be managed by hand;
 - anything from Scott's employer's systems or its clients' work. Beaufort excludes those
   domains, and the project should not route around that.
 
@@ -38,10 +39,26 @@ Call `todo_add` on the `beaufort` MCP server.
 | `request_id` | `<project>:<item_id>` |
 
 Beaufort dedupes on project and item id. Announcing the same item twice returns the existing
-`BL-` id with `created: false`, so a retry after a dropped connection is safe.
+`BL-` id with `created: false`, so a retry after a dropped connection is safe, and so is
+re-running a whole pass. Writing the `BL-` id into the project file is optional.
 
-After a successful call, write the `BL-` id next to the item in the project file ("Beaufort
-BL-293"). That marks it as announced for the next agent.
+## Keep it current
+
+When an announced item changes in the project, tell Beaufort in the same session:
+
+| Change in the project | Call |
+|---|---|
+| New headline, summary, link or due date | `todo_update` with only the fields that changed |
+| Status becomes in progress, blocked, or open again | `todo_update` with `status` |
+| Done | `todo_close` with `resolution: done` |
+| Dropped or superseded | `todo_close` with `resolution: dropped` and a one-line `note` |
+
+Both take `request_id`, `project` and `item_id`, and find the item by the project and item id it
+was announced with. They never create an item, and they refuse one that was not announced
+through `todo_add`. Closing an item twice changes nothing.
+
+Announced items appear under "projects" in `todo_list`, grouped by project, and stay out of
+Scott's daily list unless they are overdue.
 
 ## What stays in the project
 
@@ -49,12 +66,6 @@ Sources, transcripts, decisions, client data and working notes stay in the proje
 and summary are for Scott's own list: write them so a client would not mind seeing them there.
 For export-controlled client work (ITAR), the headline and summary carry no technical content at
 all.
-
-## Limits of the current server
-
-There is no update or close tool yet. A new due date, a status change or a closed item does not
-reach Beaufort. When an announced item closes, say so in the project file and tell Scott, so the
-`BL-` item can be closed by hand.
 
 ## Connecting
 
