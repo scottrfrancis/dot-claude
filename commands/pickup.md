@@ -25,13 +25,15 @@ mtime, so every one of them passed a "modified in the last 7 days" filter. Order
 also put this command at odds with the `load-handoff-context.sh` SessionStart hook, which
 orders by name. Both now read the filename.
 
+The scripts use `[[ ]]` and `find` because they run under zsh as well as bash. In zsh `[ "$fd" \< "$CUTOFF" ]` is a syntax error and an unmatched glob is an error, so the old filter let stale handoffs through (observed 2026-11-03).
+
 ```bash
 CUTOFF=$(date -d '7 days ago' +%F 2>/dev/null || date -v-7d +%F)
 for d in session-logs .claude/session-logs .factory/logs "$HOME/.claude/session-logs"; do
   [ -d "$d" ] || continue
-  ls -1 "$d"/handoff-????-??-??-*.md 2>/dev/null | sort -r | while IFS= read -r f; do
+  find "$d" -maxdepth 1 -name 'handoff-????-??-??-*.md' 2>/dev/null | sort -r | while IFS= read -r f; do
     fd=$(basename "$f"); fd=${fd#handoff-}; fd=${fd:0:10}
-    [ "$fd" \< "$CUTOFF" ] || echo "$fd  $f"
+    [[ "$fd" < "$CUTOFF" ]] || echo "$fd  $f"
   done
 done | sort -r | head -5
 ```
@@ -48,7 +50,7 @@ CUTOFF=$(date -d '7 days ago' +%F 2>/dev/null || date -v-7d +%F)
 find /Volumes/workspace -maxdepth 3 -path '*/session-logs/handoff-????-??-??-*.md' 2>/dev/null \
   | while IFS= read -r f; do
       fd=$(basename "$f"); fd=${fd#handoff-}; fd=${fd:0:10}
-      [ "$fd" \< "$CUTOFF" ] || echo "$fd  $f"
+      [[ "$fd" < "$CUTOFF" ]] || echo "$fd  $f"
     done | sort -r | head -8
 ```
 
@@ -70,22 +72,43 @@ Read and display the full contents of the handoff file so it is in active contex
 
 Run the same git checks as `/lets-go` — **both dot-repo and project repo**.
 
-### Dot-Repo Sync Check (`~/.claude`)
+### Dot-Repo Sync Check (dot-claude)
+
+**Do not probe `~/.claude`.** On profile-based setups `$HOME` is the profile, so `~/.claude` is not the dot-repo and git over ssh cannot find its keys. This block is the one in `/lets-go`.
 
 ```bash
-git -C ~/.claude fetch origin
-git -C ~/.claude rev-list --count HEAD..origin/main   # behind
-git -C ~/.claude rev-list --count origin/main..HEAD   # ahead
-git -C ~/.claude status --porcelain
+# 1. Resolve the REAL dot-repo. First candidate containing a .git wins.
+DOTC=""
+for c in /Volumes/workspace/dot-claude "$(readlink -f "$HOME/.claude" 2>/dev/null)" \
+         "/Users/$(id -un)/.claude" "$HOME/.claude"; do
+  [ -n "$c" ] && [ -d "$c/.git" ] && DOTC="$c" && break
+done
+if [ -z "$DOTC" ]; then echo "dot-claude repo not found — skipping"; else
+
+# 2. git over ssh needs the REAL home, or it looks for keys under the profile dir and
+#    fails with: no such identity: <profile>/.ssh/id_rsa
+REALHOME="/Users/$(id -un)"
+
+# 3. Fetch, and CHECK IT WORKED. Counts after a failed fetch are stale refs.
+if HOME="$REALHOME" git -C "$DOTC" fetch origin 2>&1 \
+     | grep -qiE "no such identity|could not read|permission denied|fatal"; then
+  echo "⚠ dot-claude fetch FAILED — ahead/behind would be stale; NOT reporting sync state"
+else
+  echo "dot-claude: $DOTC"
+  echo "  behind: $(git -C "$DOTC" rev-list --count HEAD..origin/main)"
+  echo "  ahead:  $(git -C "$DOTC" rev-list --count origin/main..HEAD)"
+fi
+git -C "$DOTC" status --porcelain
+fi
 ```
 
 Alert the user prominently if out of sync:
 
-- **Behind**: "⚠ ~/.claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C ~/.claude pull`."
-- **Ahead**: "~/.claude has {N} unpushed commits — consider pushing to back up your config."
-- **Dirty**: "~/.claude has uncommitted changes."
+- **Behind**: "⚠ dot-claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C {DOTC} pull`."
+- **Ahead**: "dot-claude has {N} unpushed commits — consider pushing to back up your config."
+- **Dirty**: "dot-claude has uncommitted changes."
 
-Skip silently if `~/.claude` has no remote or the fetch fails.
+If the repo is not found, say so and move on. If the fetch fails, report that and do not report counts, which would be stale.
 
 ### Project repo
 
