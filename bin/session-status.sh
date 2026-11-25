@@ -229,6 +229,23 @@ if [ "$SETTINGS" != none ]; then
   fi
 fi
 
+# --- skill links ------------------------------------------------------------
+# Claude Code loads skills from the active config dir. On a profile host that is not
+# dot-claude, and bin/link-config.sh links dot-claude's skills into it one by one.
+CFG="${SESSION_STATUS_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
+if [ -n "$DOTC" ] && [ -d "$DOTC/skills" ] && [ "$(phys "$CFG")" != "$DOTC" ]; then
+  total=0; unlinked=0
+  for s in "$DOTC"/skills/*/; do
+    name="$(basename "$s")"
+    [ "$name" = synced ] && continue
+    [ -f "$s/SKILL.md" ] || continue
+    total=$((total + 1))
+    [ -f "$CFG/skills/$name/SKILL.md" ] || unlinked=$((unlinked + 1))
+  done
+  [ "$unlinked" -gt 0 ] && \
+    emit "skills: $unlinked of $total dot-claude skills are not linked into $CFG, so they never load here; run $DOTC/bin/link-config.sh --apply"
+fi
+
 # --- time tracker -----------------------------------------------------------
 # Reports, never starts or stops: a timer posts real billable state. Absent means `$P` is
 # empty, nothing else. `punch` answers `list-open`; the older `b` capture CLI still on some
