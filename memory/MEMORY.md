@@ -35,7 +35,7 @@ at `kb-mcp` or a gitignored location instead.
 
 - `git add -u` not `git add .` in autocommit — avoids staging untracked build artifacts or secrets [2026-03-10]
 - `-n` is opt-in confirmation in autocommit; the common case is "commit all my changes" [2026-03-10]
-- Hooks are advisory: SessionStart injects handoff context and reports conformance; Stop reminds about `/session-logger` and `/handoff`; PreToolUse warns before destructive git/rm [2026-08-19]
+- Hooks are advisory: SessionStart points at drift, handoffs and conformance via `bin/session-status.sh` without consuming anything; Stop reminds once per session about `/session-logger` and `/handoff`; PreToolUse warns before destructive git/rm [2026-11-25]
 - `settings.json` is gitignored and carries per-host state, so a fresh clone registers no hooks at all [2026-08-19]
 - The File Registry from the agentic-spec method was evaluated and rejected: it cannot drift only under one-agent, mediated-write conditions that do not hold here. Protocol lives in frontmatter instead [2026-08-19 · docs/agent-spec-alignment-review.md Part III]
 

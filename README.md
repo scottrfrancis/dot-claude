@@ -46,9 +46,9 @@ Hooks         ←  validate quality    ←  data enforcement
 ├── settings.json                # Global tool permissions and hook registration
 │
 ├── hooks/                       # Global hooks (fire for every project)
-│   ├── load-handoff-context.sh  # SessionStart: auto-inject recent handoff context
+│   ├── session-status.sh        # SessionStart: point at drift, handoffs, timers (bin/session-status.sh)
 │   ├── pre-tool-safety.sh       # PreToolUse: block destructive git/rm/config writes
-│   └── session-end-reminder.sh  # Stop: remind about /session-logger and /handoff
+│   └── session-end-reminder.sh  # Stop: remind once per session about /session-logger and /handoff
 │
 ├── guidelines/                  # Reusable development standards
 │   ├── shell-scripts.md         # Bash best practices: error handling, portability
@@ -77,7 +77,7 @@ Hooks         ←  validate quality    ←  data enforcement
 │   ├── commit-manual            # Conventional commit helper
 │   ├── autocommit.md            # AI-powered commit message generator
 │   ├── checkpoint-progress      # WIP commit and session state saver
-│   ├── session-cleanup          # Pre-session device/process cleanup
+│   ├── session-cleanup          # NPU/GPU box only: kills every Claude process (--kill-all-claude)
 │   ├── validate-hw-env          # Hardware environment pre-check
 │   └── extract-adr              # Convert logged decisions to ADRs
 │
@@ -115,7 +115,7 @@ Hooks         ←  validate quality    ←  data enforcement
 | Command | Invocation | Purpose |
 | ------- | --------- | ------- |
 | **checkpoint-progress** | `/checkpoint-progress <root> <message>` | Create WIP commit and log session state |
-| **session-cleanup** | `/session-cleanup` | Kill stale processes, validate device access, clean shared memory |
+| **session-cleanup** | `session-cleanup --kill-all-claude` | Dedicated NPU/GPU box only. Kills every Claude process on the machine, then cleans device handles and shared memory. Refuses without the flag |
 | **validate-hw-env** | `/validate-hw-env` | Pre-check hardware environment safety before testing |
 
 ### Also Available
@@ -204,12 +204,11 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
 
 | Event | Hook | What It Does |
 | ----- | ---- | ------------ |
-| **SessionStart** | `load-handoff-context.sh` | Auto-injects the most recent `handoff-*.md` as context on new session startup. Checks project-local `.claude/session-logs/` first, then global. Skips files >7 days old. |
+| **SessionStart** | `session-status.sh` | Runs `bin/session-status.sh --hook` on `startup` and `clear`. Points at what needs attention and is silent otherwise: drift on dot-claude, the downstream dot-repos, the project and its nested repos (no fetch); handoffs from the last 7 days, without reading or moving them; an open `punch` timer; hooks missing from `settings.json`; overdue conformance items; stale `ACTION_ITEMS.md` entries; and the output of an executable `.claude/session-start.sh` in the project. `load-handoff-context.sh` is a deprecated alias for it. |
 | **PreToolUse** | `pre-tool-safety.sh` | Blocks (exit 2) destructive operations: `git reset --hard`, `git push --force`, `git worktree remove --force`, `rm -rf`, and redirects to sensitive config files. Prompts for user confirmation before proceeding. |
 | **PreCompact** | `pre-compact-memorialize.sh` | Snapshots branch, outstanding conformance items and uncommitted files before context is compacted, and steers what the summary preserves. Advisory. |
-| **SessionStart** | `conformance-report.sh` | Surfaces overdue maintenance at session start — conflicts still awaiting a decision, and whether `/mine-sessions` is overdue. Runs `bin/conformance.sh`, which is deterministic and costs no tokens. Advisory; silent when nothing is overdue. |
 | **SessionStart** | `account-mismatch-warn.sh` | Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) does not match the logged-in oauth account. Advisory only; silent on match; needs `jq`. |
-| **Stop** | `session-end-reminder.sh` | Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) when neither has been run today. Also reminds about `/lint-action-items` when an outline-format `ACTION_ITEMS.md` has items past the 7-day prune window. |
+| **Stop** | `session-end-reminder.sh` | Stop fires after every reply, so this speaks once per session: it reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) when neither has been run today. Also reminds about `/lint-action-items` when an outline-format `ACTION_ITEMS.md` has items past the 7-day prune window. |
 
 **Not currently registered:** `hooks/log-session-tokens`, a `SessionEnd` hook appending token usage to `~/.factory/token-ledger.json` keyed by `project:branch`. It is the ledger writer that `guidelines/pr-token-tracking.md` and `/pr-tokens` read from — both are inert until it is wired into `settings.json`.
 

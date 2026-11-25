@@ -14,8 +14,8 @@ These hooks are registered in `~/.claude/settings.json` and fire for every proje
 
 | Hook | Event | What it does |
 | ---- | ----- | ------------ |
-| `~/.claude/hooks/load-handoff-context.sh` | SessionStart | Auto-injects the most recent handoff file as context on new session startup |
-| `~/.claude/hooks/session-end-reminder.sh` | Stop | Reminds about `/session-logger` and `/handoff` when 3+ files changed |
+| `~/.claude/hooks/session-status.sh` | SessionStart | Points at what needs attention: repo drift, fresh handoffs, an open timer, conformance items, the project's own `.claude/session-start.sh` |
+| `~/.claude/hooks/session-end-reminder.sh` | Stop | Reminds once per session about `/session-logger` and `/handoff` when 3+ files changed |
 
 Project-local hooks in `.claude/settings.local.json` layer **on top of** these global hooks — they don't replace them.
 
