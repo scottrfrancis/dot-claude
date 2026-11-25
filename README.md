@@ -141,7 +141,9 @@ Every remaining command in `~/.claude/commands/`.
 
 ## Guidelines Reference
 
-On-demand reference standards in `~/.claude/guidelines/`. Read the relevant one *before* the matching task — they are not auto-loaded.
+Topic guidelines are skills: each lives in `skills/<name>/SKILL.md`, and `guidelines/<name>.md` is a symlink to it, so every path below still resolves. Claude Code lists each skill by its description and loads it when the work matches. `hooks/skill-gate.py` makes that reliable for the file types it knows: the first `.py`, `.sh`, Markdown, Dockerfile (and so on) write of a session, and the first commit or push, wait until the governing skill is loaded. Skill names are lowercase, so `C4-diagramming.md` is the `c4-diagramming` skill and `2x2-status-report.md` is `status-report-2x2`.
+
+Five stay plain guidelines, read when something points at them: `central-ops-knowledge`, `beaufort-todo-announcements` and `environments-and-llm-spend` (homelab doctrine), `session-safety` (opt-in, one kind of host) and `memory`.
 
 | Guideline | When to Apply |
 | --------- | ------------ |
@@ -171,7 +173,7 @@ On-demand reference standards in `~/.claude/guidelines/`. Read the relevant one 
 | **readme-documentation.md** | Organizing project documentation with README as central hub |
 | **rule-conflict-protocol.md** | Two instructions or two codebase patterns requiring incompatible things — stop, log to `logs/rule-conflict-log.md`, present at least three options |
 | **security-hardening.md** | Defense-in-depth patterns grounded in real-world breach analysis |
-| **session-safety.md** | **CRITICAL** - Prevent session hangs and context loss on hardware systems |
+| **session-safety.md** | Opt-in, dedicated NPU/GPU boxes only: device contention between sessions |
 | **shell-escaping.md** | Complex shell commands — quoting rules, heredocs, VS Code terminal escaping |
 | **shell-scripts.md** | Directory management, error handling, and portability |
 | **terraform.md** | Module structure, state management, security |
@@ -180,7 +182,9 @@ On-demand reference standards in `~/.claude/guidelines/`. Read the relevant one 
 
 ## Skills
 
-Global skills in `~/.claude/skills/<name>/SKILL.md`, available in every project.
+Global skills live in `skills/<name>/SKILL.md`. The topic guidelines above are skills too, hidden from the `/` menu with `user-invocable: false`.
+
+Claude Code loads skills from the active config dir: `~/.claude`, or `$CLAUDE_CONFIG_DIR`. A profile config dir (`~/.claude-profiles/<p>/.claude`, `~/.claude-ailab`) symlinks parts of this repo but not `skills/`, so no repo skill loads there until it is linked. `bin/link-config.sh` adds one link per skill, plus `bin/`, to every config dir whose `CLAUDE.md` links here. It is a dry run unless given `--apply`, and it never replaces what it did not create. Re-run it after adding or removing a skill. `bin/session-status.sh` reports a config dir with missing links.
 
 | Skill | Purpose |
 | ----- | ------- |
@@ -208,6 +212,8 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
 | **PreToolUse** | `pre-tool-safety.sh` | Blocks (exit 2) destructive operations: `git reset --hard`, `git push --force`, `git worktree remove --force`, `rm -rf`, and redirects to sensitive config files. Prompts for user confirmation before proceeding. |
 | **PreCompact** | `pre-compact-memorialize.sh` | Snapshots branch, outstanding conformance items and uncommitted files before context is compacted, and steers what the summary preserves. Advisory. |
 | **SessionStart** | `account-mismatch-warn.sh` | Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) does not match the logged-in oauth account. Advisory only; silent on match; needs `jq`. |
+| **PreToolUse** | `skill-gate.py` | Holds the first write of a governed file type (`.py`, `.go`, `.ts`, `.sh`, `.tf`, Dockerfile, tests, Markdown, workflows, `.puml`, ADRs), and the first `git commit` or `push`, until the governing skill is loaded through the Skill tool or a Read of its `SKILL.md`. Asks at most twice per skill per session. Off with `CLAUDE_SKILL_GATE=off` or a project `.claude/skill-gate-off`. |
+| **PostToolUse** | `prose-check.py` | After a Markdown write, checks the mechanical prose rules: the dash budget `max(2, lines/40)`, the corrective frame on added lines, and bold density. Judges only what the write added, and returns findings to the model (exit 2). A file containing `prose-check: off` is skipped. |
 | **Stop** | `session-end-reminder.sh` | Stop fires after every reply, so this speaks once per session: it reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) when neither has been run today. Also reminds about `/lint-action-items` when an outline-format `ACTION_ITEMS.md` has items past the 7-day prune window. |
 
 **Not currently registered:** `hooks/log-session-tokens`, a `SessionEnd` hook appending token usage to `~/.factory/token-ledger.json` keyed by `project:branch`. It is the ledger writer that `guidelines/pr-token-tracking.md` and `/pr-tokens` read from — both are inert until it is wired into `settings.json`.
@@ -224,34 +230,42 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
 ### Hook Design Rules
 
 - **Advisory by default** — most hooks warn on stderr and exit 0; PreToolUse hooks may exit 2 to block an operation and prompt the user to confirm
-- **Fast** — 5-second timeout; no network calls, no heavy computation
+- **Fast** — no network calls, no heavy computation. `timeout` is in seconds: 10 is plenty for a local check (a registered `5000` is 83 minutes)
 - **Defensive** — `set -euo pipefail`, drain stdin with `cat > /dev/null` or `jq`, guard all greps with `|| true`
 - **Context injection** — SessionStart hooks can output JSON with `additionalContext` to inject text into Claude's context
 
 ### Hook Registration Pattern
 
+`settings.json` is gitignored, so each host registers its own hooks. The global set:
+
 ```json
 {
   "hooks": {
     "SessionStart": [
-      {
-        "hooks": [{ "type": "command", "command": "~/.claude/hooks/script.sh", "timeout": 5000 }]
-      }
+      { "matcher": "^(startup|clear)$",
+        "hooks": [{ "type": "command", "command": "~/.claude/hooks/session-status.sh", "timeout": 30 }] },
+      { "hooks": [{ "type": "command", "command": "~/.claude/hooks/account-mismatch-warn.sh", "timeout": 10 }] }
+    ],
+    "PreToolUse": [
+      { "hooks": [{ "type": "command", "command": "~/.claude/hooks/pre-tool-safety.sh", "timeout": 10 }] },
+      { "matcher": "Write|Edit|MultiEdit|Bash|Read|Skill",
+        "hooks": [{ "type": "command", "command": "python3 ~/.claude/hooks/skill-gate.py", "timeout": 10 }] }
     ],
     "PostToolUse": [
-      {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [{ "type": "command", "command": ".claude/hooks/script.sh", "timeout": 5000 }]
-      }
+      { "matcher": "Write|Edit|MultiEdit",
+        "hooks": [{ "type": "command", "command": "python3 ~/.claude/hooks/prose-check.py", "timeout": 10 }] }
+    ],
+    "PreCompact": [
+      { "hooks": [{ "type": "command", "command": "~/.claude/hooks/pre-compact-memorialize.sh", "timeout": 30 }] }
     ],
     "Stop": [
-      {
-        "hooks": [{ "type": "command", "command": ".claude/hooks/script.sh", "timeout": 5000 }]
-      }
+      { "hooks": [{ "type": "command", "command": "~/.claude/hooks/session-end-reminder.sh", "timeout": 10 }] }
     ]
   }
 }
 ```
+
+Keep host-specific entries (herdr, iTerm status) alongside these. A project adds its own in `.claude/settings.local.json`, with paths relative to the project.
 
 ## Contributing to Guidelines
 
