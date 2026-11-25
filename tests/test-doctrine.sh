@@ -133,5 +133,29 @@ new_workspace
 before="$(cat "$WORK"/ws/primary/CLAUDE.md)"; run sync >/dev/null
 check_eq "sync never rewrites the primary" "$(cat "$WORK"/ws/primary/CLAUDE.md)" "$before"
 
+# The real primary. Homelab doctrine lives in doctrine/homelab.md, which homelab hosts import
+# through host.md; CLAUDE.md stays universal, so it must not carry a second copy.
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+for b in $(awk -F'|' '/^[a-z]/ { gsub(/ /, "", $1); print $1 }' "$ROOT/doctrine/targets.conf" | sort -u); do
+  if grep -qx "<!-- $b: begin -->" "$ROOT/doctrine/homelab.md" 2>/dev/null; then
+    ok "doctrine/homelab.md carries $b"
+  else
+    bad "doctrine/homelab.md carries $b"
+  fi
+  if grep -q "<!-- $b: begin -->" "$ROOT/CLAUDE.md"; then
+    bad "CLAUDE.md does not carry a second copy of $b"
+  else
+    ok "CLAUDE.md does not carry a second copy of $b"
+  fi
+done
+
+rm -rf "$WORK"/real; mkdir -p "$WORK"/real/down
+{ echo "# Down"; echo; echo "<!-- design-patterns: begin -->"
+  awk '$0=="<!-- design-patterns: begin -->"{f=1;next} $0=="<!-- design-patterns: end -->"{f=0} f' "$ROOT/doctrine/homelab.md" 2>/dev/null
+  echo "<!-- design-patterns: end -->"; } > "$WORK"/real/down/CLAUDE.md
+echo "design-patterns | down/CLAUDE.md" > "$WORK"/real/targets.conf
+( cd "$WORK"/real && "$DOCTRINE" check --targets "$WORK"/real/targets.conf >/dev/null 2>&1 ); rc=$?
+check_rc "the default primary is doctrine/homelab.md" "$rc" 0
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
