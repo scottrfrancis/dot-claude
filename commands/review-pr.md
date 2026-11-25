@@ -8,15 +8,12 @@ Review a pull request for bugs, security issues, missing tests, and code quality
 
 Arguments: $ARGUMENTS
 
-## Step 0 — Invoke `/ultrareview` (REQUIRED)
+## Step 0: Offer the deep review
 
-Before doing anything else, you MUST explicitly invoke the built-in `/ultrareview` slash command to run Claude's specialized bug-hunting reviewer fleet against the changed files. This is non-optional — `/ultrareview` is the primary source of findings for this command; the manual checklist in later steps is a supplement, not a replacement.
-
-- Run `/ultrareview` and wait for it to complete.
-- Capture the findings it produces.
-- Treat any HIGH/critical items it surfaces as required review items.
-
-If `/ultrareview` is unavailable in the current environment (e.g., older Claude model without the command), say so explicitly in the final review output and continue with the manual checklist below.
+This command is a manual, single-pass review. For a multi-agent review of the same change, the
+user can run `/code-review ultra` (or `/code-review ultra <PR#>`) themselves. It is billed and
+user-triggered, so an agent cannot start it. Mention it once in the final output when the change
+is large or risky, then carry on.
 
 ## Step 1 — Resolve the diff
 
@@ -75,7 +72,7 @@ Evaluate the diff against each category. Only report findings — skip categorie
 
 ## Step 4 — Output the review
 
-Format as a PR review comment. Group findings by file. **Merge findings from `/ultrareview` (Step 0) with findings from the manual checklist (Step 3)**, deduplicating and prefixing each finding's source as `[ultrareview]` or `[manual]` in the Finding column where helpful.
+Format as a PR review comment and group findings by file. If the user ran `/code-review` and shared its findings, merge them with the manual checklist's, dropping duplicates.
 
 ```
 ## PR Review: <title or branch>
