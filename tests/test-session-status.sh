@@ -8,7 +8,6 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATUS="$SCRIPT_DIR/../bin/session-status.sh"
-HOOK="$SCRIPT_DIR/../hooks/session-status.sh"
 
 PASS=0; FAIL=0
 ok()  { PASS=$((PASS+1)); printf '  ok   %s\n' "$1"; }

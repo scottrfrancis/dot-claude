@@ -15,7 +15,7 @@ check_rc()  { [ "$2" = "$3" ] && ok "$1" || bad "$1" "expected exit $3, got $2";
 has()    { case "$2" in *"$3"*) ok "$1" ;; *) bad "$1" "expected to mention '$3' in: $2" ;; esac; }
 hasnt()  { case "$2" in *"$3"*) bad "$1" "should not mention '$3': $2" ;; *) ok "$1" ;; esac; }
 
-WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/test-conformance.XXXXXX")"; trap 'rm -rf "$WORK"' EXIT
 
 reset() { rm -rf "$WORK"/p; mkdir -p "$WORK"/p/session-logs "$WORK"/p/logs "$WORK"/p/memory; log_header > "$WORK"/p/logs/rule-conflict-log.md; }
 log_header() { printf '# Runtime Conflict Log\n\n---\n\n(New entries appended below this separator.)\n'; }
