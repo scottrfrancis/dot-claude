@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# link-config.sh — link this repo's skills (and bin/) into profile config dirs.
+# link-config.sh — link this repo's skills, bin/, doctrine/, memory/ and host.md into profile
+# config dirs.
 #
 # Claude Code loads skills from the active config dir: ~/.claude, or $CLAUDE_CONFIG_DIR. On a
 # host that runs profiles, that is a different directory which symlinks parts of this repo
@@ -29,7 +30,10 @@ while [ $# -gt 0 ]; do
 done
 
 REPO="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-TOP_ITEMS=(bin)
+# Top-level items a profile needs: bin/ for scripts, doctrine/ and host.md for the host
+# import, memory/ for the universal memory import. Each only if the repo has it (host.md is
+# gitignored and per host).
+TOP_ITEMS=(bin doctrine memory host.md)
 
 phys() { (cd -P "$1" 2>/dev/null && pwd -P); }
 
@@ -68,7 +72,9 @@ link_item() { # $1 = link path, $2 = target
 }
 
 for d in "${DIRS[@]}"; do
-  for item in "${TOP_ITEMS[@]}"; do link_item "$d/$item" "$REPO/$item"; done
+  for item in "${TOP_ITEMS[@]}"; do
+    [ -e "$REPO/$item" ] && link_item "$d/$item" "$REPO/$item"
+  done
   for s in "$REPO"/skills/*/; do
     name="$(basename "$s")"
     [ "$name" = synced ] && continue
