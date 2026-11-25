@@ -44,6 +44,7 @@ advance_origin() { # $1 = repo
 
 # Every probe the repo tests do not exercise is switched off, so output is theirs alone.
 export SESSION_STATUS_PUNCH=none SESSION_STATUS_CONFORMANCE=none SESSION_STATUS_SETTINGS=none
+export SESSION_STATUS_CONFIG_DIR="$WORK/no-config"
 export SESSION_STATUS_WORKSPACE="$WORK/no-workspace"
 status() { "$STATUS" "$@" 2>/dev/null; }
 
@@ -226,6 +227,21 @@ has "hooks: the old SessionStart name is flagged for re-registration" "$out" "lo
 out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$WORK/absent.json" status)"
 has "hooks: a host with no settings.json is told it registers nothing" "$out" "no hooks are registered"
 export SESSION_STATUS_SETTINGS=none
+
+# --- skill links ------------------------------------------------------------
+# A profile config dir that lacks links to dot-claude's skills never loads them.
+mkdir -p "$DOTC/skills/alpha" "$DOTC/skills/beta" "$DOTC/skills/synced"
+touch "$DOTC/skills/alpha/SKILL.md" "$DOTC/skills/beta/SKILL.md"
+CFG="$WORK/cfg"; mkdir -p "$CFG/skills"
+out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$CFG" status)"
+has "skills: a profile missing dot-claude's skills is told how many and what to run" "$out" "2 of 2 dot-claude skills are not linked"
+has "skills: and what to run" "$out" "link-config.sh --apply"
+ln -s "$DOTC/skills/alpha" "$CFG/skills/alpha"; ln -s "$DOTC/skills/beta" "$CFG/skills/beta"
+out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$CFG" status)"
+lacks "skills: a fully linked profile is not mentioned" "$out" "skills:"
+out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$DOTC" status)"
+lacks "skills: dot-claude itself as the config dir needs no links" "$out" "skills:"
+rm -rf "$DOTC/skills" "$CFG"
 
 # --- hook mode --------------------------------------------------------------
 hookjson() { printf '{"session_id":"s1","hook_event_name":"SessionStart","source":"%s","cwd":"%s"}' "$1" "$2"; }
