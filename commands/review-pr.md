@@ -1,7 +1,7 @@
 ---
 description: "Review a PR diff for bugs, security issues, missing tests, and style"
 argument-hint: "[PR number or branch name] [-base main]"
-allowed-tools: ["Bash", "Read", "Glob", "Grep", "SlashCommand"]
+allowed-tools: ["Bash", "Read", "Glob", "Grep"]
 ---
 
 Review a pull request for bugs, security issues, missing tests, and code quality.
