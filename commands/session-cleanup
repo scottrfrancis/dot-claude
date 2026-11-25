@@ -1,8 +1,23 @@
 #!/bin/bash
-# Claude Code Session Cleanup
-# Run before every Claude session to prevent hangs and context loss
+# Claude Code Session Cleanup — for a dedicated NPU/GPU board only.
+#
+# Kills EVERY process whose command line contains "claude": this session, parallel
+# sessions, worktree agents, herdr panes and the desktop app. Written for a single-session
+# hardware box whose device handles leaked when a session hung. On a workstation it takes
+# down everything at once, so it refuses unless asked by name.
+#
+#   session-cleanup --kill-all-claude
 
 set -e
+
+if [ "${1:-}" != "--kill-all-claude" ]; then
+  printf '%s\n' "session-cleanup: refusing to run." "" \
+    "This kills every process matching \"claude\" on this machine, including the session that" \
+    "runs it. It is meant for a dedicated hardware box whose project CLAUDE.md opts into" \
+    "guidelines/session-safety.md. If that is where you are, run:" "" \
+    "  session-cleanup --kill-all-claude" >&2
+  exit 2
+fi
 
 echo "=== Claude Session Cleanup ==="
 
