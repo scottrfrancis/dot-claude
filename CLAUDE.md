@@ -1,277 +1,43 @@
-# Claude Code Project Guidelines
-
-This directory contains consistent guidance for all my projects with Claude Code.
-
-## Overview
-
-These guidelines help maintain consistency across projects and capture best practices learned through experience. Reference these when starting new projects or when you need specific technical guidance.
-
-## Branch Policy and Strategy
-
-The user works on multiple projects that have different repositories, policies and strategies.  The user is also forgetful to update the local repository when starting sessions.
-
-REMIND the user to consider the appropriate branching strategy when starting a session or a series of tasks.  This reminder should include
-
-- current branch and status
-- suggestions to pull, push, create or delete branches
-
-## Session Safety
-
-[Session safety](./guidelines/session-safety.md) applies only to a dedicated NPU/GPU box whose project CLAUDE.md opts in. Never run `session-cleanup` anywhere else: it kills every Claude process on the machine, this session included.
-
-## Active Guidelines
-
-- [Shell Script Best Practices](./guidelines/shell-scripts.md) - Directory management, error handling, and portability
-- [Conventional Commits](./guidelines/conventional-commits.md) - Standardized commit message format
-- [README Documentation](./guidelines/readme-documentation.md) - Organizing project documentation with README as central hub
-- [Session Safety](./guidelines/session-safety.md) - Opt-in, dedicated NPU/GPU boxes only: device contention between sessions
-- [AI Systems Engineering Patterns](./guidelines/ai-patterns.md) - LLM integration patterns: caching, routing, guardrails, RAG
-- [Tool Delegation for LLM Cron Skills](./guidelines/ai-cron-tool-delegation.md) - When a cron skill must produce a number, build a deterministic helper and wire it via cron payload — not via SKILL.md or AGENTS.md
-- [Project Setup](./guidelines/project-setup.md) - Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling
-- [Prose Style](./guidelines/prose-style.md) - **Always on, all written output.** Anti-AI-smell rules: em-dash discipline, the corrective frame in its disguises, plain register, concrete nouns, sentence variation, state-what-is (never narrate the document's own edits), bold discipline
-- [Markdown Formatting](./guidelines/markdown-formatting.md) - Spacing rules for generated Markdown: blank lines around lists, paragraph separation, consistent bullet markers
-- [PR Token Tracking](./guidelines/pr-token-tracking.md) - Include AI token usage in PR descriptions, read from the branch-keyed ledger
-- [Prototype Hygiene](./guidelines/prototype-hygiene.md) - Ship clean from day one: config over code, stable docs over stale state, PRs over branches
-- [Security Hardening](./guidelines/security-hardening.md) - Defense-in-depth patterns grounded in real-world breach analysis
-- [Automated Ingest Hygiene](./guidelines/ingest-hygiene.md) - What two disclosures through automated mail ingest cost, and the five rules they bought: bodies tracked/attachments not, audit reality not version markers, ask what a control would have seen, no fail-open default, "done" means on the remote's default branch
-- [Rule Conflict Protocol](./guidelines/rule-conflict-protocol.md) - What to do when two rules genuinely contradict: log the conflict, decide once, record the decision rather than re-deciding each session
-- [Memory Scope](./guidelines/memory.md) - What belongs in memory, what never does, and the public/private split (`memory/local/` is gitignored)
-- [Glossary](./guidelines/glossary.md) - One term, one meaning; `glossary/GLOSSARY.md` is the shared vocabulary and `bin/check-glossary.sh` enforces it
-- [Data-Diode List Control](./guidelines/data-diode-list-control.md) - Black/white/gray list pattern for one-way egress boundaries (scrub/allow/pending-promotable); the gray list discovers unknowns before they leak
-- [Beaufort TODO Announcements](./guidelines/beaufort-todo-announcements.md) - Project agents announce Scott's open action items to Beaufort (`todo_add` on the `beaufort` MCP): headline, summary and link only; `todo_update`/`todo_close` keep it current; stable item ids; the project keeps the details
-- [Go Code Standards](./guidelines/golang.md) - JSON response safety (no fmt.Fprintf), gosec patterns, G104 triage
-- [Python Code Standards](./guidelines/python.md) - Type hints, error handling, testing patterns
-- [TypeScript Standards](./guidelines/typescript.md) - Strict types, functional components, error boundaries
-- [Docker Standards](./guidelines/docker.md) - Multi-stage builds, security, layer optimization
-- [Terraform Standards](./guidelines/terraform.md) - Module structure, state management, security
-- [Git Workflow](./guidelines/git-workflow.md) - Branch + PR discipline; never commit/push main; stacked-PR handling
-- [ADR Format](./guidelines/adr.md) - Canonical Architecture Decision Record convention: docs/decisions/ADR-NNNN, numbering, status lifecycle, FR-### traceability
-- [Testing Strategies](./guidelines/testing.md) - Test pyramid, mocking, CI integration, framework-specific notes
-- [CI Local Parity](./guidelines/ci-local-parity.md) - Run exact CI commands locally before pushing; install all scanners; budget for pre-existing issues
-- [Environments and the LLM Spend Gate](./guidelines/environments-and-llm-spend.md) - Work on Studio, deploy to dev.local (dev AND staging), prod only on explicit promotion; dev-ai.local for ALL smoke/functional tests, cloud LLMs only when asked
-- [Verification Layers](./guidelines/verification-layers.md) - The gap between "tests pass" and "the system does the thing": code → image → deploy artefact → running system; checks that cannot fail; detector fixtures must be real output; suite self-consistency; non-deterministic tiers as advisory
-- [DOCX Conversion](./guidelines/docx-conversion.md) - python-docx over pandoc; color palette, typography, hyperlinks
-- [Karpathy Principles](./guidelines/karpathy-principles.md) - Deltas not already covered: surface assumptions before implementing; match existing style; mention don't delete pre-existing dead code; read before you write
-- [2x2 Status Report](./guidelines/2x2-status-report.md) - Quad-chart format for short weekly status reports (Last week / This week / Risks / Asks); SA-org tradition, not the canonical Amazon WBR
-- [Architecture Diagram Craft](./guidelines/architecture-diagrams.md) - AWS reference-diagram visual conventions (numbered flow, icon/color rules, boundaries, critique rubric, reference assets); GCP/multi-cloud adaptation; companion to C4-diagramming.md
-- [C4 Diagramming](./guidelines/C4-diagramming.md) - PlantUML file organization for C4 diagrams (modular includes, C1/C2/C3 layout, boundary conflicts)
-- [Central Ops Knowledge](./guidelines/central-ops-knowledge.md) - The vision + doctrine for the central, authoritative, dynamic+archival ops-knowledge state (`okf-knowledge` bundle + wiki, served live via the `kb-mcp` filesystem MCP + `kb-static` browse on mini; Hazel/OpenWebUI is one client); consult-before-acting, write-back. Propagated to all AI tools.
-
-## Custom Commands
-
-- `~/.claude/commands/commit-manual` - Helper for creating conventional commits
-- `~/.claude/commands/autocommit.md` - Stage tracked changes and commit with an AI-generated conventional commit message
-- `~/.claude/commands/lets-go.md` - Session initialization with git sync protocol
-- `~/.claude/commands/session-logger.md` - Session summary with cross-linking and effectiveness assessment
-- `~/.claude/commands/handoff.md` - Generate continuation prompt for seamless session handoff
-- `~/.claude/commands/pickup.md` - Resume from the most recent handoff prompt
-- `~/.claude/commands/mine-sessions.md` - Analyze session logs for patterns, metrics, and process improvements
-- `~/.claude/commands/arch-review.md` - Principal Architect review framework
-- `~/.claude/commands/doc-review.md` - Audit documentation for accuracy, DRY, and clarity; commit on a docs branch
-- `~/.claude/commands/editorial-review.md` - Audit prose for AI tells; accepts optional voice/style parameter (author name, publication, URL, or adjective)
-- `~/.claude/commands/security-audit.md` - Breach-driven security audit for web applications
-- `~/.claude/commands/review-pr.md` - PR code review: bugs, security, missing tests, style; works with PR numbers or branches
-- `~/.claude/commands/babysit-pr.md` - Monitor a PR for check results, reviews, and merge readiness; pairs with `/loop`
-- `~/.claude/commands/checkpoint-progress` - Git checkpoint script: stages all changes and commits a WIP snapshot with timestamp
-- `~/.claude/commands/memorialize.md` - Close out a thread: promote what is durable to memory, then confirm it is safe to clear
-- `~/.claude/commands/extract-adr` - Extract architectural decisions from a session log into the canonical ADR format; saves to `docs/decisions/` with sequential numbering (see `guidelines/adr.md`)
-- `~/.claude/commands/punch.md` - Drive the local `punch` time tracker (start/stop/status/log); project-aware, syncs to hasami via the time-push agent. Renamed from `/b` on 2026-08-14; `b` remains a symlink
-- `~/.claude/commands/build-pdf.md` - Build a PDF from ordered markdown sections via the `md2pdf` CLI and a `report.yaml` manifest
-- `~/.claude/commands/link-sweep.md` - One target per invocation of the federation link audit; designed to run under `/loop`
-- `~/.claude/commands/export-prompts` - Python: export AI agent prompt history (Droid + Claude Code sessions) to markdown, by date or range
-- `~/.claude/commands/pr-tokens` - Python: format the current branch's token usage as a PR-description snippet (see `guidelines/pr-token-tracking.md`)
-- `~/.claude/commands/session-cleanup` - Bash, NPU/GPU box only: kills every Claude process; refuses without `--kill-all-claude` (see `guidelines/session-safety.md`)
-- `~/.claude/commands/validate-hw-env` - Bash: verify exclusive device access before hardware testing; fails when competing sessions are detected
-
-### Spec-Driven Development (SDLC) — harvested from the airgapped engagement fork
-
-- `~/.claude/commands/discovery-init.md` - Scaffold a Spec-Driven Development project: artifact templates, glossary, constitution, traceability chain
-- `~/.claude/commands/interview-to-spec.md` - Convert interview notes into readout, FR-### requirements, Gherkin scenarios, and tracker updates
-- `~/.claude/commands/design-review.md` - Review design deliverables for consistency, terminology alignment, cross-document reference integrity
-- `~/.claude/commands/trace-check.md` - Validate bidirectional traceability across requirements, feature files, scenarios, and tests
-- `~/.claude/commands/constitution.md` - Generate CONSTITUTION.md + WORKFLOWS.md (principles, Definition of Done, quality gates)
-- `~/.claude/commands/assumptions.md` - Track hypothesis-driven assumptions (if-true/if-false/fallback) in ASSUMPTIONS-TRACKER.md
-- `~/.claude/commands/gherkin.md` - Draft Gherkin acceptance scenarios from a requirement or FR-###
-
-## Cross-Tool Session Protocol
-
-Session logs are written to `session-logs/` at the project root — a shared location accessible by Claude Code, Cursor, Copilot, and Droid. Legacy locations (`.claude/session-logs/`, `.factory/logs/`) are searched as fallbacks.
-
-All session logs and handoff files include YAML frontmatter with a `tool:` field (e.g., `tool: claude-code`) so any receiving tool knows the source. This enables cross-tool session continuity — a handoff written in Cursor can be picked up by Claude Code, and vice versa.
-
-## Conformance Tooling
-
-Deterministic shell checks under `bin/`, no model tokens. Each has a suite in `tests/`, and
-`.github/workflows/validate.yml` runs them on every push.
-
-- `bin/conformance.sh --project . --quiet` - the entry point: reports conflicts awaiting a
-  decision and whether `/mine-sessions` is overdue. `/lets-go` runs it as a session-start probe.
-- `bin/doctrine.sh check|sync` - propagate marker-delimited doctrine blocks from this repo to the
-  downstream `dot-*` repos listed in `doctrine/targets.conf`. dot-claude is primary; downstream
-  copies are replaced from it and are never a source.
-- `bin/check-glossary.sh`, `bin/check-conflict-log.sh`, `bin/check-public-memory.sh`,
-  `bin/memory-scope.sh` - the individual tiers.
-
-## Global Hooks
-
-Registered in `~/.claude/settings.json`, these fire for every project automatically:
-
-- **SessionStart** → `~/.claude/hooks/session-status.sh`: runs `bin/session-status.sh --hook` on startup and clear: points at repo drift, fresh handoffs (never reads or moves them; `/pickup` does), an open `punch` timer, unregistered hooks, conformance items, and the project's own `.claude/session-start.sh`. Silent when nothing needs attention. `load-handoff-context.sh` is a deprecated alias
-- **SessionStart** → `~/.claude/hooks/account-mismatch-warn.sh` — Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) doesn't match the logged-in oauth account. Advisory only; silent on match; needs `jq`
-- **PreToolUse** → `~/.claude/hooks/pre-tool-safety.sh` — Blocks destructive git operations (`reset --hard`, `push --force`, also behind global options such as `git -C <repo>`), recursive deletes, and writes to sensitive config files; prompts for confirmation. A force push passes unprompted only as `--force-with-lease=<ref>:<sha>` or with `--force-if-includes`
-- **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Once per session (Stop fires after every reply), reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run; checks both `session-logs/` and `.claude/session-logs/`. Also: if the cwd has an outline-format `ACTION_ITEMS.md` (see Catalyst-RCM's `lint-action-items` skill), reminds about `/lint-action-items` when items are past the 7-day prune window — reminder-only by design, no standing cron
-
-- **SessionStart / SessionEnd / PostToolUse** (`Bash|EnterWorktree|ExitWorktree`) → `~/.claude/hooks/herdr-follow-worktree.sh` — Inside herdr only (`HERDR_ENV=1`): opens each new git worktree of the session's repo as a herdr workspace without stealing focus, and closes it when the worktree is removed. Skips subagent worktrees (lock reason `claude agent …`). Silent, always exits 0; needs `git` and `python3`
-
-Project-local hooks in `.claude/settings.local.json` layer on top of these.
-
-Shipped by this repo but **not currently registered** either (same reason -- `settings.json` is
-gitignored, so registration is per-host):
-
-- `~/.claude/hooks/pre-compact-memorialize.sh` - prompts `/memorialize` before context is compacted
-
-Also present but **not currently registered**: `~/.claude/hooks/log-session-tokens` — a `SessionEnd` hook that appends token usage to `~/.factory/token-ledger.json` keyed by `project:branch`. It is the ledger writer that `guidelines/pr-token-tracking.md` and `/pr-tokens` read from, so those two are inert until it is wired into `settings.json`.
-
-**Note:** `settings.json` is deliberately gitignored (it carries per-host and account state), so a fresh clone of this repo has the hook *scripts* but no registration. After cloning, register the hooks above in `~/.claude/settings.json` or the hooks will silently never fire.
-
-## Skills
-
-Global skills live in `skills/<name>/SKILL.md`. The topic guidelines listed above are skills too (`guidelines/<name>.md` links to each), loaded when their description matches; `hooks/skill-gate.py` holds the first write of a governed file type until its skill is loaded. On a profile host, `bin/link-config.sh --apply` links them into each config dir.
-
-- `explain-diff-html` - Rich, interactive HTML explanation of a code change, diff, branch, or PR
-- `explain-diff-md` - Same, as a single self-contained Markdown file (fits the wiki/OKF knowledge base)
-
-## How to Use These Guidelines
-
-### Starting a New Project
-
-Include relevant guidelines in your initial Claude Code prompt:
-
-```yaml
-Please follow these guidelines:
-- ~/.claude/guidelines/shell-scripts.md for all bash scripts
-- ~/.claude/guidelines/shell-escaping.md for shell escaping
-- ~/.claude/guidelines/conventional-commits.md for git commits
-- ~/.claude/guidelines/readme-documentation.md for documentation organization
-```
-
-### Multiple Guidelines
-
-For projects using multiple technologies:
-
-```yaml
-Please follow these guidelines:
-- ~/.claude/guidelines/shell-scripts.md for bash scripts
-- ~/.claude/guidelines/python.md for Python code
-```
-
-### Project-Specific Overrides
-
-If a project needs exceptions to these guidelines, create a local override file:
-
-```sh
-project/.claude/overrides.md
-```
-
-## Contributing to Guidelines
-
-1. Update guidelines when you discover new patterns or best practices
-2. Include both positive examples (do this) and negative examples (avoid this)
-3. Explain the reasoning behind each guideline
-4. Keep guidelines concise but comprehensive
-
-## Onboarding Guides
-
-- [Copilot to Claude Code](./guides/copilot-to-claude-code.md) - Transition guide for GitHub Copilot users: mental model shift, setup, session lifecycle, permissions, commands
-
-## Quick Reference
-
-List all available guidelines:
-
-```bash
-find ~/.claude/guidelines -name "*.md" -type f | sort
-```
-
-## Global Behavioral Rules
-
-- **Write to the prose style by default, everywhere.** [Prose Style](./guidelines/prose-style.md) is **always on** and applies to anything a human reads: knowledge-base pages, analysis documents, READMEs, ADRs, PR descriptions, commit bodies, and chat responses. Do not wait to be asked, and do not treat "it's technical documentation" as an exemption. The three that cost the most to fix afterwards: **em-dashes** (if it can be a period, colon or comma, make it one), **documents narrating their own edit history** ("this previously said…" belongs in a changelog, not the page), and **bold used as a highlighter** rather than a spotlight. Each rule names a move, so rewording the move keeps the tell. The corrective frame ("it's not X, it's Y") now arrives split across two sentences or as a trailing "not an X", and the fix is to delete the negated half.
-- **Red-Green-Refactor TDD is REQUIRED for ALL code changes.** Always write a failing test first (RED), then the minimum production code to pass (GREEN), then refactor with tests green. No production code without a failing test. No retroactive tests. See [Testing Strategies](./guidelines/testing.md) for the full cycle, non-negotiable rules, and the (narrow) exceptions.
-- **Surface conflicts; don't average them.** When two patterns in the codebase contradict (two error-handling styles, two test idioms, two of these guidelines pointing different directions), pick one — usually the more recent or more tested — explain why, and flag the other for cleanup. Blending two patterns produces a third that nobody intended.
-- **LLM spend gate.** `dev-ai.local` is the LLM for ALL smoke tests and functional tests. Use Bedrock, the Anthropic API, or any other cloud/paid LLM **only when I specifically ask**. Test functionality, not output quality — a local model's weak prose is not a finding. See [Environments and the LLM Spend Gate](./guidelines/environments-and-llm-spend.md).
-- **Deploy to `dev.local`, promote to prod only when asked.** We work on Studio (sometimes razer); `dev.local` is both the dev and the staging environment and is where testing and evaluation happen. A green `dev.local` run is not authorisation to deploy.
-- Create temporary test scripts and programs in `/tmp`, not in the project directory
-- When the user reports a PR has been merged, prompt them to update the local repository (pull, delete merged branch)
-- When asked to push to a repo, suggest a new branch if the current branch is the default (main/master)
-- **Time tracking** — the local `punch` tool (beaufort time-tool) tracks billable/work time; records accumulate in `~/.beaufort/data/time.db` and sync to hasami via a push agent — `time-push` launchd on macOS, `beaufort-time-push` systemd user timer on Linux (local-first, no runtime SSH). `/lets-go` surfaces any open timer and nudges (advisory) when none is running on project work; `/session-logger` and `/handoff` remind to `/punch stop`. **Remind, never auto-start/stop** — starting a timer posts real billable state. Use `/punch` to drive it. Skip silently on devices where `punch` isn't installed — but **verify before claiming absence**: the old macOS-only `dscl` detection returned empty under a sandbox and reported the tracker missing on a host that had it (2026-08-14). Installed on studio-3 and dev.local; `b` still works as a symlink.
-
-## Version History
-
-- 2026-09-19: Take the additive half of the agent-spec work (PR #12, open since 2026-08-18): the
-  conformance tooling under `bin/` with seven test suites and a CI workflow, the rule-conflict /
-  memory-scope / glossary guidelines, `/memorialize`, and two hooks. Its 245-line CLAUDE.md
-  restructure was dropped: it predated the always-on prose style and the ingest-hygiene
-  guideline, and replaying it would have fought newer work. Closed PR #11 (`/b` -> `/punch`) as
-  superseded -- that rename reached main another way
-
-
-- 2026-09-10: Prose style adds three sections from a reader's feedback on the eval-spend series: the corrective frame and its disguises, plain register (no epigram kickers, staged reveals or fragment runs), and concrete nouns (an abstract-noun watch list, with "edge" first). Adds the principle that a rule names a move, so rewording the move keeps the tell, plus a candidate-finder grep and a noun counter. `/editorial-review` audits for all three. Propagated to dot-cursor, dot-droid, dot-copilot and dot-opencode, which were still on the text from before 2026-09-02
-
-- 2026-09-02: Prose style becomes **always on, all written output**, and the "does not apply to technical documentation" exemption is removed. That exemption let one knowledge bundle reach 2,190 em-dashes across 56 files before it was noticed. Adds a testable em-dash threshold, a **state-what-is** rule (documents do not narrate their own edit history), and bold discipline
-
-- 2026-08-31: House style for environments + the LLM spend gate — Studio works, dev.local is dev AND staging, prod only on explicit promotion; dev-ai.local for all smoke/functional tests, cloud LLMs gated on an explicit ask
-
-- 2025-01-31: Initial setup with shell script guidelines
-- 2026-02-17: Establish as pure base class — remove project-specific content, document extension pattern
-- 2026-03-10: Add PreToolUse safety hook; create MEMORY.md; clean up settings.json; document checkpoint-progress and extract-adr
-- 2026-03-10: Add guides/ directory; copilot-to-claude-code.md onboarding guide
-- 2026-03-11: Add /review-pr and /babysit-pr commands; add testing guideline
-- 2026-03-27: Cross-tool session sync — session-logs/ as shared primary location, YAML frontmatter with tool: field, multi-location search in all commands/hooks, project docs integration (docs/guidelines/, docs/adr/, AGENTS.md) in review commands
-- 2026-05-11: Add surface-conflicts global rule; karpathy-principles "read before you write" delta; testing.md "tests must be able to fail" section; prototype-hygiene.md "fail loud" rule
-- 2026-05-21: Add 2x2-status-report guideline (quad-chart weekly status; disambiguates from canonical Amazon WBR)
-- 2026-08-13: Completeness audit — index 8 previously undocumented guidelines/commands, add a Skills section, document the `account-mismatch-warn` hook and the unregistered `log-session-tokens`, note that gitignored `settings.json` means a fresh clone has no hook registration
-- 2026-06-30: Add `/b` command + time-tracking touchpoints in `/lets-go`, `/session-logger`, `/handoff` (remind-don't-auto policy); local `b` time-tool on studio-3 → `time-push` → hasami ingest (`bronze.time_entry`, `task_raw`)
-- 2026-08-14: Rename `b` → `punch` (`b` kept as a symlink); fix the tracker-detection snippet in all three commands — the macOS-only `dscl` lookup returned empty under a sandbox and reported "not installed" on a host that had it. Now tries `getent` then `dscl`, and treats an empty home as not-found rather than building `/bin/punch`. Installed on dev.local
-<!-- central-ops-knowledge: begin -->
-## Central Ops Knowledge (shared doctrine — all my AI tools)
-
-I maintain ONE central, authoritative **ops-knowledge state** for my homelab/home: **dynamic**
-(live, current, queryable by every human and AI on the LAN) and **archival** (durable,
-portable, hand-off-able to anyone taking over anything). It lives in the **`okf-knowledge` bundle**
-(vault-authoritative `vault:/volume1/gitrepos/okf-knowledge.git`; clones: hasami `~/okf-knowledge`,
-Studio `/Volumes/workspace/okf-knowledge`; `wiki/` alongside — infra content promoted from the older
-`HomeAssistant/home-ops/` on 2026-07-01), is surfaced
-live to agents via the read-only **`kb-mcp` filesystem MCP** (`mini.local:8092`, tools
-`search`/`read_file`/`list_dir`; registered in **Hazel**/OpenWebUI and reusable by any MCP
-client) and to humans via **`kb-static`** browse (`mini.local:8090`), and kept current by the
-`tools/*-scan.sh` self-tracking probes. (Ingesting the bundle into the **Librarian RAG** is on
-indefinite hold — the MCP reads markdown live, no re-index.) Full doctrine:
-`~/.claude/guidelines/central-ops-knowledge.md`.
-
-Operating rules for every agent (Claude, OpenCode, Codex, Cursor, Droid, Copilot…):
-1. **Consult before acting on infrastructure** — before stopping/changing a service, host, or
-   config, check the knowledge base for "what is this and *why*." Stale assumptions cause outages.
-   On the LAN, query it live via the `kb-mcp` MCP (or read the `okf-knowledge` bundle markdown
-   directly — on hasami: `~/okf-knowledge/`, e.g. `infra/`); off-LAN, read the repo checkout.
-2. **Write back** — when you learn or change something about the ops state, record or flag it so
-   it stays current. Session-only knowledge is lost.
-3. **OKF form** — plain markdown + YAML, **no secrets** (pointers only), conformant for any tool.
-4. **Local-first / WAN-tolerant** — prefer local LLM/files/Kiwix; must work with the internet down.
-5. **Respect boundaries** — household surfaces LAN-only; don't touch non-Scott tailnet hosts.
-<!-- central-ops-knowledge: end -->
-
-<!-- design-patterns: begin -->
-## Design-pattern discipline
-
-Before designing a non-trivial component, or coining a new mechanism/abstraction:
-
-- **Consult the pattern library first** — the `dot-patterns` corpus (GoF index with house
-  stances, personal patterns, vetted mixins). On the LAN: the **patterns MCP** at `mini.local:8093` (search/read_file), or read the
-  vault checkout `/Volumes/workspace/dot-patterns` directly. Off-LAN: the installed skills
-  / your local `dot-patterns` checkout.
-- **Name the pattern you apply** ("this is Strategy" / "the data-diode black/white/gray") in
-  your plan and PR so reviewers share the vocabulary.
-- **Don't reinvent what the library names.** Reuse an applicable pattern; if you deviate, say why.
-- **If you coin something reusable, flag it for capture** rather than letting it evaporate.
-- Prefer the GoF house stances (composition over inheritance; Strategy over if-ladders;
-  avoid Singleton/Visitor) unless there's a stated reason.
-<!-- design-patterns: end -->
+# Working rules
+
+These apply to every project on every host. Topic guidance lives in skills, which load when the
+work matches them. README.md indexes the skills, commands, hooks and tooling, and records why
+things are the way they are.
+
+@~/.claude/host.md
+@~/.claude/memory/MEMORY.md
+
+## Branches
+
+- At the start of a session or a run of tasks, remind Scott where the repo stands: the current
+  branch and its status, and whether to pull, push, branch or delete one. He works across many
+  repos and often starts without syncing. The SessionStart status block has the facts, and
+  `/lets-go` fetches before reporting.
+- Never commit or push a default branch. When asked to push from one, suggest a branch first.
+- When Scott says a PR has merged, prompt him to pull and delete the merged branch.
+
+## Code
+
+- Write the test first for code that has behaviour: a failing test, the least code that passes
+  it, then a refactor with the tests green. The test has to fail when the behaviour breaks, so
+  apply the testing skill's mutation check. Spikes, pure config and generated code are exempt;
+  say so when you use an exemption.
+- When two patterns or rules contradict, pick one (usually the newer or better tested), say
+  why, and flag the other for cleanup. Blending them produces a third pattern nobody chose. The
+  rule-conflict-protocol skill covers recording the decision.
+- Put temporary scripts and test programs in a temp directory, never in the project.
+
+## Writing
+
+Everything a person reads follows the prose-style skill: chat replies, commit and PR bodies,
+docs, READMEs and ADRs. Technical writing gets no exemption; one knowledge bundle written under
+that exemption reached 2,190 em-dashes. The costliest misses are em-dashes where a period, colon
+or comma would do, documents that narrate their own edits, and bold used as a highlighter. When
+a sentence sets up a claim only to deny it, delete the denied half, including when it is split
+across two sentences.
+
+## Safety
+
+Session safety (`guidelines/session-safety.md`) applies only to a dedicated NPU/GPU box whose
+project CLAUDE.md opts in. Never run `session-cleanup` anywhere else: it kills every Claude
+process on the machine, this session included.
