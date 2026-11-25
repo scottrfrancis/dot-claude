@@ -4,13 +4,13 @@
 #
 # dot-claude is primary. Every block lives, authoritatively, between
 #   <!-- <block>: begin -->  and  <!-- <block>: end -->
-# in the primary file. Downstream copies are replaced from it; they are never a source.
+# in the primary file, doctrine/homelab.md, which homelab hosts import through host.md. Downstream copies are replaced from it; they are never a source.
 #
 #   doctrine.sh check   report every target that differs, is missing the block, or
 #                       carries malformed markers; exit 1 if any finding
 #   doctrine.sh sync    rewrite each target's block from the primary
 #
-#   --primary FILE      default: <repo-root>/CLAUDE.md
+#   --primary FILE      default: <repo-root>/doctrine/homelab.md
 #   --targets FILE      default: <repo-root>/doctrine/targets.conf
 #
 # Target paths resolve relative to the current directory, which is expected to be the
@@ -20,7 +20,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-PRIMARY="$REPO_ROOT/CLAUDE.md"
+PRIMARY="$REPO_ROOT/doctrine/homelab.md"
 TARGETS="$REPO_ROOT/doctrine/targets.conf"
 MODE=""
 
