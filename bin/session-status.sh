@@ -144,6 +144,13 @@ TOP="$(git -C "$PROJECT" rev-parse --show-toplevel 2>/dev/null || true)"
 [ -n "$TOP" ] && TOP="$(phys "$TOP")"
 
 [ -n "$DOTC" ] && repo_line "$DOTC" "dot-claude"
+# The downstream dot-repos that bin/doctrine.sh writes to, where this host has them.
+WS="${SESSION_STATUS_WORKSPACE:-/Volumes/workspace}"
+if [ "$WS" != none ]; then
+  for d in dot-cursor dot-droid dot-copilot dot-opencode; do
+    [ -e "$WS/$d/.git" ] && repo_line "$WS/$d" "$d"
+  done
+fi
 if [ -n "$TOP" ]; then
   name="$(basename "$TOP")"
   [ "$TOP" = "$DOTC" ] || repo_line "$TOP" "$name"
@@ -165,8 +172,6 @@ fi
 TODAY="${SESSION_STATUS_TODAY:-$(date +%F)}"
 CUTOFF="$(date -d "$TODAY -7 days" +%F 2>/dev/null \
           || date -j -v-7d -f '%Y-%m-%d' "$TODAY" +%F 2>/dev/null || true)"
-WS="${SESSION_STATUS_WORKSPACE:-/Volumes/workspace}"
-
 if [ -n "$CUTOFF" ]; then
   dirs=()
   for base in "$PROJECT" ${TOP:+"$TOP"}; do
@@ -199,6 +204,28 @@ if [ -n "$CUTOFF" ]; then
       [ -n "$TOP" ] && case "$f" in "$TOP"/*) shown="${f#"$TOP"/}" ;; esac
       emit "    $shown"
     done
+  fi
+fi
+
+# --- hook registration ------------------------------------------------------
+# settings.json is gitignored and per host, so a fresh clone or a newly set-up host has the
+# hook scripts and registers none of them. Silent when the core three are registered.
+SETTINGS="${SESSION_STATUS_SETTINGS:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json}"
+if [ "$SETTINGS" != none ]; then
+  if [ ! -f "$SETTINGS" ]; then
+    emit "hooks: no $SETTINGS, so no hooks are registered on this host (see README, Hooks)"
+  else
+    missing=()
+    if ! grep -q 'hooks/session-status\.sh' "$SETTINGS"; then
+      if grep -q 'hooks/load-handoff-context\.sh' "$SETTINGS"; then
+        emit "hooks: SessionStart registers the old load-handoff-context.sh; register hooks/session-status.sh in its place"
+      else
+        missing+=("session-status.sh (SessionStart)")
+      fi
+    fi
+    grep -q 'hooks/pre-tool-safety\.sh' "$SETTINGS" || missing+=("pre-tool-safety.sh (PreToolUse)")
+    grep -q 'hooks/session-end-reminder\.sh' "$SETTINGS" || missing+=("session-end-reminder.sh (Stop)")
+    [ "${#missing[@]}" -gt 0 ] && emit "hooks: not registered in $SETTINGS: $(join ',' "${missing[@]}" | sed 's/,/, /g')"
   fi
 fi
 
@@ -262,13 +289,18 @@ fi
 
 # --- project probe ----------------------------------------------------------
 # Project-specific checks (Contoso's dev-stack health, AILab's KB refresher) live in the
-# project, in an executable .claude/session-start.sh, so this script stays generic.
+# project, in an executable .claude/session-start.sh, so this script stays generic. The probe
+# gets SESSION_STATUS_FETCH=1 on an explicit start (/lets-go, /pickup), where network work such
+# as a Drive pull is welcome, and 0 from the hook, which fires on every session start.
 PROBE="${TOP:-$PROJECT}/.claude/session-start.sh"
 if [ -f "$PROBE" ] && [ -x "$PROBE" ]; then
-  T=""; command -v timeout >/dev/null 2>&1 && T="timeout 20"
-  command -v gtimeout >/dev/null 2>&1 && [ -z "$T" ] && T="gtimeout 20"
+  secs=15; [ "$FETCH" -eq 1 ] && secs=90
+  T=""
+  if command -v timeout >/dev/null 2>&1; then T="timeout $secs"
+  elif command -v gtimeout >/dev/null 2>&1; then T="gtimeout $secs"
+  fi
   while IFS= read -r l; do emit "$l"; done \
-    < <(cd "${TOP:-$PROJECT}" && $T "$PROBE" 2>&1 | head -20)
+    < <(cd "${TOP:-$PROJECT}" && SESSION_STATUS_FETCH="$FETCH" $T "$PROBE" 2>&1 | head -20)
 fi
 
 # --- output -----------------------------------------------------------------
