@@ -212,13 +212,16 @@ rm -rf "$PROJ/.claude"
 # --- hook registration ------------------------------------------------------
 # settings.json is gitignored and per host, so a fresh clone or a new host registers nothing.
 SET="$WORK/settings.json"
-printf '{"hooks":{"SessionStart":[{"hooks":[{"command":"~/.claude/hooks/session-status.sh"}]}],"PreToolUse":[{"hooks":[{"command":"~/.claude/hooks/pre-tool-safety.sh"}]}],"Stop":[{"hooks":[{"command":"~/.claude/hooks/session-end-reminder.sh"}]}]}}' > "$SET"
+printf '{"hooks":{"SessionStart":[{"hooks":[{"command":"~/.claude/hooks/session-status.sh"}]}],"PreToolUse":[{"hooks":[{"command":"~/.claude/hooks/pre-tool-safety.sh"}]}],"Stop":[{"hooks":[{"command":"~/.claude/hooks/session-end-reminder.sh"}]}],"PostToolUse":[{"hooks":[{"command":"python3 ~/.claude/hooks/prose-check.py"}]}],"X":[{"hooks":[{"command":"python3 ~/.claude/hooks/skill-gate.py"}]}]}}' > "$SET"
 out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET" status)"
 empty "hooks: a settings.json registering all three hooks is not mentioned" "$out"
 
 sed 's/pre-tool-safety/something-else/' "$SET" > "$SET.2"
 out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.2" status)"
 has "hooks: a missing registration is named" "$out" "pre-tool-safety.sh"
+sed 's/skill-gate/other-gate/' "$SET" > "$SET.4"
+out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.4" status)"
+has "hooks: the skill gate counts as a core hook" "$out" "skill-gate.py"
 
 sed 's/session-status\.sh/load-handoff-context.sh/' "$SET" > "$SET.3"
 out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.3" status)"
