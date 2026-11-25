@@ -209,7 +209,7 @@ fi
 
 # --- hook registration ------------------------------------------------------
 # settings.json is gitignored and per host, so a fresh clone or a newly set-up host has the
-# hook scripts and registers none of them. Silent when the core three are registered.
+# hook scripts and registers none of them. Silent when the core hooks are registered.
 SETTINGS="${SESSION_STATUS_SETTINGS:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json}"
 if [ "$SETTINGS" != none ]; then
   if [ ! -f "$SETTINGS" ]; then
@@ -225,6 +225,8 @@ if [ "$SETTINGS" != none ]; then
     fi
     grep -q 'hooks/pre-tool-safety\.sh' "$SETTINGS" || missing+=("pre-tool-safety.sh (PreToolUse)")
     grep -q 'hooks/session-end-reminder\.sh' "$SETTINGS" || missing+=("session-end-reminder.sh (Stop)")
+    grep -q 'hooks/skill-gate\.py' "$SETTINGS" || missing+=("skill-gate.py (PreToolUse)")
+    grep -q 'hooks/prose-check\.py' "$SETTINGS" || missing+=("prose-check.py (PostToolUse)")
     [ "${#missing[@]}" -gt 0 ] && emit "hooks: not registered in $SETTINGS: $(join ',' "${missing[@]}" | sed 's/,/, /g')"
   fi
 fi
