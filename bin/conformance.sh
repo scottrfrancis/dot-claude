@@ -147,6 +147,37 @@ for MEMORY in "${MEMORIES[@]}"; do
   fi
 done
 
+# --- built-in memory decay -------------------------------------------------
+# Claude Code's own per-project memory: <root>/<key>/memory/*.md, one fact per file, where the
+# key is the project path with every non-alphanumeric replaced by "-". The verified date is
+# `verified:` in the frontmatter (top level or under metadata). Without one the file's mtime
+# stands in: this store is not in git, so nothing rewrites mtime wholesale, and on Studio 415
+# of 416 files had no date when this check was added (2026-11-25).
+AUTO_ROOT="${CLAUDE_MEMORY_ROOT:-$HOME/.claude/projects}"
+AUTO_KEY="$(cd "$PROJECT" 2>/dev/null && pwd || printf '%s' "$PROJECT")"
+AUTO_DIR="$AUTO_ROOT/$(printf '%s' "$AUTO_KEY" | sed 's/[^A-Za-z0-9]/-/g')/memory"
+if [ -d "$AUTO_DIR" ]; then
+  now="$(date +%s)"; stale=0; oldest=""
+  for f in "$AUTO_DIR"/*.md; do
+    [ -f "$f" ] || continue
+    [ "$(basename "$f")" = MEMORY.md ] && continue
+    d="$(awk 'NR==1 && $0!="---" {exit} NR>1 && $0=="---" {exit}
+              /^[[:space:]]*verified:/ {sub(/^[[:space:]]*verified:[[:space:]]*/, ""); gsub(/["'\'']/, ""); print; exit}' "$f")"
+    e=""; [ -n "$d" ] && e="$(date_epoch "$d")"
+    if [ -z "$e" ]; then
+      e="$(mtime "$f")"
+      d="$(date -r "$e" +%Y-%m-%d 2>/dev/null || date -d "@$e" +%Y-%m-%d 2>/dev/null || echo unknown)"
+    fi
+    if [ $(( (now - e) / 86400 )) -ge "$MEMORY_DAYS" ]; then
+      stale=$((stale + 1))
+      if [ -z "$oldest" ] || [ "$d" \< "$oldest" ]; then oldest="$d"; fi
+    fi
+  done
+  if [ "$stale" -gt 0 ]; then
+    findings+=("$stale built-in memory file(s) unverified since $oldest in \`$AUTO_DIR\` — re-verify (set metadata.verified) or delete.")
+  fi
+fi
+
 # --- output --------------------------------------------------------------
 if [ "${#findings[@]}" -eq 0 ]; then
   [ "$QUIET" -eq 1 ] || printf 'conformance: nothing overdue\n'
