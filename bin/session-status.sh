@@ -231,6 +231,22 @@ if [ "$SETTINGS" != none ]; then
   fi
 fi
 
+# --- host.md ----------------------------------------------------------------
+# CLAUDE.md imports ~/.claude/host.md, gitignored and per host; on a homelab host it imports
+# doctrine/homelab.md. Claude Code skips a missing import without a word, so say it here.
+HOSTMD="${SESSION_STATUS_HOSTMD:-$HOME/.claude/host.md}"
+if [ "$HOSTMD" != none ]; then
+  if [ ! -f "$HOSTMD" ]; then
+    emit "host.md: $HOSTMD is missing, so this host loads no host doctrine; a homelab host needs @~/.claude/doctrine/homelab.md in it (README, Hosts)"
+  else
+    while IFS= read -r imp; do
+      ip="${imp#@}"
+      case "$ip" in \~/*) ip="$HOME/${ip:2}" ;; esac
+      [ -e "$ip" ] || emit "host.md: imports $ip, which does not exist here; on a profile host run bin/link-config.sh --apply"
+    done < <(grep -E '^@[^[:space:]]+' "$HOSTMD" 2>/dev/null | sed 's/[[:space:]].*$//')
+  fi
+fi
+
 # --- skill links ------------------------------------------------------------
 # Claude Code loads skills from the active config dir. On a profile host that is not
 # dot-claude, and bin/link-config.sh links dot-claude's skills into it one by one.

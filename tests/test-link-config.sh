@@ -39,6 +39,15 @@ has "a dry run says what it would link" "$out" "would link $P/skills/python"
   || bad "--apply links each repo skill by absolute path" "$(readlink "$P/skills/python")"
 [ "$(readlink "$P/bin")" = "$REPO/bin" ] && ok "--apply links bin/" || bad "--apply links bin/" "$(ls -la "$P")"
 [ ! -e "$P/skills/synced" ] && ok "Claude Code's own skills/synced is not linked" || bad "Claude Code's own skills/synced is not linked"
+[ "$(readlink "$P/doctrine")" = "$REPO/doctrine" ] && ok "--apply links doctrine/, which host.md imports from" \
+  || bad "--apply links doctrine/, which host.md imports from" "$(ls -la "$P")"
+[ "$(readlink "$P/memory")" = "$REPO/memory" ] && ok "--apply links memory/, which CLAUDE.md imports from" \
+  || bad "--apply links memory/, which CLAUDE.md imports from"
+if [ -e "$REPO/host.md" ]; then
+  [ "$(readlink "$P/host.md")" = "$REPO/host.md" ] && ok "--apply links this host's host.md" || bad "--apply links this host's host.md"
+else
+  [ ! -e "$P/host.md" ] && [ ! -L "$P/host.md" ] && ok "no host.md in the repo: none is linked" || bad "no host.md in the repo: none is linked"
+fi
 
 out="$("$LINK" --apply "$P" 2>&1)"
 lacks "a second run has nothing to do" "$out" "link $P"
