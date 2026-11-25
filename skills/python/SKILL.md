@@ -23,7 +23,7 @@ user-invocable: false
 - No wildcard imports (`from module import *`)
 
 ## Testing
-- **Red-Green-Refactor TDD is REQUIRED** — failing test first, minimum code to pass, refactor.
+- Test first, as the testing skill describes: a failing test, the least code that passes it, then a refactor.
 - pytest, not unittest
 - Fixtures for setup/teardown
 - Parametrize for data-driven tests

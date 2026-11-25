@@ -8,40 +8,39 @@ user-invocable: false
 
 Practical testing guidelines to pair with arch-review's quality gates.
 
-## Red-Green-Refactor TDD (REQUIRED — ALWAYS)
+## Test First
 
-**Red-Green-Refactor TDD is mandatory for every code change.** No production code is written without a failing test first. This applies to bug fixes, new features, and refactors alike. There is no "I'll add tests later." Tests come first, always.
+Write the test before the code for anything with behaviour: bug fixes, features and refactors. A
+test written first has been seen to fail, which is the evidence that it can, and writing it first
+keeps each increment small.
 
-The cycle — repeat for every behavior:
+The cycle, repeated for each behaviour:
 
-1. **🔴 RED** — Write a failing test that expresses the desired behavior. Run it and confirm it fails for the right reason (the behavior is missing, not a typo/compile error). Do NOT write any production code yet.
-2. **🟢 GREEN** — Write the minimum production code needed to make the failing test pass. Resist adding logic the current test doesn't require.
-3. **🔵 REFACTOR** — With all tests green, clean up the code: remove duplication, improve names, clarify structure. Tests must stay green throughout. Refactor production and test code alike.
+1. **Red.** Write a test for the behaviour you want, run it, and confirm it fails for the right
+   reason: the behaviour is missing, not a typo or an import error.
+2. **Green.** Write the least production code that passes it.
+3. **Refactor.** With the tests green, clean up names, duplication and structure, in the tests
+   as well as the code.
 
-### Non-negotiable rules
+Keep cycles to minutes. One failing test at a time keeps each step small enough to reason about,
+and a long cycle means the increment is too big to land in one go, so split it. A test written
+after the code it covers has never been seen to fail: apply the mutation check below before
+trusting it, and say in review that it came second.
 
-- **Never** write production code without a corresponding failing test first.
-- **Never** write more than one failing test at a time.
-- **Never** add production logic beyond what the currently-failing test demands.
-- **Always** run the test between RED and GREEN to verify it actually fails (and fails for the right reason).
-- **Always** keep the cycle short — minutes, not hours. If a cycle runs long, the increment is too big; split it.
-- **No retroactive tests.** Tests added after the production code they exercise do not count as TDD and must be flagged in code review.
+A test that is hard to write usually means the design is coupled or the behaviour is
+under-specified. Fix that first.
 
-### When TDD feels hard
+### When test-first does not apply
 
-If you are tempted to skip TDD because "this is trivial" or "I already know the answer": write the test anyway. The discipline catches design smells, enforces small increments, and produces the coverage the codebase needs.
+- **Spikes.** Throwaway exploration in a temp directory or a scratch branch. Rebuild anything
+  you keep, test first.
+- **Pure configuration.** There is no behaviour to test. Verify with a smoke or integration
+  check where practical.
+- **Generated code.** Protobuf stubs, migrations, lockfiles. Test the code that consumes it.
+- **One-off scripts.** A migration or a script run once and thrown away. Verify its result
+  instead, with a check that would fail if the script were wrong.
 
-If the test is hard to write, that is signal: the design is probably coupled, or the behavior is under-specified. Fix the design before fixing the test.
-
-### Narrow exceptions
-
-These are the only cases where writing code before a test is acceptable:
-
-- **Spikes** — exploratory code in `/tmp` or a scratch branch, explicitly labeled as throwaway. Any production code derived from a spike must be re-built via TDD; the spike itself is discarded.
-- **Pure config changes** — no behavior, no tests required (but verify with an integration or smoke test where practical).
-- **Generated code** — protobuf stubs, ORM migrations, lockfiles. Trust the generator; test the consumer.
-
-If you think you have another exception, you do not. Write the test.
+Outside these, write the test first. When you take an exemption, say which one.
 
 ## Tests Must Be Able to Fail
 
