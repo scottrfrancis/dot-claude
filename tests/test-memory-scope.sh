@@ -94,5 +94,12 @@ has   "resolves the matching client glossary"  "$out" "local/ailab/GLOSSARY.md"
 hasnt "NEVER resolves another client glossary" "$out" "brightsign"
 hasnt "does not mix memory into a glossary scope" "$out" "MEMORY.md"
 
+# Launched from the login home, the project tier is <home>/.claude/memory/MEMORY.md, which
+# is the universal file itself. Listing it twice made every finding about it appear twice.
+setup; mkdir -p "$WORK/login"; ln -s "$WORK/h" "$WORK/login/.claude"
+n="$("$SCOPE" --home "$WORK/h" --project "$WORK/login" 2>&1 | grep -c 'memory/MEMORY.md$' || true)"
+[ "$n" = 1 ] && ok "a file reached by two paths is listed once" \
+             || bad "a file reached by two paths is listed once" "listed $n times"
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
