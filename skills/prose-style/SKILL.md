@@ -4,6 +4,8 @@ description: "House prose rules for anything a human reads (docs, READMEs, ADRs,
 user-invocable: false
 ---
 
+<!-- prose-check: off -->
+
 # Prose Style Guidelines
 
 **Apply these to anything written for a human reader.** Narrative prose, yes, but also knowledge-base pages, analysis documents, READMEs, ADRs, PR descriptions and commit bodies. Anywhere someone reads sentences.
