@@ -24,6 +24,9 @@ jobs:
                 head -1 "$f" | grep -qE '^#!.*(ba)?sh' && bash -n "$f" || true
               done
 
+      - name: Parse every Python hook
+        run: python3 -m py_compile hooks/*.py
+
       - name: shellcheck
         run: |
           set -euo pipefail

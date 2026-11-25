@@ -136,7 +136,7 @@ Also present but **not currently registered**: `~/.claude/hooks/log-session-toke
 
 ## Skills
 
-Global skills live in `~/.claude/skills/<name>/SKILL.md` and are available in every project:
+Global skills live in `skills/<name>/SKILL.md`. The topic guidelines listed above are skills too (`guidelines/<name>.md` links to each), loaded when their description matches; `hooks/skill-gate.py` holds the first write of a governed file type until its skill is loaded. On a profile host, `bin/link-config.sh --apply` links them into each config dir.
 
 - `explain-diff-html` - Rich, interactive HTML explanation of a code change, diff, branch, or PR
 - `explain-diff-md` - Same, as a single self-contained Markdown file (fits the wiki/OKF knowledge base)
