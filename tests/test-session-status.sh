@@ -43,7 +43,7 @@ advance_origin() { # $1 = repo
 }
 
 # Every probe the repo tests do not exercise is switched off, so output is theirs alone.
-export SESSION_STATUS_PUNCH=none SESSION_STATUS_CONFORMANCE=none
+export SESSION_STATUS_PUNCH=none SESSION_STATUS_CONFORMANCE=none SESSION_STATUS_SETTINGS=none
 export SESSION_STATUS_WORKSPACE="$WORK/no-workspace"
 status() { "$STATUS" "$@" 2>/dev/null; }
 
@@ -108,6 +108,15 @@ rm -f "$DOTC/x.txt"
 
 out="$(cd "$WORK" && SESSION_STATUS_DOTC=none status --fetch)"
 empty "outside any repo, with dot-claude skipped, prints nothing" "$out"
+
+# The downstream dot-repos in the workspace are checked too; absent ones are skipped.
+DWS="$WORK/dws"; mkdir -p "$DWS"; mkrepo "$DWS/dot-cursor"; mkrepo "$DWS/dot-droid"
+touch "$DWS/dot-cursor/x.txt"
+out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_WORKSPACE="$DWS" status --fetch)"
+has "a dirty downstream dot-repo is reported" "$out" "dot-cursor: 1 uncommitted"
+lacks "a clean downstream dot-repo is not" "$out" "dot-droid"
+lacks "an absent downstream dot-repo is skipped silently" "$out" "dot-opencode"
+rm -rf "$DWS"
 
 # --- handoffs ---------------------------------------------------------------
 # Pointed at, never consumed: /pickup is the only reader. Freshness comes from the date in
@@ -192,7 +201,31 @@ chmod +x "$PROJ/.claude/session-start.sh"
 out="$(cd "$PROJ" && status)"
 has "an executable project probe is run" "$out" "probe line 20"
 lacks "project probe output is capped at 20 lines" "$out" "probe line 21"
+printf '#!/usr/bin/env bash\necho "probe fetch=${SESSION_STATUS_FETCH:-unset}"\n' > "$PROJ/.claude/session-start.sh"
+out="$(cd "$PROJ" && status --fetch)"
+has "a project probe is told when network work is welcome" "$out" "probe fetch=1"
+out="$(cd "$PROJ" && status)"
+has "a project probe is told when it is not" "$out" "probe fetch=0"
 rm -rf "$PROJ/.claude"
+
+# --- hook registration ------------------------------------------------------
+# settings.json is gitignored and per host, so a fresh clone or a new host registers nothing.
+SET="$WORK/settings.json"
+printf '{"hooks":{"SessionStart":[{"hooks":[{"command":"~/.claude/hooks/session-status.sh"}]}],"PreToolUse":[{"hooks":[{"command":"~/.claude/hooks/pre-tool-safety.sh"}]}],"Stop":[{"hooks":[{"command":"~/.claude/hooks/session-end-reminder.sh"}]}]}}' > "$SET"
+out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET" status)"
+empty "hooks: a settings.json registering all three hooks is not mentioned" "$out"
+
+sed 's/pre-tool-safety/something-else/' "$SET" > "$SET.2"
+out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.2" status)"
+has "hooks: a missing registration is named" "$out" "pre-tool-safety.sh"
+
+sed 's/session-status\.sh/load-handoff-context.sh/' "$SET" > "$SET.3"
+out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.3" status)"
+has "hooks: the old SessionStart name is flagged for re-registration" "$out" "load-handoff-context.sh"
+
+out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$WORK/absent.json" status)"
+has "hooks: a host with no settings.json is told it registers nothing" "$out" "no hooks are registered"
+export SESSION_STATUS_SETTINGS=none
 
 # --- hook mode --------------------------------------------------------------
 hookjson() { printf '{"session_id":"s1","hook_event_name":"SessionStart","source":"%s","cwd":"%s"}' "$1" "$2"; }
