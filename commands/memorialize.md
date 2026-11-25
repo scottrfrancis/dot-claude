@@ -35,13 +35,19 @@ State the three lists briefly before writing anything.
 
 ## 2. Propose memory entries
 
-For each durable fact, draft a line in the `guidelines/memory.md` format: one fact, ending
-`[YYYY-MM-DD]` with today's date, provenance after `·` where there is one.
+Pick the tier first (`guidelines/memory.md`, Segments):
 
-- Target `<project>/.claude/memory/MEMORY.md`, or `memory/MEMORY.md` in this config repo.
-- Check each against what MEMORY.md already holds. If a fact is already there, **update its
-  date** rather than adding a duplicate. If it contradicts an existing fact, say so and ask
-  — do not silently overwrite.
+- **One project** goes to Claude Code's built-in memory for that project: one file per fact,
+  frontmatter `name`, `description` and `metadata` with `type` and `verified: YYYY-MM-DD`
+  (today), the fact, then **Why:** and **How to apply:** lines, and a one-line pointer in that
+  directory's `MEMORY.md` index. It is per host.
+- **Every project, every host** goes to `memory/MEMORY.md` in this config repo, as one line
+  ending `[YYYY-MM-DD]`. CLAUDE.md imports that file into every session, so it must earn its
+  place.
+
+Check each fact against what the target already holds. If it is already there, update its
+verified date rather than adding a duplicate. If it contradicts an existing fact, say so and
+ask; never overwrite silently.
 - **Never** write credentials, addresses, personal contact details, or client-identifying
   information. Record a pointer to `kb-mcp` instead. `dot-claude` is public, and a later
   edit does not erase history.
@@ -61,7 +67,8 @@ Memory is a staging tier. For each fact, ask whether it belongs higher:
 
 Name the candidates; do not promote unprompted. The last row is the one most often skipped —
 the central-ops doctrine requires writing back what you learn about the ops state, and a
-fact left in MEMORY.md has not been written back.
+fact left in memory has not been written back. Built-in memory is per host, so a fact that
+other hosts need must be promoted or it stays where it was learned.
 
 ## 4. Note any term that was read two ways
 

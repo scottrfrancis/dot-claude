@@ -11,7 +11,7 @@ carried a Home Assistant control/access map and has been redacted.
 
 **Read local infrastructure from the `kb-mcp` MCP server**, LAN-local on **mini**. It is a
 read-only filesystem MCP over the whole OKF federation, with tools `list_bundles`,
-`search`, `read_file`, and `list_dir`. Endpoint and doctrine: `CLAUDE.md` §"Central Ops
+`search`, `read_file`, and `list_dir`. Endpoint and doctrine: `doctrine/homelab.md` §"Central Ops
 Knowledge". Start with `list_bundles`; the registry bundle `knowledge-index` is the
 discovery entry point.
 
