@@ -79,3 +79,6 @@ hooks/herdr-agent-state.sh
 
 # Python bytecode (CI and local py_compile of hooks/*.py)
 __pycache__/
+
+# Per-host imports for CLAUDE.md (README, Hosts). Homelab hosts import doctrine/homelab.md.
+host.md

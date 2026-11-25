@@ -197,6 +197,24 @@ Claude Code loads skills from the active config dir: `~/.claude`, or `$CLAUDE_CO
 | ----- | --- |
 | [copilot-to-claude-code.md](./guides/copilot-to-claude-code.md) | GitHub Copilot users: mental model shift, setup, session lifecycle, permissions, commands |
 
+## Hosts
+
+CLAUDE.md holds the rules that apply everywhere. What a host adds comes from `~/.claude/host.md`, which CLAUDE.md imports and git ignores. On the homelab hosts (Studio, razer, hasami, dev.local) it holds one line:
+
+```text
+@~/.claude/doctrine/homelab.md
+```
+
+That file carries the LLM spend gate, environments, time tracking, Beaufort announcements, and the two doctrine blocks that `bin/doctrine.sh` copies to the downstream dot-repos. A host outside the homelab leaves `host.md` empty. Claude Code skips a missing import silently, so `bin/session-status.sh` reports a missing `host.md`, and any import in it that does not resolve.
+
+To set up a homelab host:
+
+1. Clone this repo to `~/.claude`, or link it there.
+2. Run `printf '@~/.claude/doctrine/homelab.md\n' > ~/.claude/host.md`.
+3. Register the hooks (see Hook Registration Pattern below).
+4. On a host with profiles, run `~/.claude/bin/link-config.sh`, then again with `--apply`. It links `host.md`, `doctrine/`, `memory/`, `bin/` and every skill into each profile.
+5. Start a session. The status block should be silent, and `/memory` should list `host.md` and `doctrine/homelab.md`.
+
 ## Hooks System
 
 Hooks are shell scripts that fire on specific Claude Code events. They operate at two levels:
@@ -326,3 +344,59 @@ Project settings supplement global settings. Both use the same format:
   }
 }
 ```
+
+## Cross-Tool Session Protocol
+
+Session logs are written to `session-logs/` at the project root — a shared location accessible by Claude Code, Cursor, Copilot, and Droid. Legacy locations (`.claude/session-logs/`, `.factory/logs/`) are searched as fallbacks.
+
+All session logs and handoff files include YAML frontmatter with a `tool:` field (e.g., `tool: claude-code`) so any receiving tool knows the source. This enables cross-tool session continuity — a handoff written in Cursor can be picked up by Claude Code, and vice versa.
+
+## Conformance Tooling
+
+Deterministic shell checks under `bin/`, no model tokens. Each has a suite in `tests/`, and
+`.github/workflows/validate.yml` runs them on every push.
+
+- `bin/conformance.sh --project . --quiet` - the entry point: reports conflicts awaiting a
+  decision and whether `/mine-sessions` is overdue. `/lets-go` runs it as a session-start probe.
+- `bin/doctrine.sh check|sync` - propagate marker-delimited doctrine blocks from this repo to the
+  downstream `dot-*` repos listed in `doctrine/targets.conf`. dot-claude is primary; downstream
+  copies are replaced from it and are never a source.
+- `bin/check-glossary.sh`, `bin/check-conflict-log.sh`, `bin/check-public-memory.sh`,
+  `bin/memory-scope.sh` - the individual tiers.
+
+## Changelog
+
+- 2026-11-25: Port the findings of a laptop fork's audit. CLAUDE.md drops from 27KB to about 3KB of
+  rules: homelab rules and both doctrine blocks move to `doctrine/homelab.md`, imported through a
+  gitignored per-host `host.md`, and the command index, hooks, tooling and this changelog live
+  here. `memory/MEMORY.md` is pruned to facts recorded nowhere else and imported, so it loads.
+  Absolute wording (REQUIRED, CRITICAL, "you do not have another exception") becomes rules with
+  reasons. Earlier in the same port: `bin/session-status.sh` replaced the duplicated session
+  probes, handoffs became pointers, `session-cleanup` stopped killing every session, and 31
+  topic guidelines became skills with a skill gate and a prose check.
+
+- 2026-09-19: Take the additive half of the agent-spec work (PR #12, open since 2026-08-18): the
+  conformance tooling under `bin/` with seven test suites and a CI workflow, the rule-conflict /
+  memory-scope / glossary guidelines, `/memorialize`, and two hooks. Its 245-line CLAUDE.md
+  restructure was dropped: it predated the always-on prose style and the ingest-hygiene
+  guideline, and replaying it would have fought newer work. Closed PR #11 (`/b` -> `/punch`) as
+  superseded -- that rename reached main another way
+
+
+- 2026-09-10: Prose style adds three sections from a reader's feedback on the eval-spend series: the corrective frame and its disguises, plain register (no epigram kickers, staged reveals or fragment runs), and concrete nouns (an abstract-noun watch list, with "edge" first). Adds the principle that a rule names a move, so rewording the move keeps the tell, plus a candidate-finder grep and a noun counter. `/editorial-review` audits for all three. Propagated to dot-cursor, dot-droid, dot-copilot and dot-opencode, which were still on the text from before 2026-09-02
+
+- 2026-09-02: Prose style becomes **always on, all written output**, and the "does not apply to technical documentation" exemption is removed. That exemption let one knowledge bundle reach 2,190 em-dashes across 56 files before it was noticed. Adds a testable em-dash threshold, a **state-what-is** rule (documents do not narrate their own edit history), and bold discipline
+
+- 2026-08-31: House style for environments + the LLM spend gate — Studio works, dev.local is dev AND staging, prod only on explicit promotion; dev-ai.local for all smoke/functional tests, cloud LLMs gated on an explicit ask
+
+- 2025-01-31: Initial setup with shell script guidelines
+- 2026-02-17: Establish as pure base class — remove project-specific content, document extension pattern
+- 2026-03-10: Add PreToolUse safety hook; create MEMORY.md; clean up settings.json; document checkpoint-progress and extract-adr
+- 2026-03-10: Add guides/ directory; copilot-to-claude-code.md onboarding guide
+- 2026-03-11: Add /review-pr and /babysit-pr commands; add testing guideline
+- 2026-03-27: Cross-tool session sync — session-logs/ as shared primary location, YAML frontmatter with tool: field, multi-location search in all commands/hooks, project docs integration (docs/guidelines/, docs/adr/, AGENTS.md) in review commands
+- 2026-05-11: Add surface-conflicts global rule; karpathy-principles "read before you write" delta; testing.md "tests must be able to fail" section; prototype-hygiene.md "fail loud" rule
+- 2026-05-21: Add 2x2-status-report guideline (quad-chart weekly status; disambiguates from canonical Amazon WBR)
+- 2026-08-13: Completeness audit — index 8 previously undocumented guidelines/commands, add a Skills section, document the `account-mismatch-warn` hook and the unregistered `log-session-tokens`, note that gitignored `settings.json` means a fresh clone has no hook registration
+- 2026-06-30: Add `/b` command + time-tracking touchpoints in `/lets-go`, `/session-logger`, `/handoff` (remind-don't-auto policy); local `b` time-tool on studio-3 → `time-push` → hasami ingest (`bronze.time_entry`, `task_raw`)
+- 2026-08-14: Rename `b` → `punch` (`b` kept as a symlink); fix the tracker-detection snippet in all three commands — the macOS-only `dscl` lookup returned empty under a sandbox and reported "not installed" on a host that had it. Now tries `getent` then `dscl`, and treats an empty home as not-found rather than building `/bin/punch`. Installed on dev.local
