@@ -40,7 +40,7 @@ done
 [ -f "$PRIMARY" ]  || { printf 'doctrine.sh: primary not found: %s\n' "$PRIMARY" >&2; exit 2; }
 [ -f "$TARGETS" ]  || { printf 'doctrine.sh: targets file not found: %s\n' "$TARGETS" >&2; exit 2; }
 
-TMP="$(mktemp -d)"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/doctrine.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 
 # Print the body of BLOCK in FILE — the lines strictly between its markers.

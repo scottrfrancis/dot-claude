@@ -14,7 +14,7 @@ PASS=0; FAIL=0
 ok()  { PASS=$((PASS+1)); printf '  ok   %s\n' "$1"; }
 bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; [ $# -gt 1 ] && printf '       %s\n' "$2"; return 0; }
 
-WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/test-hooks.XXXXXX")"; trap 'rm -rf "$WORK"' EXIT
 
 snapshot() { # run the hook in $1 and print the snapshot it wrote
   ( cd "$1" && printf '{"trigger":"auto"}' | "$PRECOMPACT" >/dev/null 2>&1
@@ -32,7 +32,8 @@ fi
 one_line() { # $1 = dir, $2 = label
   d="$WORK/$1"; n="$(snapshot "$d" | awk '/^---$/{c++; next} c==1' | grep -c '^[a-z]*:')"
   t="$(snapshot "$d" | awk '/^---$/{c++; next} c==1' | wc -l)"
-  [ "$n" = "$t" ] && ok "$2: frontmatter is one value per line" \
+  # Compare as numbers: BSD wc pads its count with spaces.
+  [ "$n" -eq "$t" ] && ok "$2: frontmatter is one value per line" \
                   || bad "$2: frontmatter is one value per line" "$(snapshot "$d" | head -10)"
 }
 
@@ -58,6 +59,18 @@ mkdir -p "$WORK/nogit2"
 ( cd "$WORK/nogit2" && printf '{"trigger":"auto"}' | "$PRECOMPACT" >/dev/null 2>&1 )
 [ $? -eq 0 ] && ok "always exits 0 — advisory, never blocks compaction" \
              || bad "always exits 0 — advisory, never blocks compaction"
+
+# Profile-based hosts reach hooks/ through a symlinked dir, and $HOME/.claude/bin does not
+# exist there. The hook must still find bin/conformance.sh beside its real location.
+PROFILE="$WORK/profile/.claude"; mkdir -p "$PROFILE"
+ln -s "$(cd -P "$SCRIPT_DIR/../hooks" && pwd -P)" "$PROFILE/hooks"
+mkdir -p "$WORK/prof-proj/session-logs" && touch "$WORK/prof-proj/session-logs/session-2026-11-01-0900.md"
+( cd "$WORK/prof-proj" && printf '{"trigger":"auto"}' \
+    | HOME="$WORK/profile" "$PROFILE/hooks/pre-compact-memorialize.sh" >/dev/null 2>&1 )
+case "$(cat "$WORK/prof-proj"/session-logs/precompact-*.md 2>/dev/null)" in
+  *"Outstanding at compaction"*) ok "finds bin/ through a symlinked hooks dir on a profile host" ;;
+  *) bad "finds bin/ through a symlinked hooks dir on a profile host" "no conformance section in the snapshot" ;;
+esac
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

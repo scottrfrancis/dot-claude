@@ -18,7 +18,7 @@ mem() { printf '# Memory\n\n%s\n' "$1" > "$WORK/m.md"; }
 rejects() { mem "$2"; [ "$(rc)" = 1 ] && ok "rejects $1" || bad "rejects $1" "accepted: $2"; }
 accepts() { mem "$2"; [ "$(rc)" = 0 ] && ok "accepts $1" || bad "accepts $1" "rejected: $(out)"; }
 
-WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/test-public-memory.XXXXXX")"; trap 'rm -rf "$WORK"' EXIT
 
 echo "test-public-memory.sh"
 if [ ! -x "$CHECK" ]; then

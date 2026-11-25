@@ -14,7 +14,7 @@ bad()  { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; [ $# -gt 1 ] && printf '  
 check_eq() { [ "$2" = "$3" ] && ok "$1" || bad "$1" "expected [$3], got [$2]"; }
 check_rc() { [ "$2" = "$3" ] && ok "$1" || bad "$1" "expected exit $3, got $2"; }
 
-WORK="$(mktemp -d)"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/test-doctrine.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 
 # Build a fixture workspace: one primary, three downstream targets.

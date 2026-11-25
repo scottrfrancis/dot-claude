@@ -7,6 +7,9 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Run hermetically even from inside a herdr pane: the "outside herdr" cases depend on
+# HERDR_ENV being unset, and a live pane exports it.
+unset HERDR_ENV HERDR_PANE_ID HERDR_TAB_ID HERDR_WORKSPACE_ID HERDR_SOCKET_PATH HERDR_BIN_PATH
 HOOK="$SCRIPT_DIR/../hooks/herdr-follow-worktree.sh"
 
 PASS=0; FAIL=0

@@ -15,7 +15,7 @@ bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; [ $# -gt 1 ] && printf '   
 has()   { case "$2" in *"$3"*) ok "$1" ;; *) bad "$1" "expected '$3' in: $2" ;; esac; }
 hasnt() { case "$2" in *"$3"*) bad "$1" "must NOT contain '$3': $2" ;; *) ok "$1" ;; esac; }
 
-WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/test-memory-scope.XXXXXX")"; trap 'rm -rf "$WORK"' EXIT
 
 setup() {
   rm -rf "$WORK"/h "$WORK"/p
