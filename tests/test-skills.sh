@@ -31,10 +31,10 @@ def check(ok: bool, label: str, detail: str = "") -> None:
         if detail:
             print(f"       {detail}")
 
-# Guidelines that stay plain files: homelab doctrine, the opt-in hardware guideline, and the
-# memory convention that bin/memory-scope.sh documents.
+# Guidelines that stay plain files: homelab doctrine and the memory convention that
+# bin/memory-scope.sh documents. Hardware session safety lives in the one project that needs it.
 KEPT = {"central-ops-knowledge", "beaufort-todo-announcements", "environments-and-llm-spend",
-        "session-safety", "memory"}
+        "memory"}
 # Links that are examples inside sample documents, meant to be unresolved.
 EXAMPLE_LINKS = {("readme-documentation", "docs/configuration.md")}
 
@@ -81,7 +81,7 @@ for g in sorted((root / "guidelines").glob("*.md")):
     else:
         plain.add(g.stem)
 check(not wrong, "every guideline symlink resolves to a skill's SKILL.md or a rule", "; ".join(wrong))
-check(plain == KEPT, "exactly the homelab and opt-in guidelines stay plain files",
+check(plain == KEPT, "exactly the homelab and memory guidelines stay plain files",
       f"plain but expected a skill: {sorted(plain - KEPT)}; expected plain: {sorted(KEPT - plain)}")
 check(len(linked) >= 24 and len(as_rule) >= 6, "the topic guidelines are skills or rules",
       f"{len(linked)} skills, {len(as_rule)} rules")

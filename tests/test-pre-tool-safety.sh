@@ -24,12 +24,24 @@ if ! command -v jq >/dev/null 2>&1; then
   echo; echo "0 passed, 1 failed"; exit 1
 fi
 
-verdict() { # $1 = command; prints the hook's exit code
-  jq -n --arg c "$1" '{tool_name: "Bash", tool_input: {command: $c}}' | bash "$HOOK" >/dev/null 2>&1
-  echo $?
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/pre-tool-safety.XXXXXX")"; trap 'rm -rf "$WORK"' EXIT
+WORK="$(cd -P "$WORK" && pwd -P)"
+mkdir -p "$WORK/plain"   # not a git repo, so no branch rule applies
+HERE="$WORK/plain"
+
+verdict() { # $1 = command; prints 2 (blocked), ask (the user is asked) or 0 (allowed)
+  local out rc
+  out="$(jq -n --arg c "$1" --arg d "$HERE" '{tool_name: "Bash", tool_input: {command: $c}, cwd: $d}' \
+    | bash "$HOOK" 2>/dev/null)"; rc=$?
+  if [ "$rc" = 0 ] && [ "$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null)" = ask ]; then
+    echo ask
+  else
+    echo "$rc"
+  fi
 }
-blocks() { local rc; rc=$(verdict "$1"); [ "$rc" = 2 ] && ok "blocks:  $1" || bad "blocks:  $1" "exit $rc"; }
-allows() { local rc; rc=$(verdict "$1"); [ "$rc" = 0 ] && ok "allows:  $1" || bad "allows:  $1" "exit $rc"; }
+blocks() { local rc; rc=$(verdict "$1"); [ "$rc" = 2 ] && ok "blocks:  $1" || bad "blocks:  $1" "got $rc"; }
+allows() { local rc; rc=$(verdict "$1"); [ "$rc" = 0 ] && ok "allows:  $1" || bad "allows:  $1" "got $rc"; }
+asks()   { local rc; rc=$(verdict "$1"); [ "$rc" = ask ] && ok "asks:    $1" || bad "asks:    $1" "got $rc"; }
 
 # Force pushes, however they are spelled.
 blocks 'git push --force'
@@ -68,6 +80,81 @@ allows 'git commit -m "push --force is mentioned here"'
 # The other rules still hold.
 blocks 'git reset --hard'
 blocks 'rm -rf build'
+
+# --- killing sessions by pattern --------------------------------------------
+# Every Claude Code session, worktree agent and herdr pane on a host matches "claude", the
+# session running the command included.
+blocks 'pkill -f claude'
+blocks 'pkill -9 -f "claude"'
+blocks 'killall claude'
+blocks 'cd /tmp && pkill -f Claude'
+blocks 'pgrep -f claude | xargs kill'
+blocks 'pgrep -f claude | xargs -r kill -9'
+allows 'pkill -f my-dev-server'
+allows 'pgrep -fl claude'
+allows 'ps aux | grep claude'
+
+# session-cleanup kills every Claude process on the machine. It refuses without its flag;
+# with the flag the user decides.
+blocks 'session-cleanup'
+blocks "$HOME/.claude/commands/session-cleanup"
+blocks 'tools/session-cleanup --dry-run'
+asks   'session-cleanup --kill-all-claude'
+allows 'grep -n session-cleanup README.md'
+
+# --- commits and pushes on a default branch --------------------------------
+# Never commit or push a default branch; a repo that does so by design answers the prompt.
+G=(-c user.email=t@t -c user.name=t -c init.defaultBranch=main)
+git "${G[@]}" init -q --bare "$WORK/origin.git"
+git "${G[@]}" clone -q "$WORK/origin.git" "$WORK/c" 2>/dev/null
+git -C "$WORK/c" "${G[@]}" commit -q --allow-empty -m init && git -C "$WORK/c" push -q origin main 2>/dev/null
+git -C "$WORK/c" remote set-head origin -a >/dev/null 2>&1
+git "${G[@]}" clone -q "$WORK/origin.git" "$WORK/c2" 2>/dev/null       # stays on main
+git "${G[@]}" init -q --bare --initial-branch=trunk "$WORK/trunk.git"
+git "${G[@]}" clone -q "$WORK/trunk.git" "$WORK/t" 2>/dev/null
+git -C "$WORK/t" "${G[@]}" checkout -q -b trunk 2>/dev/null; git -C "$WORK/t" "${G[@]}" commit -q --allow-empty -m init
+git -C "$WORK/t" push -q origin trunk 2>/dev/null; git -C "$WORK/t" remote set-head origin -a >/dev/null 2>&1
+git "${G[@]}" init -q "$WORK/n" && git -C "$WORK/n" "${G[@]}" commit -q --allow-empty -m init   # no remote
+
+HERE="$WORK/c"
+asks   'git commit -m "x"'
+asks   'git add -A && git commit'
+asks   'git push'
+asks   'git push origin'
+asks   'git push -u origin main'
+asks   'git push origin HEAD'
+allows 'git status'
+allows 'git checkout -b feat/x'
+
+git -C "$WORK/c" checkout -q -b feat/x
+allows 'git commit -m "x"'
+allows 'git push -u origin feat/x'
+allows 'git push origin HEAD'
+asks   'git push origin main'
+asks   'git push origin feat/x:main'
+asks   'git push origin HEAD:refs/heads/main'
+asks   'git push --all'
+
+HERE="$WORK/plain"
+asks   "git -C $WORK/c2 commit -m x"
+allows "git -C $WORK/c commit -m x"
+asks   "cd $WORK/c2 && git commit -m x"
+allows "cd $WORK/c && git add -A && git commit -m x"
+allows "cd $WORK/c2 && git checkout -b feat/y && git commit -m x"
+asks   "git -C $WORK/c2 push -o ci.skip origin"
+asks   "git -C $WORK/c2 push -o ci.skip origin main"
+allows "git -C $WORK/c2 push -o ci.skip origin feat/y"
+
+HERE="$WORK/t"
+asks   'git commit -m "on trunk, the default here"'
+git -C "$WORK/t" checkout -q -b main
+allows 'git commit -m "main is an ordinary branch here"'
+
+HERE="$WORK/n"
+asks   'git commit -m "no remote: main counts as default"'
+git -C "$WORK/n" checkout -q --detach
+allows 'git commit -m "detached HEAD"'
+HERE="$WORK/plain"
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
