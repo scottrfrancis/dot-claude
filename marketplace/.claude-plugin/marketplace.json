@@ -1,8 +1,15 @@
 {
   "name": "dot-claude",
-  "owner": { "name": "dot-claude" },
-  "description": "Optional plugins from the dot-claude base config, served in place from the checkout",
+  "owner": {
+    "name": "dot-claude"
+  },
+  "description": "Plugins from the dot-claude base config, served in place from the checkout",
   "plugins": [
+    {
+      "name": "hooks",
+      "source": "./plugins/hooks",
+      "description": "The base config's global hook registrations, so no host writes them into settings.json by hand"
+    },
     {
       "name": "sdlc",
       "source": "./plugins/sdlc",

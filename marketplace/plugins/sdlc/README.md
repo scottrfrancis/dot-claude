@@ -17,8 +17,8 @@ that a project turns on.
 ## Turning it on
 
 The marketplace is this repo's `marketplace/` directory, and Claude Code serves the plugin from
-the checkout, so a pull updates it. Declare the marketplace once per host, in
-`~/.claude/settings.json`, with the checkout's absolute path:
+the checkout, so a pull updates it. `bin/install.sh --apply` declares the marketplace on each
+host, in `settings.json`, with the checkout's absolute path:
 
 ```json
 "extraKnownMarketplaces": {

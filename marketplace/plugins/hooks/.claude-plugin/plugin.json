@@ -1,0 +1,5 @@
+{
+  "name": "hooks",
+  "description": "The dot-claude base config's global hooks: session status, the Bash safety check, the prose check on Markdown writes, the account check and the end-of-session reminder",
+  "version": "1.0.0"
+}
