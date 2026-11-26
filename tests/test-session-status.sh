@@ -43,9 +43,8 @@ advance_origin() { # $1 = repo
 }
 
 # Every probe the repo tests do not exercise is switched off, so output is theirs alone.
-export SESSION_STATUS_PUNCH=none SESSION_STATUS_CONFORMANCE=none SESSION_STATUS_SETTINGS=none
+export SESSION_STATUS_PUNCH=none SESSION_STATUS_CONFORMANCE=none SESSION_STATUS_INSTALL=none
 export SESSION_STATUS_CONFIG_DIR="$WORK/no-config"
-export SESSION_STATUS_HOSTMD=none
 export SESSION_STATUS_WORKSPACE="$WORK/no-workspace"
 status() { "$STATUS" "$@" 2>/dev/null; }
 
@@ -210,76 +209,30 @@ out="$(cd "$PROJ" && status)"
 has "a project probe is told when it is not" "$out" "probe fetch=0"
 rm -rf "$PROJ/.claude"
 
-# --- hook registration ------------------------------------------------------
-# settings.json is gitignored and per host, so a fresh clone or a new host registers nothing.
-SET="$WORK/settings.json"
-HH="$WORK/hh"; mkdir -p "$HH/.claude/hooks"   # a home where every registered script exists
-for h in session-status.sh pre-tool-safety.sh session-end-reminder.sh prose-check.py; do : > "$HH/.claude/hooks/$h"; done
-printf '{"hooks":{"SessionStart":[{"hooks":[{"command":"~/.claude/hooks/session-status.sh"}]}],"PreToolUse":[{"hooks":[{"command":"~/.claude/hooks/pre-tool-safety.sh"}]}],"Stop":[{"hooks":[{"command":"~/.claude/hooks/session-end-reminder.sh"}]}],"PostToolUse":[{"hooks":[{"command":"python3 ~/.claude/hooks/prose-check.py"}]}]}}' > "$SET"
-out="$(cd "$WORK" && HOME="$HH" SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET" status)"
-empty "hooks: a settings.json registering every core hook is not mentioned" "$out"
+# --- install state --------------------------------------------------------
+# The config checks (links, host.md, hook registration) live in bin/install.sh --check. The
+# probe runs it for the session's own config dir and passes on what it prints.
+STUB="$WORK/install-stub.sh"
+printf '#!/usr/bin/env bash\necho "args: $*"\necho "hooks: a stub problem"\nexit 1\n' > "$STUB"; chmod +x "$STUB"
+out="$(cd "$WORK" && SESSION_STATUS_INSTALL="$STUB" SESSION_STATUS_CONFIG_DIR="$WORK/cfgx" status)"
+has "install: the probe passes on what install.sh --check reports" "$out" "hooks: a stub problem"
+has "install: for the session's config dir" "$out" "args: --check $WORK/cfgx"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$STUB"
+out="$(cd "$WORK" && SESSION_STATUS_INSTALL="$STUB" SESSION_STATUS_CONFIG_DIR="$WORK/cfgx" status)"
+empty "install: a clean check adds nothing" "$out"
 
-sed 's/pre-tool-safety/something-else/' "$SET" > "$SET.2"
-out="$(cd "$WORK" && HOME="$HH" SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.2" status)"
-has "hooks: a missing registration is named" "$out" "pre-tool-safety.sh"
-lacks "hooks: the retired skill gate is not asked for" "$out" "skill-gate"
-
-# A registered script that is gone fails on every event: `python3 gone.py` exits 2, which in
-# PreToolUse blocks every tool call. ~ is the hook shell's HOME, a profile's own on Studio.
-mkdir -p "$WORK/h3/.claude/hooks" && : > "$WORK/h3/.claude/hooks/here.sh"
-sed 's|"Stop":|"X":[{"hooks":[{"command":"python3 ~/.claude/hooks/skill-gate.py"},{"command":"~/.claude/hooks/here.sh"}]}],"Stop":|' "$SET" > "$SET.4"
-out="$(cd "$WORK" && HOME="$WORK/h3" SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.4" status)"
-has "hooks: a registered script that does not exist is named" "$out" "skill-gate.py, which does not exist"
-lacks "hooks: a registered script that exists is not" "$out" "here.sh"
-
-sed 's/session-status\.sh/load-handoff-context.sh/' "$SET" > "$SET.3"
-out="$(cd "$WORK" && HOME="$HH" SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.3" status)"
-has "hooks: the old SessionStart name is flagged for re-registration" "$out" "load-handoff-context.sh"
-
-out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$WORK/absent.json" status)"
-has "hooks: a host with no settings.json is told it registers nothing" "$out" "no hooks are registered"
-export SESSION_STATUS_SETTINGS=none
-
-# --- host.md ----------------------------------------------------------------
-# CLAUDE.md imports ~/.claude/host.md, which on a homelab host imports doctrine/homelab.md.
-# A missing file is skipped silently by Claude Code, so the probe says so instead.
-out="$(cd "$WORK" && SESSION_STATUS_HOSTMD="$WORK/absent-host.md" status)"
-has "host.md: a host without one is told it loads no host doctrine" "$out" "host.md"
-printf '# host\n@%s/doctrine/homelab.md\n' "$WORK/hd" > "$WORK/host.md"
-out="$(cd "$WORK" && SESSION_STATUS_HOSTMD="$WORK/host.md" status)"
-has "host.md: an import that does not resolve is named" "$out" "$WORK/hd/doctrine/homelab.md"
-mkdir -p "$WORK/hd/doctrine" && touch "$WORK/hd/doctrine/homelab.md"
-out="$(cd "$WORK" && SESSION_STATUS_HOSTMD="$WORK/host.md" status)"
-lacks "host.md: a host.md whose imports resolve is not mentioned" "$out" "host.md"
-printf '@~/.claude/doctrine/homelab.md\n' > "$WORK/host2.md"; mkdir -p "$WORK/h2/.claude/doctrine"; touch "$WORK/h2/.claude/doctrine/homelab.md"
-out="$(cd "$WORK" && HOME="$WORK/h2" SESSION_STATUS_HOSTMD="$WORK/host2.md" status)"
-lacks "host.md: ~ in an import means \$HOME" "$out" "host.md"
-rm -rf "$WORK/hd" "$WORK/h2" "$WORK/host.md" "$WORK/host2.md"
-
-# --- skill links ------------------------------------------------------------
-# A profile config dir that lacks links to dot-claude's skills never loads them.
-mkdir -p "$DOTC/skills/alpha" "$DOTC/skills/beta" "$DOTC/skills/synced"
-touch "$DOTC/skills/alpha/SKILL.md" "$DOTC/skills/beta/SKILL.md"
-CFG="$WORK/cfg"; mkdir -p "$CFG/skills"
-out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$CFG" status)"
-has "skills: a profile missing dot-claude's skills is told how many and what to run" "$out" "2 of 2 dot-claude skills are not linked"
-has "skills: and what to run" "$out" "link-config.sh --apply"
-ln -s "$DOTC/skills/alpha" "$CFG/skills/alpha"; ln -s "$DOTC/skills/beta" "$CFG/skills/beta"
-out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$CFG" status)"
-lacks "skills: a fully linked profile is not mentioned" "$out" "skills:"
-out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$DOTC" status)"
-lacks "skills: dot-claude itself as the config dir needs no links" "$out" "skills:"
-
-# The path-scoped rules load from the config dir's rules/, linked whole.
-mkdir -p "$DOTC/rules" && : > "$DOTC/rules/python.md"
-out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$CFG" status)"
-has "rules: a profile without rules/ is told what to run" "$out" "rules: $CFG has no rules/"
-ln -s "$DOTC/rules" "$CFG/rules"
-out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$CFG" status)"
-lacks "rules: a linked rules/ is not mentioned" "$out" "rules:"
-out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$DOTC" status)"
-lacks "rules: dot-claude itself needs no link" "$out" "rules:"
-rm -rf "$DOTC/skills" "$DOTC/rules" "$CFG"
+# With the real installer, a config dir of this checkout that lacks its links is told what is
+# missing and what to run. One that belongs to something else is not checked.
+CFG="$WORK/hx/.claude"; mkdir -p "$CFG"; ln -s "$SCRIPT_DIR/../CLAUDE.md" "$CFG/CLAUDE.md"
+out="$(cd "$WORK" && SESSION_STATUS_INSTALL="$SCRIPT_DIR/../bin/install.sh" SESSION_STATUS_CONFIG_DIR="$CFG" status)"
+has "install: the real check names unlinked skills" "$out" "skills:"
+has "install: and the command that fixes it" "$out" "install.sh --apply"
+out="$(cd "$WORK" && SESSION_STATUS_INSTALL='' SESSION_STATUS_CONFIG_DIR="$CFG" "$STATUS" 2>/dev/null)"
+has "install: by default the probe runs the installer beside it" "$out" "install.sh --apply"
+OTHER="$WORK/hy/.claude-other"; mkdir -p "$OTHER"; echo "its own rules" > "$OTHER/CLAUDE.md"
+out="$(cd "$WORK" && SESSION_STATUS_INSTALL="$SCRIPT_DIR/../bin/install.sh" SESSION_STATUS_CONFIG_DIR="$OTHER" status)"
+empty "install: a config dir that is not dot-claude's gets no dot-claude checks" "$out"
+rm -rf "$WORK/hx" "$WORK/hy"
 
 # --- hook mode --------------------------------------------------------------
 hookjson() { printf '{"session_id":"s1","hook_event_name":"SessionStart","source":"%s","cwd":"%s"}' "$1" "$2"; }
