@@ -37,6 +37,7 @@ daemon-auth-status.json
 .claude/
 
 # Local-only secrets and per-host state
+settings.json.*.bak
 token
 .claude.json*
 downloads
@@ -49,6 +50,8 @@ paste-cache/
 uploads/
 plugins/.last_inuse_sweep
 plugins/installed_plugins.json
+plugins/plugin-directory-cache-v2.json
+plugins/store/
 policy-limits.json
 remote-settings.json
 scheduled_tasks.lock
