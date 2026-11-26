@@ -363,4 +363,3 @@ Start fresh with `/lets-go`. This re-anchors context with git state and project 
 - [Shell Script Best Practices](../guidelines/shell-scripts.md) — if Claude writes bash
 - [Project Setup](../guidelines/project-setup.md) — bootstrapping a new project with this workflow
 - [Prototype Hygiene](../guidelines/prototype-hygiene.md) — keep the codebase clean as you iterate
-- [Session Safety](../guidelines/session-safety.md) — critical if working with hardware (GPU/NPU)
