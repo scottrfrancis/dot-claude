@@ -45,6 +45,7 @@ advance_origin() { # $1 = repo
 # Every probe the repo tests do not exercise is switched off, so output is theirs alone.
 export SESSION_STATUS_PUNCH=none SESSION_STATUS_CONFORMANCE=none SESSION_STATUS_SETTINGS=none
 export SESSION_STATUS_CONFIG_DIR="$WORK/no-config"
+export SESSION_STATUS_HOSTMD=none
 export SESSION_STATUS_WORKSPACE="$WORK/no-workspace"
 status() { "$STATUS" "$@" 2>/dev/null; }
 
@@ -230,6 +231,22 @@ has "hooks: the old SessionStart name is flagged for re-registration" "$out" "lo
 out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$WORK/absent.json" status)"
 has "hooks: a host with no settings.json is told it registers nothing" "$out" "no hooks are registered"
 export SESSION_STATUS_SETTINGS=none
+
+# --- host.md ----------------------------------------------------------------
+# CLAUDE.md imports ~/.claude/host.md, which on a homelab host imports doctrine/homelab.md.
+# A missing file is skipped silently by Claude Code, so the probe says so instead.
+out="$(cd "$WORK" && SESSION_STATUS_HOSTMD="$WORK/absent-host.md" status)"
+has "host.md: a host without one is told it loads no host doctrine" "$out" "host.md"
+printf '# host\n@%s/doctrine/homelab.md\n' "$WORK/hd" > "$WORK/host.md"
+out="$(cd "$WORK" && SESSION_STATUS_HOSTMD="$WORK/host.md" status)"
+has "host.md: an import that does not resolve is named" "$out" "$WORK/hd/doctrine/homelab.md"
+mkdir -p "$WORK/hd/doctrine" && touch "$WORK/hd/doctrine/homelab.md"
+out="$(cd "$WORK" && SESSION_STATUS_HOSTMD="$WORK/host.md" status)"
+lacks "host.md: a host.md whose imports resolve is not mentioned" "$out" "host.md"
+printf '@~/.claude/doctrine/homelab.md\n' > "$WORK/host2.md"; mkdir -p "$WORK/h2/.claude/doctrine"; touch "$WORK/h2/.claude/doctrine/homelab.md"
+out="$(cd "$WORK" && HOME="$WORK/h2" SESSION_STATUS_HOSTMD="$WORK/host2.md" status)"
+lacks "host.md: ~ in an import means \$HOME" "$out" "host.md"
+rm -rf "$WORK/hd" "$WORK/h2" "$WORK/host.md" "$WORK/host2.md"
 
 # --- skill links ------------------------------------------------------------
 # A profile config dir that lacks links to dot-claude's skills never loads them.

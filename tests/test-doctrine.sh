@@ -133,5 +133,58 @@ new_workspace
 before="$(cat "$WORK"/ws/primary/CLAUDE.md)"; run sync >/dev/null
 check_eq "sync never rewrites the primary" "$(cat "$WORK"/ws/primary/CLAUDE.md)" "$before"
 
+# --- several primaries ---------------------------------------------------
+# Universal doctrine lives in CLAUDE.md and homelab doctrine in doctrine/homelab.md, so each
+# block is read from whichever primary carries it. A block in two primaries is ambiguous.
+new_workspace
+mkdir -p "$WORK"/ws/second "$WORK"/ws/down-y
+printf '# Second\n\n<!-- doctrine-y: begin -->\nDoctrine Y, canonical.\n<!-- doctrine-y: end -->\n' \
+  > "$WORK"/ws/second/homelab.md
+printf '# Y\n\n<!-- doctrine-y: begin -->\nDoctrine Y, stale.\n<!-- doctrine-y: end -->\n' \
+  > "$WORK"/ws/down-y/CLAUDE.md
+printf 'doctrine-x | down-a/CLAUDE.md\ndoctrine-y | down-y/CLAUDE.md\n' > "$WORK"/ws/targets.conf
+run2() { ( cd "$WORK/ws" && "$DOCTRINE" --primary primary/CLAUDE.md --primary second/homelab.md --targets targets.conf "$@" ) 2>&1; }
+rc2()  { ( cd "$WORK/ws" && "$DOCTRINE" --primary primary/CLAUDE.md --primary second/homelab.md --targets targets.conf "$@" ) >/dev/null 2>&1; echo $?; }
+out="$(run2 check)"
+case "$out" in *"down-y/CLAUDE.md: block \"doctrine-y\" differs"*) ok "check reads a block from the second primary" ;;
+  *) bad "check reads a block from the second primary" "$out" ;; esac
+case "$out" in *down-a/CLAUDE.md*) bad "a block in the first primary still matches" "$out" ;;
+  *) ok "a block in the first primary still matches" ;; esac
+run2 sync >/dev/null
+grep -q 'Doctrine Y, canonical' "$WORK"/ws/down-y/CLAUDE.md \
+  && ok "sync copies a block from the second primary" || bad "sync copies a block from the second primary"
+check_rc "check passes after syncing from two primaries" "$(rc2 check)" 0
+
+printf '\n<!-- doctrine-y: begin -->\nDoctrine Y, rival.\n<!-- doctrine-y: end -->\n' >> "$WORK"/ws/primary/CLAUDE.md
+check_rc "a block in two primaries is an error" "$(rc2 check)" 2
+case "$(run2 check)" in *"more than one primary"*) ok "the error says the block has two homes" ;;
+  *) bad "the error says the block has two homes" "$(run2 check)" ;; esac
+
+# --- the real primaries --------------------------------------------------
+# Design-pattern discipline is universal, so it lives in CLAUDE.md, which loads on every host.
+# Central ops knowledge is homelab doctrine, in doctrine/homelab.md, imported through host.md.
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+in_file() { grep -qx "<!-- $1: begin -->" "$2" 2>/dev/null; }
+in_file design-patterns "$ROOT/CLAUDE.md" \
+  && ok "CLAUDE.md carries design-patterns" || bad "CLAUDE.md carries design-patterns"
+in_file central-ops-knowledge "$ROOT/doctrine/homelab.md" \
+  && ok "doctrine/homelab.md carries central-ops-knowledge" || bad "doctrine/homelab.md carries central-ops-knowledge"
+for b in $(awk -F'|' '/^[a-z]/ { gsub(/ /, "", $1); print $1 }' "$ROOT/doctrine/targets.conf" | sort -u); do
+  n=0
+  for f in "$ROOT/CLAUDE.md" "$ROOT/doctrine/homelab.md"; do in_file "$b" "$f" && n=$((n+1)); done
+  check_eq "$b has exactly one home among the primaries" "$n" 1
+done
+
+rm -rf "$WORK"/real; mkdir -p "$WORK"/real/down; : > "$WORK"/real/targets.conf
+for pair in design-patterns:CLAUDE.md central-ops-knowledge:doctrine/homelab.md; do
+  b="${pair%%:*}"; src="$ROOT/${pair#*:}"
+  { echo "<!-- $b: begin -->"
+    awk -v b="$b" '$0=="<!-- "b": begin -->"{f=1;next} $0=="<!-- "b": end -->"{f=0} f' "$src" 2>/dev/null
+    echo "<!-- $b: end -->"; echo; } >> "$WORK"/real/down/CLAUDE.md
+  echo "$b | down/CLAUDE.md" >> "$WORK"/real/targets.conf
+done
+( cd "$WORK"/real && "$DOCTRINE" check --targets "$WORK"/real/targets.conf >/dev/null 2>&1 ); rc=$?
+check_rc "the default primaries are CLAUDE.md and doctrine/homelab.md" "$rc" 0
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

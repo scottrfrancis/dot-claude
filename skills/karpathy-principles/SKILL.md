@@ -8,7 +8,7 @@ user-invocable: false
 
 Andrej Karpathy's [viral observations](https://x.com/karpathy/status/2015883857489522876) on LLM coding pitfalls were distilled by [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) into four principles: *Think Before Coding*, *Simplicity First*, *Surgical Changes*, *Goal-Driven Execution*.
 
-Two of those four are already enforced by the Claude Code system prompt (simplicity, don't-over-abstract, no speculative error handling) and by `testing.md` (RED-GREEN-REFACTOR as mandatory, stronger than Karpathy's "consider tests-first"). This file captures only the **deltas** — the rules not already covered.
+Two of those four are already enforced by the Claude Code system prompt (simplicity, don't-over-abstract, no speculative error handling) and by `testing.md` (test first by default, with named exemptions, stronger than Karpathy's "consider tests-first"). This file captures only the **deltas** — the rules not already covered.
 
 ## Delta 1: Surface Assumptions Before Implementing
 
@@ -51,6 +51,6 @@ Before adding a function, type, or constant to a file:
 
 ## See Also
 
-- `testing.md` — Goal-Driven Execution is covered here as mandatory RED-GREEN-REFACTOR, stronger than Karpathy's version.
+- `testing.md` — Goal-Driven Execution is covered here as test-first red-green-refactor, stronger than Karpathy's version.
 - `prototype-hygiene.md` — Simplicity First in practice: config over code, no stale state in docs, PRs over branches.
 - System prompt (unchangeable) already enforces: no speculative features, no abstractions for single-use code, no error handling for impossible scenarios, no comments for the obvious.
