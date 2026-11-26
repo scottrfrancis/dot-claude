@@ -16,8 +16,9 @@
 #              Never fetches.
 #   --project  directory to report on (default: $PWD)
 #
-# Test seams: SESSION_STATUS_DOTC, SESSION_STATUS_WORKSPACE, SESSION_STATUS_PUNCH and
-# SESSION_STATUS_CONFORMANCE override a path ("none" skips that probe);
+# Test seams: SESSION_STATUS_DOTC, SESSION_STATUS_WORKSPACE, SESSION_STATUS_PUNCH,
+# SESSION_STATUS_CONFORMANCE and SESSION_STATUS_INSTALL override a path ("none" skips that
+# probe); SESSION_STATUS_CONFIG_DIR overrides the config dir install.sh --check reports on;
 # SESSION_STATUS_TODAY overrides today's date (YYYY-MM-DD).
 set -uo pipefail
 
@@ -207,69 +208,16 @@ if [ -n "$CUTOFF" ]; then
   fi
 fi
 
-# --- hook registration ------------------------------------------------------
-# settings.json is gitignored and per host, so a fresh clone or a newly set-up host has the
-# hook scripts and registers none of them. Silent when the core hooks are registered.
-SETTINGS="${SESSION_STATUS_SETTINGS:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json}"
-if [ "$SETTINGS" != none ]; then
-  if [ ! -f "$SETTINGS" ]; then
-    emit "hooks: no $SETTINGS, so no hooks are registered on this host (see README, Hooks)"
-  else
-    missing=()
-    if ! grep -q 'hooks/session-status\.sh' "$SETTINGS"; then
-      if grep -q 'hooks/load-handoff-context\.sh' "$SETTINGS"; then
-        emit "hooks: SessionStart registers the old load-handoff-context.sh; register hooks/session-status.sh in its place"
-      else
-        missing+=("session-status.sh (SessionStart)")
-      fi
-    fi
-    grep -q 'hooks/pre-tool-safety\.sh' "$SETTINGS" || missing+=("pre-tool-safety.sh (PreToolUse)")
-    grep -q 'hooks/session-end-reminder\.sh' "$SETTINGS" || missing+=("session-end-reminder.sh (Stop)")
-    grep -q 'hooks/prose-check\.py' "$SETTINGS" || missing+=("prose-check.py (PostToolUse)")
-    [ "${#missing[@]}" -gt 0 ] && emit "hooks: not registered in $SETTINGS: $(join ',' "${missing[@]}" | sed 's/,/, /g')"
-    # A registered script that is gone fails on every event it is registered for, and
-    # `python3 gone.py` exits 2, which in PreToolUse blocks every tool call.
-    while IFS= read -r h; do
-      [ -e "$HOME/${h#\~/}" ] || emit "hooks: $SETTINGS registers $h, which does not exist; remove that entry"
-    done < <(grep -oE '[~]/\.claude/hooks/[A-Za-z0-9._-]+' "$SETTINGS" | sort -u)
-  fi
-fi
-
-# --- host.md ----------------------------------------------------------------
-# CLAUDE.md imports ~/.claude/host.md, gitignored and per host; on a homelab host it imports
-# doctrine/homelab.md. Claude Code skips a missing import without a word, so say it here.
-HOSTMD="${SESSION_STATUS_HOSTMD:-$HOME/.claude/host.md}"
-if [ "$HOSTMD" != none ]; then
-  if [ ! -f "$HOSTMD" ]; then
-    emit "host.md: $HOSTMD is missing, so this host loads no host doctrine; a homelab host needs @~/.claude/doctrine/homelab.md in it (README, Hosts)"
-  else
-    while IFS= read -r imp; do
-      ip="${imp#@}"
-      case "$ip" in \~/*) ip="$HOME/${ip:2}" ;; esac
-      [ -e "$ip" ] || emit "host.md: imports $ip, which does not exist here; on a profile host run bin/link-config.sh --apply"
-    done < <(grep -E '^@[^[:space:]]+' "$HOSTMD" 2>/dev/null | sed 's/[[:space:]].*$//')
-  fi
-fi
-
-# --- skill links ------------------------------------------------------------
-# Claude Code loads skills from the active config dir. On a profile host that is not
-# dot-claude, and bin/link-config.sh links dot-claude's skills into it one by one.
+# --- install state --------------------------------------------------------
+# bin/install.sh --check holds the config checks: the skill, rules/ and doctrine links, host.md
+# and its imports, and the hooks plugin in settings.json, each with the command that fixes it.
+# It runs here for the session's own config dir.
 CFG="${SESSION_STATUS_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
-if [ -n "$DOTC" ] && [ -d "$DOTC/skills" ] && [ "$(phys "$CFG")" != "$DOTC" ]; then
-  total=0; unlinked=0
-  for s in "$DOTC"/skills/*/; do
-    name="$(basename "$s")"
-    [ "$name" = synced ] && continue
-    [ -f "$s/SKILL.md" ] || continue
-    total=$((total + 1))
-    [ -f "$CFG/skills/$name/SKILL.md" ] || unlinked=$((unlinked + 1))
-  done
-  [ "$unlinked" -gt 0 ] && \
-    emit "skills: $unlinked of $total dot-claude skills are not linked into $CFG, so they never load here; run $DOTC/bin/link-config.sh --apply"
-fi
-# The path-scoped rules load from the config dir's rules/, which link-config links whole.
-if [ -n "$DOTC" ] && [ -d "$DOTC/rules" ] && [ "$(phys "$CFG")" != "$DOTC" ] && [ ! -d "$CFG/rules" ]; then
-  emit "rules: $CFG has no rules/, so the file-type rules never load here; run $DOTC/bin/link-config.sh --apply"
+INSTALL="${SESSION_STATUS_INSTALL:-$(cd -P "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd -P)/install.sh}"
+if [ "$INSTALL" != none ] && [ -x "$INSTALL" ]; then
+  while IFS= read -r line; do
+    [ -n "$line" ] && emit "$line"
+  done < <(INSTALL_HOME="$REALHOME" "$INSTALL" --check "$CFG" 2>/dev/null)
 fi
 
 # --- time tracker -----------------------------------------------------------

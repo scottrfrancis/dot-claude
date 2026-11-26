@@ -43,7 +43,7 @@ Hooks         ←  validate quality    ←  data enforcement
 ~/.claude/
 ├── CLAUDE.md                    # Global instructions loaded into every session
 ├── README.md                    # This file — theory of operation and reference
-├── settings.json                # Global tool permissions and hook registration
+├── settings.json                # Per-host permissions; enables the hooks plugin
 │
 ├── hooks/                       # Global hooks (fire for every project)
 │   ├── session-status.sh        # SessionStart: point at drift, handoffs, timers (bin/session-status.sh)
@@ -83,6 +83,7 @@ Hooks         ←  validate quality    ←  data enforcement
 │   └── extract-adr              # Convert logged decisions to ADRs
 │
 ├── marketplace/                 # Local plugin marketplace, served in place
+│   ├── plugins/hooks/           # The global hook registrations, enabled by bin/install.sh
 │   └── plugins/sdlc/            # Optional Spec-Driven Development commands, enabled per project
 │
 └── projects/                    # Per-project session data (auto-managed)
@@ -138,7 +139,7 @@ Every remaining command in `~/.claude/commands/`.
 
 ### SDLC plugin
 
-The seven Spec-Driven Development commands (`discovery-init`, `interview-to-spec`, `gherkin`, `assumptions`, `trace-check`, `constitution`, `design-review`) are the `sdlc` plugin in `marketplace/plugins/sdlc/`, typed as `/sdlc:<name>`. A project that uses them enables `sdlc@dot-claude` in its `.claude/settings.json`; the host declares the `dot-claude` marketplace once. [marketplace/plugins/sdlc/README.md](marketplace/plugins/sdlc/README.md) has both snippets.
+The seven Spec-Driven Development commands (`discovery-init`, `interview-to-spec`, `gherkin`, `assumptions`, `trace-check`, `constitution`, `design-review`) are the `sdlc` plugin in `marketplace/plugins/sdlc/`, typed as `/sdlc:<name>`. A project that uses them enables `sdlc@dot-claude` in its `.claude/settings.json`, and `bin/install.sh` declares the `dot-claude` marketplace on each host. [marketplace/plugins/sdlc/README.md](marketplace/plugins/sdlc/README.md) has both snippets.
 
 ## Guidelines Reference
 
@@ -182,7 +183,7 @@ Four stay plain guidelines, read when something points at them: `central-ops-kno
 
 Global skills live in `skills/<name>/SKILL.md`. The topic guidelines above are skills too, hidden from the `/` menu with `user-invocable: false`.
 
-Claude Code loads skills from the active config dir: `~/.claude`, or `$CLAUDE_CONFIG_DIR`. A profile config dir (`~/.claude-profiles/<p>/.claude`, `~/.claude-ailab`) symlinks parts of this repo but not `skills/`, so no repo skill loads there until it is linked. `bin/link-config.sh` adds one link per skill, plus `bin/` and `rules/`, to every config dir whose `CLAUDE.md` links here. It is a dry run unless given `--apply`, and it never replaces what it did not create. Re-run it after adding or removing a skill. `bin/session-status.sh` reports a config dir with missing links.
+Claude Code loads skills from the active config dir: `~/.claude`, or `$CLAUDE_CONFIG_DIR`. A profile config dir (`~/.claude-profiles/<p>/.claude`, `~/.claude-ailab`) symlinks parts of this repo but not `skills/`, so no repo skill loads there until it is linked. `bin/install.sh` adds one link per skill, plus `bin/`, `rules/`, `doctrine/`, `memory/` and `host.md`, to every config dir whose `CLAUDE.md` links here. It is a dry run unless given `--apply`, and it never replaces what it did not create. Re-run it after adding or removing a skill. `bin/session-status.sh` reports a config dir with missing links.
 
 | Skill | Purpose |
 | ----- | ------- |
@@ -226,31 +227,30 @@ That file carries the homelab names (the local model and the dev host), time tra
 To set up a homelab host:
 
 1. Clone this repo to `~/.claude`, or link it there.
-2. Create `host.md` in the checkout itself: `printf '@~/.claude/doctrine/homelab.md\n' > <checkout>/host.md`. On a host with swapped-HOME profiles, `~/.claude` inside a profile is the profile's own directory, so a file written there reaches only that profile.
-3. Register the hooks (see Hook Registration Pattern below), and set `"cleanupPeriodDays": 90` in `settings.json` so transcripts last long enough for `/mine-sessions` and usage reviews.
-4. On a host with profiles, run `<checkout>/bin/link-config.sh`, then again with `--apply`. Use the full path: a profile has no `~/.claude/bin` until link-config has run. It links `host.md`, `doctrine/`, `memory/`, `bin/`, `rules/` and every skill into each profile.
-5. Plugins synced from the claude.ai account load in every Claude Code session, with their skills in the listing and their MCP servers at startup. Turn off the ones Claude Code does not use with `claude plugin disable <name>@synced --scope user` (`claude plugin list` names them); they stay on in claude.ai. To offer the `sdlc` plugin to projects, declare the `dot-claude` marketplace as [its README](marketplace/plugins/sdlc/README.md) shows.
-6. Start a session. The status block should be silent, and `/memory` should list `host.md` and `doctrine/homelab.md`.
+2. Run `<checkout>/bin/install.sh --doctrine homelab` to see what it would do, then again with `--apply`. Use the full path: a profile has no `~/.claude/bin` until the installer has run. It creates `host.md` in the checkout, links it with `doctrine/`, `memory/`, `bin/`, `rules/` and every skill into each profile, and enables the hooks plugin in each `settings.json`, after a backup, removing the hand-written registrations the plugin replaces. A host outside the homelab passes `--doctrine none`. An existing `host.md` is never overwritten.
+3. Set `"cleanupPeriodDays": 90` in `settings.json` so transcripts last long enough for `/mine-sessions` and usage reviews.
+4. Plugins synced from the claude.ai account load in every Claude Code session, with their skills in the listing and their MCP servers at startup. Turn off the ones Claude Code does not use with `claude plugin disable <name>@synced --scope user` (`claude plugin list` names them); they stay on in claude.ai. To offer the `sdlc` plugin to projects, declare the `dot-claude` marketplace as [its README](marketplace/plugins/sdlc/README.md) shows.
+5. Start a session. The status block should be silent, and `/memory` should list `host.md` and `doctrine/homelab.md`. `<checkout>/bin/install.sh --check` runs the same checks for every config dir on the host and exits 1 when one needs fixing.
 
 ## Hooks System
 
 Hooks are shell scripts that fire on specific Claude Code events. They operate at two levels:
 
-- **Global** (`~/.claude/settings.json`): Fire for every project. Handle session lifecycle automation.
+- **Global** (the hooks plugin, which `~/.claude/settings.json` enables): Fire for every project. Handle session lifecycle automation.
 - **Project** (`.claude/settings.local.json`): Add domain-specific checks. Layer on top of global hooks.
 
 ### Global Hooks
 
 | Event | Hook | What It Does |
 | ----- | ---- | ------------ |
-| **SessionStart** | `session-status.sh` | Runs `bin/session-status.sh --hook` on `startup` and `clear`. Points at what needs attention and is silent otherwise: drift on dot-claude, the downstream dot-repos, the project and its nested repos (no fetch); handoffs from the last 7 days, without reading or moving them; an open `punch` timer; hooks missing from `settings.json`; overdue conformance items; stale `ACTION_ITEMS.md` entries; and the output of an executable `.claude/session-start.sh` in the project. `load-handoff-context.sh` is a deprecated alias for it. |
+| **SessionStart** | `session-status.sh` | Runs `bin/session-status.sh --hook` on `startup` and `clear`. Points at what needs attention and is silent otherwise: drift on dot-claude, the downstream dot-repos, the project and its nested repos (no fetch); handoffs from the last 7 days, without reading or moving them; an open `punch` timer; what `bin/install.sh --check` finds in the session's config dir (missing links, `host.md`, the hooks plugin); overdue conformance items; stale `ACTION_ITEMS.md` entries; and the output of an executable `.claude/session-start.sh` in the project. `load-handoff-context.sh` is a deprecated alias for it. |
 | **PreToolUse** | `pre-tool-safety.sh` | Blocks (exit 2) destructive operations: `git reset --hard`, an unguarded `git push --force`, `git worktree remove --force`, `rm -rf`, redirects to sensitive config files, killing processes that match `claude`, and `session-cleanup` without its flag. Asks the user (a permission prompt) before a commit or push on a repo's default branch (`origin/HEAD`, else `main` or `master`), and before `session-cleanup --kill-all-claude`. |
 | **PreCompact** | `pre-compact-memorialize.sh` | Snapshots branch, outstanding conformance items and uncommitted files before context is compacted, and steers what the summary preserves. Advisory. |
 | **SessionStart** | `account-mismatch-warn.sh` | Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) does not match the logged-in oauth account. Advisory only; silent on match; needs `jq`. |
 | **PostToolUse** | `prose-check.py` | After a Markdown write, checks the mechanical prose rules: the dash budget `max(2, lines/40)`, the corrective frame on added lines, and bold density. Judges only what the write added, and returns findings to the model (exit 2). A file containing `prose-check: off` is skipped. |
 | **Stop** | `session-end-reminder.sh` | Stop fires after every reply, so this speaks once per session: it reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) when neither has been run today. Also reminds about `/lint-action-items` when an outline-format `ACTION_ITEMS.md` has items past the 7-day prune window. |
 
-**`settings.json` is deliberately gitignored** (per-host and account state), so a fresh clone has the hook *scripts* but no registration. Register them after cloning or the hooks silently never fire.
+`settings.json` is gitignored because it holds per-host and account state, so the registrations live in the hooks plugin and `bin/install.sh` enables it on each host. **Until the installer runs, a fresh clone has the hook scripts and no hook fires.**
 
 ### Project Hook Types
 
@@ -268,35 +268,28 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
 
 ### Hook Registration Pattern
 
-`settings.json` is gitignored, so each host registers its own hooks. The global set:
+The global set lives in the hooks plugin, `marketplace/plugins/hooks/hooks/hooks.json`, where `tests/test-hooks-plugin.sh` holds it in place:
+
+| Event | Matcher | Script | Timeout (s) |
+| ----- | ------- | ------ | ----------- |
+| SessionStart | `^(startup\|clear)$` | `session-status.sh` | 30 |
+| SessionStart | every start | `account-mismatch-warn.sh` | 10 |
+| PreToolUse | `Bash` | `pre-tool-safety.sh` | 10 |
+| PostToolUse | `Write\|Edit\|MultiEdit` | `prose-check.py` | 10 |
+| Stop | every reply | `session-end-reminder.sh` | 10 |
+
+Claude Code serves the plugin in place from the checkout, so a pull updates it with no reinstall. Each command reaches its script as `${CLAUDE_PLUGIN_ROOT}/../../../hooks/<script>`, which resolves the same way under any HOME. `bin/install.sh --apply` writes the two settings that turn it on:
 
 ```json
 {
-  "hooks": {
-    "SessionStart": [
-      { "matcher": "^(startup|clear)$",
-        "hooks": [{ "type": "command", "command": "~/.claude/hooks/session-status.sh", "timeout": 30 }] },
-      { "hooks": [{ "type": "command", "command": "~/.claude/hooks/account-mismatch-warn.sh", "timeout": 10 }] }
-    ],
-    "PreToolUse": [
-      { "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "~/.claude/hooks/pre-tool-safety.sh", "timeout": 10 }] }
-    ],
-    "PostToolUse": [
-      { "matcher": "Write|Edit|MultiEdit",
-        "hooks": [{ "type": "command", "command": "python3 ~/.claude/hooks/prose-check.py", "timeout": 10 }] }
-    ],
-    "PreCompact": [
-      { "hooks": [{ "type": "command", "command": "~/.claude/hooks/pre-compact-memorialize.sh", "timeout": 30 }] }
-    ],
-    "Stop": [
-      { "hooks": [{ "type": "command", "command": "~/.claude/hooks/session-end-reminder.sh", "timeout": 10 }] }
-    ]
-  }
+  "extraKnownMarketplaces": {
+    "dot-claude": { "source": { "source": "directory", "path": "/Users/you/.claude/marketplace" } }
+  },
+  "enabledPlugins": { "hooks@dot-claude": true }
 }
 ```
 
-Keep host-specific entries (herdr, iTerm status) alongside these. A project adds its own in `.claude/settings.local.json`, with paths relative to the project.
+A hook the plugin does not carry is registered in `settings.json` by hand: the host-specific ones (herdr, iTerm status) and `pre-compact-memorialize.sh`. A hand-written registration of a script the plugin carries would run it twice, so the installer removes those and `--check` reports any that come back. A project adds its own hooks in `.claude/settings.local.json`, with paths relative to the project.
 
 ## Contributing to Guidelines
 
@@ -373,6 +366,10 @@ Deterministic shell checks under `bin/`, no model tokens. Each has a suite in `t
 - `bin/doctrine.sh check|sync` - propagate marker-delimited doctrine blocks from this repo to the
   downstream `dot-*` repos listed in `doctrine/targets.conf`. dot-claude is primary; downstream
   copies are replaced from it and are never a source.
+- `bin/install.sh --check` - for every config dir on the host: the links into this checkout,
+  `host.md` and its imports, and whether `settings.json` enables the hooks plugin. Each problem
+  comes with the command that fixes it. `bin/session-status.sh` runs it for the session's own
+  config dir.
 - `bin/transcripts.py tokens|usage` - reads Claude Code's session transcripts in every config dir
   on the host: token usage for one branch (behind `pr-tokens`), and per-session commands, skills
   and tokens for a window (behind `/mine-sessions`). No model tokens.
@@ -380,6 +377,13 @@ Deterministic shell checks under `bin/`, no model tokens. Each has a suite in `t
   `bin/memory-scope.sh` - the individual tiers.
 
 ## Changelog
+
+- 2026-11-26: One installer sets a host up. `bin/install.sh`, grown from `link-config.sh` (kept
+  as its old name), links each config dir, creates `host.md` from `--doctrine`, and enables the
+  hooks plugin in each `settings.json`, removing the hand-written registrations it replaces.
+  The global hook registrations moved from each host's `settings.json` into
+  `marketplace/plugins/hooks/`, so they are versioned and tested. `install.sh --check` holds
+  the config checks `bin/session-status.sh` used to carry.
 
 - 2026-11-26: Token and usage numbers come from Claude Code's own transcripts.
   `bin/transcripts.py` sums a branch's tokens by model across every config dir on the host and
