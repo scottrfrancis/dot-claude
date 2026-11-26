@@ -247,7 +247,8 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
       { "hooks": [{ "type": "command", "command": "~/.claude/hooks/account-mismatch-warn.sh", "timeout": 10 }] }
     ],
     "PreToolUse": [
-      { "hooks": [{ "type": "command", "command": "~/.claude/hooks/pre-tool-safety.sh", "timeout": 10 }] },
+      { "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "~/.claude/hooks/pre-tool-safety.sh", "timeout": 10 }] },
       { "matcher": "Write|Edit|MultiEdit|Bash|Read|Skill",
         "hooks": [{ "type": "command", "command": "python3 ~/.claude/hooks/skill-gate.py", "timeout": 10 }] }
     ],
@@ -281,7 +282,7 @@ detail, indexes, and anything addressed to a human belong here.
 
 Follow `guidelines/project-setup.md` for the full checklist. The short version:
 
-**Tier 1 (all projects):** Create `CLAUDE.md` at project root, `.claude/memory/MEMORY.md` for persistent context, and `.claude/session-logs/` for handoff auto-loading. Global commands (`/lets-go`, `/session-logger`, `/handoff`) and global hooks (SessionStart context injection, Stop reminders) work immediately with no per-project setup.
+**Tier 1 (all projects):** Create `CLAUDE.md` at project root, `.claude/memory/MEMORY.md` for persistent context, and `session-logs/` for session logs and handoffs. Global commands (`/lets-go`, `/session-logger`, `/handoff`, `/pickup`) and global hooks (the session-start status, Stop reminders) work immediately with no per-project setup.
 
 **Tier 2 (tracked projects):** Add `.claude/settings.local.json` for permissions and hook registration. Add a Stop hook for session-end reminders. Create `.claude/session-logs/` directory.
 
