@@ -15,7 +15,7 @@ bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; [ $# -gt 1 ] && printf '   
 has()   { case "$2" in *"$3"*) ok "$1" ;; *) bad "$1" "expected '$3' in: $2" ;; esac; }
 hasnt() { case "$2" in *"$3"*) bad "$1" "must NOT contain '$3': $2" ;; *) ok "$1" ;; esac; }
 
-WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/test-memory-scope.XXXXXX")"; trap 'rm -rf "$WORK"' EXIT
 
 setup() {
   rm -rf "$WORK"/h "$WORK"/p
@@ -93,6 +93,13 @@ has   "resolves the universal glossary"        "$out" "h/glossary/GLOSSARY.md"
 has   "resolves the matching client glossary"  "$out" "local/ailab/GLOSSARY.md"
 hasnt "NEVER resolves another client glossary" "$out" "northwind"
 hasnt "does not mix memory into a glossary scope" "$out" "MEMORY.md"
+
+# Launched from the login home, the project tier is <home>/.claude/memory/MEMORY.md, which
+# is the universal file itself. Listing it twice made every finding about it appear twice.
+setup; mkdir -p "$WORK/login"; ln -s "$WORK/h" "$WORK/login/.claude"
+n="$("$SCOPE" --home "$WORK/h" --project "$WORK/login" 2>&1 | grep -c 'memory/MEMORY.md$' || true)"
+[ "$n" = 1 ] && ok "a file reached by two paths is listed once" \
+             || bad "a file reached by two paths is listed once" "listed $n times"
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

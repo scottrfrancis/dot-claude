@@ -1,6 +1,13 @@
 # Session Safety Guidelines
 
-This guideline prevents Claude Code session hangs and context loss on hardware development systems, particularly when working with NPU/GPU devices.
+This guideline applies only to a dedicated NPU/GPU development box whose project `CLAUDE.md`
+opts in by naming it. Everywhere else, do not follow it: the cleanup below kills every Claude
+process on the machine, including parallel sessions, worktree agents, herdr panes and the
+desktop app. `commands/session-cleanup` refuses to run without `--kill-all-claude` for that
+reason.
+
+On an opted-in box, it prevents Claude Code session hangs and context loss caused by several
+sessions holding the same device.
 
 ## Critical Problem: Session Accumulation
 
