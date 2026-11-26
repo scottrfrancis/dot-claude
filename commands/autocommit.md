@@ -2,6 +2,7 @@
 description: Stage changed files and commit with an AI-generated conventional commit message
 argument-hint: [-n to confirm before committing] [-t type to suggest commit type] [-all to include untracked files]
 allowed-tools: Bash, Read, Glob
+disable-model-invocation: true
 ---
 
 Stage tracked changes and commit with a generated conventional commit message.

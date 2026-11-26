@@ -85,11 +85,16 @@ Hooks         ←  validate quality    ←  data enforcement
 │   ├── validate-hw-env          # Hardware environment pre-check
 │   └── extract-adr              # Convert logged decisions to ADRs
 │
+├── marketplace/                 # Local plugin marketplace, served in place
+│   └── plugins/sdlc/            # Optional Spec-Driven Development commands, enabled per project
+│
 └── projects/                    # Per-project session data (auto-managed)
     └── <encoded-path>/          # Session logs, memory snapshots per project
 ```
 
 ## Commands Reference
+
+Commands marked user-only run when typed and are left out of the model's listing, which every session pays for. The reviews marked forked run in a subagent with its own context: the reading stays out of the working session, and the report arrives when it finishes. `/babysit-pr` and `/link-sweep` stay model-invocable because they run under `/loop`, and a scheduled fire passes a user-only command to Claude as text without running it.
 
 ### Session Management
 
@@ -98,8 +103,8 @@ Hooks         ←  validate quality    ←  data enforcement
 | **lets-go** | `/lets-go [role with task]` | Initialize a session: read project docs, run git sync protocol (fetch, compare ahead/behind, recommend pull/push/branch), check recent session logs |
 | **session-logger** | `/session-logger [topic]` | Create structured session summary with: activities, decisions, reusable insights, effectiveness assessment. Cross-links to previous session log automatically |
 | **handoff** | `/handoff [topic notes]` | Generate forward-looking continuation prompt for the next session. Use when context window is filling up or when pausing work mid-task. Saves to `session-logs/handoff-*.md` |
-| **memorialize** | `/memorialize [topic]` | Close out a thread at a context shift: sort durable from transient, propose dated MEMORY.md entries, name promotion candidates (guideline / ADR / `okf-knowledge`), then confirm whether it is safe to clear |
-| **mine-sessions** | `/mine-sessions [days:N] [save]` | Analyze session logs for patterns, metrics, and process improvement recommendations. Extracts reusable insights, tracks decision evolution, identifies process friction |
+| **memorialize** | `/memorialize [topic]` | User-only. Close out a thread at a context shift: sort durable from transient, propose dated MEMORY.md entries, name promotion candidates (guideline / ADR / `okf-knowledge`), then confirm whether it is safe to clear |
+| **mine-sessions** | `/mine-sessions [days:N] [save]` | User-only, forked. Analyze session logs for patterns, metrics, and process improvement recommendations. Extracts reusable insights, tracks decision evolution, identifies process friction |
 | **pickup** | `/pickup` | Resume from the most recent handoff: load handoff file, quick git sync, archive the handoff so it isn't re-injected next session |
 
 ### Git and Code Quality
@@ -107,12 +112,12 @@ Hooks         ←  validate quality    ←  data enforcement
 | Command | Invocation | Purpose |
 | ------- | --------- | ------- |
 | **commit-manual** | `/commit <type> [scope] <description>` | Create a conventional commit with validated type |
-| **autocommit** | `/autocommit [-n] [-t type] [-all]` | Stage tracked changes and commit with an AI-generated conventional commit message; `-n` prompts for confirmation |
-| **arch-review** | `/arch-review` | Principal Architect review: AWS/SOLID frameworks, security, testing, AI patterns, technical debt |
+| **autocommit** | `/autocommit [-n] [-t type] [-all]` | User-only. Stage tracked changes and commit with an AI-generated conventional commit message; `-n` prompts for confirmation |
+| **arch-review** | `/arch-review` | User-only, forked. Principal Architect review: AWS/SOLID frameworks, security, testing, AI patterns, technical debt |
 | **extract-adr** | `/extract-adr` | Convert significant decisions from session logs into Architecture Decision Records |
-| **doc-review** | `/doc-review` | Audit project documentation for accuracy, DRY, and clarity; commit fixes on a `docs/review-*` branch |
+| **doc-review** | `/doc-review` | User-only, forked. Audit project documentation for accuracy, DRY, and clarity; commit fixes on a `docs/review-*` branch |
 | **editorial-review** | `/editorial-review [style]` | Audit prose for AI-generated patterns; refine toward a target voice or style |
-| **security-audit** | `/security-audit` | Breach-driven security audit: OWASP top 10, secrets exposure, injection, auth weaknesses |
+| **security-audit** | `/security-audit` | User-only, forked. Breach-driven security audit: OWASP top 10, secrets exposure, injection, auth weaknesses |
 
 ### System Operations
 
@@ -128,20 +133,17 @@ Every remaining command in `~/.claude/commands/`.
 
 | Command | Invocation | Purpose |
 | ------- | --------- | ------- |
-| **assumptions** | `/assumptions` | Track hypothesis-driven assumptions (if-true/if-false/fallback) in ASSUMPTIONS-TRACKER.md |
 | **babysit-pr** | `/babysit-pr` | Monitor a PR for check results, reviews, and merge readiness; pairs with `/loop` |
-| **build-pdf** | `/build-pdf` | Build a PDF from ordered markdown sections via the `md2pdf` CLI and a `report.yaml` manifest |
-| **constitution** | `/constitution` | Generate CONSTITUTION.md + WORKFLOWS.md (principles, Definition of Done, quality gates) |
-| **design-review** | `/design-review` | Review design deliverables for consistency, terminology alignment, cross-document reference integrity |
-| **discovery-init** | `/discovery-init` | Scaffold a Spec-Driven Development project: artifact templates, glossary, constitution, traceability chain |
+| **build-pdf** | `/build-pdf` | User-only. Build a PDF from ordered markdown sections via the `md2pdf` CLI and a `report.yaml` manifest |
 | **export-prompts** | `/export-prompts` | Python: export AI agent prompt history (Droid + Claude Code sessions) to markdown, by date or range |
-| **gherkin** | `/gherkin` | Draft Gherkin acceptance scenarios from a requirement or FR-### |
-| **interview-to-spec** | `/interview-to-spec` | Convert interview notes into readout, FR-### requirements, Gherkin scenarios, and tracker updates |
 | **link-sweep** | `/link-sweep` | One target per invocation of the federation link audit; designed to run under `/loop` |
 | **pr-tokens** | `/pr-tokens` | Python: format the current branch's token usage as a PR-description snippet (see `guidelines/pr-token-tracking.md`) |
-| **punch** | `/punch` | Drive the local `punch` time tracker (start/stop/status/log); project-aware, syncs to hasami via the time-push agent. Renamed from `/b` on 2026-08-14; `b` remains a symlink |
-| **review-pr** | `/review-pr` | PR code review: bugs, security, missing tests, style; works with PR numbers or branches |
-| **trace-check** | `/trace-check` | Validate bidirectional traceability across requirements, feature files, scenarios, and tests |
+| **punch** | `/punch` | User-only. Drive the local `punch` time tracker (start/stop/status/log); project-aware, syncs to hasami via the time-push agent. Renamed from `/b` on 2026-08-14; `b` remains a symlink |
+| **review-pr** | `/review-pr` | User-only, forked. PR code review: bugs, security, missing tests, style; works with PR numbers or branches |
+
+### SDLC plugin
+
+The seven Spec-Driven Development commands (`discovery-init`, `interview-to-spec`, `gherkin`, `assumptions`, `trace-check`, `constitution`, `design-review`) are the `sdlc` plugin in `marketplace/plugins/sdlc/`, typed as `/sdlc:<name>`. A project that uses them enables `sdlc@dot-claude` in its `.claude/settings.json`; the host declares the `dot-claude` marketplace once. [marketplace/plugins/sdlc/README.md](marketplace/plugins/sdlc/README.md) has both snippets.
 
 ## Guidelines Reference
 
@@ -234,7 +236,8 @@ To set up a homelab host:
 2. Create `host.md` in the checkout itself: `printf '@~/.claude/doctrine/homelab.md\n' > <checkout>/host.md`. On a host with swapped-HOME profiles, `~/.claude` inside a profile is the profile's own directory, so a file written there reaches only that profile.
 3. Register the hooks (see Hook Registration Pattern below), and set `"cleanupPeriodDays": 90` in `settings.json` so transcripts last long enough for `/mine-sessions` and usage reviews.
 4. On a host with profiles, run `<checkout>/bin/link-config.sh`, then again with `--apply`. Use the full path: a profile has no `~/.claude/bin` until link-config has run. It links `host.md`, `doctrine/`, `memory/`, `bin/`, `rules/` and every skill into each profile.
-5. Start a session. The status block should be silent, and `/memory` should list `host.md` and `doctrine/homelab.md`.
+5. Plugins synced from the claude.ai account load in every Claude Code session, with their skills in the listing and their MCP servers at startup. Turn off the ones Claude Code does not use with `claude plugin disable <name>@synced --scope user` (`claude plugin list` names them); they stay on in claude.ai. To offer the `sdlc` plugin to projects, declare the `dot-claude` marketplace as [its README](marketplace/plugins/sdlc/README.md) shows.
+6. Start a session. The status block should be silent, and `/memory` should list `host.md` and `doctrine/homelab.md`.
 
 ## Hooks System
 
@@ -383,6 +386,11 @@ Deterministic shell checks under `bin/`, no model tokens. Each has a suite in `t
   `bin/memory-scope.sh` - the individual tiers.
 
 ## Changelog
+
+- 2026-11-26: The skill listing gets smaller. Nine commands only Scott starts are user-only,
+  five reviews run forked, every skill description is at most 200 characters and leads with
+  when to use it, and the seven SDLC commands moved to an optional `sdlc` plugin in
+  `marketplace/`. `tests/test-listing.sh` holds each of these in place.
 
 - 2026-11-26: Path-scoped rules replace the skill gate. Eleven files in `rules/` load when
   Claude touches a matching file: the Python, TypeScript, Go, Docker, Terraform and Markdown

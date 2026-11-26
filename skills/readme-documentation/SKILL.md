@@ -1,6 +1,6 @@
 ---
 name: readme-documentation
-description: "README as the documentation hub: single entry point, what belongs in README versus docs/, structure and linking. Use when writing or reorganising a README or a project's documentation."
+description: "Use when writing or reorganising a README or a project's docs: README as the single entry point, what belongs in docs/, structure and linking."
 user-invocable: false
 ---
 

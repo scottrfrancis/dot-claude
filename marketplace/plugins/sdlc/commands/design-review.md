@@ -1,3 +1,7 @@
+---
+description: "Review design deliverables for internal consistency, terminology, cross-document references and traceability coverage"
+---
+
 # Design Deliverable Review
 
 Review D2.x design documents for internal consistency, terminology alignment, traceability coverage, and compliance. This is a document-layer review (complementing `arch-review` which reviews code architecture).

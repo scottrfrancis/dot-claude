@@ -1,3 +1,7 @@
+---
+description: "Generate CONSTITUTION.md and WORKFLOWS.md: project principles, the Definition of Done and quality gates"
+---
+
 # Project Constitution Generator
 
 ## When to Use

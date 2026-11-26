@@ -1,6 +1,6 @@
 ---
 name: status-report-2x2
-description: "Quad-chart format for short weekly status reports: Last week, This week, Risks, Asks, as four H2 sections. Use when writing a weekly or recurring status update, or when asked for a 2x2 or quad-chart report."
+description: "Use when writing a weekly or recurring status update, or a 2x2 or quad-chart report: Last week, This week, Risks and Asks as four H2 sections."
 user-invocable: false
 ---
 

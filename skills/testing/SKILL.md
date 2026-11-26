@@ -1,6 +1,6 @@
 ---
 name: testing
-description: "Testing discipline: test first, tests that can fail (the mutation check), gates that can be wrong, the test pyramid, a UX tier for user-facing work. Use when writing or changing code with behaviour, writing tests, or reviewing a test suite."
+description: "Use when writing or changing code with behaviour, writing tests, or reviewing a suite: test first, the mutation check, gates that can be wrong, the pyramid, a UX tier."
 user-invocable: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: prose-style
-description: "House prose rules for anything a human reads (docs, READMEs, ADRs, PR and commit bodies, chat): em-dash budget, the corrective frame and its disguises, plain register, concrete nouns, state what is, bold discipline. Use when writing or editing any prose."
+description: "Use when writing or editing anything a person reads: docs, READMEs, ADRs, PR and commit bodies, chat. House rules on dashes, corrective frames, register, concrete nouns and bold."
 user-invocable: false
 ---
 

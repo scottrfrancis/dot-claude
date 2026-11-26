@@ -1,3 +1,9 @@
+---
+description: "Breach-driven security audit of a web application: secrets, injection, auth, tenant isolation; writes a findings report"
+disable-model-invocation: true
+context: fork
+---
+
 # Security Audit
 
 Perform a targeted security audit of the web application codebase. This audit follows the breach-driven methodology: map real attack patterns to your system, find the gaps, recommend fixes.

@@ -1,0 +1,5 @@
+{
+  "name": "sdlc",
+  "description": "Spec-Driven Development commands: discovery scaffold, interview-to-spec, Gherkin, assumptions, traceability, constitution, design review",
+  "version": "1.0.0"
+}

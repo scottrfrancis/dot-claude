@@ -1,6 +1,6 @@
 ---
 name: adr
-description: "The canonical Architecture Decision Record convention: docs/decisions/ADR-NNNN, numbering, status lifecycle, FR-### traceability. Use when writing, extracting, numbering or reviewing an ADR or any record of an architectural decision."
+description: "Use when writing, extracting, numbering or reviewing an Architecture Decision Record: docs/decisions/ADR-NNNN, numbering, status lifecycle, FR-### traceability."
 user-invocable: false
 ---
 

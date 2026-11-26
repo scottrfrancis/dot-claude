@@ -1,6 +1,6 @@
 ---
 name: conventional-commits
-description: "Conventional Commits format: type(scope): description, body, footers, breaking changes. Use when writing any git commit message or PR title."
+description: "Use when writing a git commit message or PR title: the Conventional Commits types, scope, body, footers and breaking changes."
 user-invocable: false
 ---
 

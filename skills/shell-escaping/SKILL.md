@@ -1,6 +1,6 @@
 ---
 name: shell-escaping
-description: "Shell quoting, line continuations, TTY handling and terminal compatibility across VS Code, native terminals and CI. Use when a shell command or script involves nested quotes or heredocs, or behaves differently between terminals."
+description: "Use when a shell command or script has nested quotes, heredocs or line continuations, or behaves differently between VS Code, a native terminal and CI."
 user-invocable: false
 ---
 

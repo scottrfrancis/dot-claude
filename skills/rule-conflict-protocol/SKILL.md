@@ -1,6 +1,6 @@
 ---
 name: rule-conflict-protocol
-description: "What to do when two durable instructions contradict: log it in logs/rule-conflict-log.md with a stable RC### id, decide once, record the decision. Use when two rules, guidelines or instructions cannot both be satisfied."
+description: "Use when two rules, guidelines or instructions cannot both be satisfied: log the conflict with an RC### id in logs/rule-conflict-log.md, decide once, record the decision."
 user-invocable: false
 ---
 

@@ -1,3 +1,7 @@
+---
+description: "Validate bidirectional traceability across requirements, feature files, scenarios and tests, and report orphans, broken links and gaps"
+---
+
 # Traceability Validator
 
 Scan the project's specification and test artifacts to validate bidirectional traceability. Produce a coverage report identifying orphans, broken links, and gaps.
