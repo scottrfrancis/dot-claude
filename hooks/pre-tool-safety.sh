@@ -84,4 +84,96 @@ if echo "$CMD_HEAD" | grep -qE '(>|>>)\s*(~\/\.claude\/settings\.json|~\/\.ssh\/
   exit 2
 fi
 
+# --- Killing Claude sessions by pattern ---
+# Every Claude Code session, worktree agent and herdr pane on the host matches "claude",
+# the session running the command included.
+if printf '%s\n' "$CMD_HEAD" | grep -qiE '(^|[;&|[:space:]])(pkill|killall)[[:space:]][^;&|]*claude|pgrep[^;&|]*claude[^;&|]*\|[[:space:]]*xargs[^;&|]*[[:space:]]kill'; then
+  echo "Safety check: this kills every process matching 'claude', which ends every Claude Code session on the host, this one included. Kill a specific PID instead." >&2
+  exit 2
+fi
+
+# The user is asked; the reason is shown in the permission prompt.
+ask() {
+  jq -n --arg r "$1" '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "ask", permissionDecisionReason: $r}}'
+  exit 0
+}
+
+# --- session-cleanup, run as a command ---
+# It kills every Claude process on the machine and refuses without --kill-all-claude.
+CLEANUP_RE='(^|[;&|])[[:space:]]*((sudo|bash|sh|env)[[:space:]]+)*([^[:space:];&|]*/)?session-cleanup([[:space:]]|$)'
+if printf '%s\n' "$CMD_HEAD" | grep -qE "$CLEANUP_RE"; then
+  if [[ $CMD_HEAD == *--kill-all-claude* ]]; then
+    ask "session-cleanup --kill-all-claude kills every Claude process on this machine, this session included. Run it only on a dedicated NPU/GPU box."
+  fi
+  echo "Safety check: session-cleanup kills every Claude process on the machine and runs only with --kill-all-claude, on a dedicated NPU/GPU box. Ask Scott before running it." >&2
+  exit 2
+fi
+
+# --- Commits and pushes on a default branch ---
+# Never commit or push a default branch. This asks rather than blocks, so a repo that
+# commits to its default branch by design (an engagement umbrella) is one approval away.
+# The repo is the one git will act on: `git -C <dir>`, a leading `cd <dir> &&`, or the cwd.
+RE_COMMIT='(^|[;&|[:space:]])git[[:space:]]+commit([[:space:]]|$)'
+RE_PUSH='(^|[;&|[:space:]])git[[:space:]]+push([[:space:]][^;&|]*)?'
+RE_NEWBRANCH='git[[:space:]]+(checkout|switch)[[:space:]]+-[bBcC][[:space:]]'
+is_commit=0; is_push=0; push_args=""
+[[ $GIT_CMD_HEAD =~ $RE_COMMIT ]] && ! [[ $GIT_CMD_HEAD =~ $RE_NEWBRANCH ]] && is_commit=1
+if [[ $GIT_CMD_HEAD =~ $RE_PUSH ]]; then is_push=1; push_args="${BASH_REMATCH[2]}"; fi
+
+if { [ "$is_commit" -eq 1 ] || [ "$is_push" -eq 1 ]; } && command -v git >/dev/null 2>&1; then
+  CWD=$(echo "$HOOK_INPUT" | jq -r '.cwd // empty' 2>/dev/null)
+  dir="${CWD:-$PWD}"
+  q="(\"[^\"]*\"|'[^']*'|[^[:space:];&|]+)"
+  re_c="(^|[;&|[:space:]])git[[:space:]]+-C[[:space:]]+${q}"
+  re_cd="^[[:space:]]*cd[[:space:]]+${q}[[:space:]]*(&&|;)"
+  p=""
+  if [[ $CMD_HEAD =~ $re_c ]]; then p="${BASH_REMATCH[2]}"
+  elif [[ $CMD_HEAD =~ $re_cd ]]; then p="${BASH_REMATCH[1]}"
+  fi
+  if [ -n "$p" ]; then
+    p="${p#\"}"; p="${p%\"}"; p="${p#\'}"; p="${p%\'}"
+    case "$p" in \~) p="$HOME" ;; \~/*) p="$HOME/${p#\~/}" ;; /*) ;; *) p="$dir/$p" ;; esac
+    dir="$p"
+  fi
+  if git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
+    branch=$(git -C "$dir" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+    default=$(git -C "$dir" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)
+    default="${default#origin/}"
+    is_default() { # no origin/HEAD: main and master count as default
+      [ -n "$1" ] || return 1
+      if [ -n "$default" ]; then [ "$1" = "$default" ]; else [ "$1" = main ] || [ "$1" = master ]; fi
+    }
+    if [ "$is_commit" -eq 1 ] && is_default "$branch"; then
+      ask "This commits on $branch, the default branch of $dir. Branch first, unless this repo commits to $branch by design."
+    fi
+    if [ "$is_push" -eq 1 ]; then
+      read -r -a toks <<< "$push_args"
+      pos=(); skip=0; all=0
+      for t in ${toks[@]+"${toks[@]}"}; do
+        if [ "$skip" -eq 1 ]; then skip=0; continue; fi
+        case "$t" in
+          --all|--mirror) all=1 ;;
+          -o|--push-option|--repo|--receive-pack|--exec) skip=1 ;;
+          -*) ;;
+          *) pos+=("$t") ;;
+        esac
+      done
+      dsts=()
+      if [ "$all" -eq 1 ]; then dsts+=("${default:-main}")
+      elif [ "${#pos[@]}" -le 1 ]; then dsts+=("$branch")
+      else
+        for r in "${pos[@]:1}"; do
+          r="${r#+}"
+          case "$r" in *:*) d="${r#*:}" ;; *) d="$r" ;; esac
+          [ "$d" = HEAD ] && d="$branch"
+          dsts+=("${d#refs/heads/}")
+        done
+      fi
+      for d in "${dsts[@]}"; do
+        is_default "$d" && ask "This pushes to $d, the default branch of $dir. Push a branch and open a PR, unless this repo pushes to $d by design."
+      done
+    fi
+  fi
+fi
+
 exit 0
