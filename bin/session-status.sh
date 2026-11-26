@@ -209,7 +209,7 @@ fi
 
 # --- hook registration ------------------------------------------------------
 # settings.json is gitignored and per host, so a fresh clone or a newly set-up host has the
-# hook scripts and registers none of them. Silent when the core three are registered.
+# hook scripts and registers none of them. Silent when the core hooks are registered.
 SETTINGS="${SESSION_STATUS_SETTINGS:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json}"
 if [ "$SETTINGS" != none ]; then
   if [ ! -f "$SETTINGS" ]; then
@@ -225,8 +225,27 @@ if [ "$SETTINGS" != none ]; then
     fi
     grep -q 'hooks/pre-tool-safety\.sh' "$SETTINGS" || missing+=("pre-tool-safety.sh (PreToolUse)")
     grep -q 'hooks/session-end-reminder\.sh' "$SETTINGS" || missing+=("session-end-reminder.sh (Stop)")
+    grep -q 'hooks/skill-gate\.py' "$SETTINGS" || missing+=("skill-gate.py (PreToolUse)")
+    grep -q 'hooks/prose-check\.py' "$SETTINGS" || missing+=("prose-check.py (PostToolUse)")
     [ "${#missing[@]}" -gt 0 ] && emit "hooks: not registered in $SETTINGS: $(join ',' "${missing[@]}" | sed 's/,/, /g')"
   fi
+fi
+
+# --- skill links ------------------------------------------------------------
+# Claude Code loads skills from the active config dir. On a profile host that is not
+# dot-claude, and bin/link-config.sh links dot-claude's skills into it one by one.
+CFG="${SESSION_STATUS_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
+if [ -n "$DOTC" ] && [ -d "$DOTC/skills" ] && [ "$(phys "$CFG")" != "$DOTC" ]; then
+  total=0; unlinked=0
+  for s in "$DOTC"/skills/*/; do
+    name="$(basename "$s")"
+    [ "$name" = synced ] && continue
+    [ -f "$s/SKILL.md" ] || continue
+    total=$((total + 1))
+    [ -f "$CFG/skills/$name/SKILL.md" ] || unlinked=$((unlinked + 1))
+  done
+  [ "$unlinked" -gt 0 ] && \
+    emit "skills: $unlinked of $total dot-claude skills are not linked into $CFG, so they never load here; run $DOTC/bin/link-config.sh --apply"
 fi
 
 # --- time tracker -----------------------------------------------------------
