@@ -4,14 +4,15 @@ Rules that depend on Scott's homelab: Studio, razer, hasami and dev.local. Each 
 imports this file from its gitignored `~/.claude/host.md`. A host outside the homelab, such as a
 client laptop, does not import it, and none of this applies there.
 
-## Environments and the LLM spend gate
+## Environments
 
-- `dev-ai.local` is the LLM for all smoke and functional tests. Use Bedrock, the Anthropic API
-  or any other paid model only when Scott asks for it. Test functionality, not output quality:
-  a local model's weak prose is not a finding. Detail: `guidelines/environments-and-llm-spend.md`.
+CLAUDE.md sets the rules for paid models and prod. These are the homelab names they refer to.
+
+- `dev-ai.local` is the local model for all smoke and functional tests. Test functionality, not
+  output quality: a local model's weak prose is not a finding. Detail:
+  `guidelines/environments-and-llm-spend.md`.
 - Work happens on Studio, sometimes razer. `dev.local` is both dev and staging, and testing and
-  evaluation happen there. Promote to prod only when Scott asks; a green `dev.local` run is not
-  that request.
+  evaluation happen there. A green `dev.local` run is not a request to promote to prod.
 
 ## Time tracking
 
@@ -55,20 +56,3 @@ Operating rules for every agent (Claude, OpenCode, Codex, Cursor, Droid, Copilot
 4. **Local-first / WAN-tolerant** — prefer local LLM/files/Kiwix; must work with the internet down.
 5. **Respect boundaries** — household surfaces LAN-only; don't touch non-Scott tailnet hosts.
 <!-- central-ops-knowledge: end -->
-
-<!-- design-patterns: begin -->
-## Design-pattern discipline
-
-Before designing a non-trivial component, or coining a new mechanism/abstraction:
-
-- **Consult the pattern library first** — the `dot-patterns` corpus (GoF index with house
-  stances, personal patterns, vetted mixins). On the LAN: the **patterns MCP** at `mini.local:8093` (search/read_file), or read the
-  vault checkout `/Volumes/workspace/dot-patterns` directly. Off-LAN: the installed skills
-  / your local `dot-patterns` checkout.
-- **Name the pattern you apply** ("this is Strategy" / "the data-diode black/white/gray") in
-  your plan and PR so reviewers share the vocabulary.
-- **Don't reinvent what the library names.** Reuse an applicable pattern; if you deviate, say why.
-- **If you coin something reusable, flag it for capture** rather than letting it evaporate.
-- Prefer the GoF house stances (composition over inheritance; Strategy over if-ladders;
-  avoid Singleton/Visitor) unless there's a stated reason.
-<!-- design-patterns: end -->
