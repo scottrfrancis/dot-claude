@@ -83,7 +83,7 @@ for g in sorted((root / "guidelines").glob("*.md")):
 check(not wrong, "every guideline symlink resolves to a skill's SKILL.md or a rule", "; ".join(wrong))
 check(plain == KEPT, "exactly the homelab and memory guidelines stay plain files",
       f"plain but expected a skill: {sorted(plain - KEPT)}; expected plain: {sorted(KEPT - plain)}")
-check(len(linked) >= 24 and len(as_rule) >= 6, "the topic guidelines are skills or rules",
+check(len(linked) >= 23 and len(as_rule) >= 6, "the topic guidelines are skills or rules",
       f"{len(linked)} skills, {len(as_rule)} rules")
 
 hidden = []

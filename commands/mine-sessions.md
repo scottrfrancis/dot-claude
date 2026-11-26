@@ -1,5 +1,5 @@
 ---
-description: Analyze session logs for patterns, metrics, and process improvements
+description: "Analyze session transcripts and logs for patterns, metrics, and process improvements"
 argument-hint: [days:N] [save]
 allowed-tools: Read, Bash, Write, Glob, Grep
 disable-model-invocation: true
@@ -8,7 +8,7 @@ context: fork
 
 # Mine Session Logs
 
-Analyze session logs to extract patterns, quantitative metrics, and actionable feedback for improving development workflows.
+Analyze Claude Code session transcripts and session logs to extract patterns, quantitative metrics, and actionable feedback for improving development workflows. The transcripts record every session; a session log exists only when someone ran `/session-logger`.
 
 ## Arguments
 
@@ -19,7 +19,15 @@ Parse `$ARGUMENTS` for:
 
 ## Step 1: Gather Data
 
-Read all `.md` files modified within the lookback period from these locations (check all, merge results):
+Start with the transcripts. This prints the sessions active in the window, the slash commands typed and the skills Claude invoked (each counted once per session), and tokens per project directory:
+
+```bash
+python3 ~/.claude/bin/transcripts.py usage --days N --project . --format json
+```
+
+Drop `--project .` for every project on the host. Transcripts last `cleanupPeriodDays` (90 on the homelab hosts), so a window longer than that undercounts: say so in the report.
+
+Then read the session logs: all `.md` files modified within the lookback period from these locations (check all, merge results):
 
 1. `session-logs/` (shared cross-tool location)
 2. `.claude/session-logs/` (Claude Code legacy location)
@@ -32,7 +40,8 @@ If files have YAML frontmatter with a `tool:` field, track which tool generated 
 
 Present:
 
-- Total sessions in period and sessions per week (activity cadence)
+- Total sessions in period from the transcripts, sessions per week (activity cadence), and how many of them left a session log
+- Commands and skills by sessions using them, and the commands and skills no session used
 - Most common topics (by filename keyword parsing)
 - Process changes timeline (skill updates, pattern file changes, memory updates extracted from logs)
 
@@ -76,7 +85,7 @@ Present the report with clear section headers and tables. If `save` was specifie
 
 ## Rules
 
-- Use only data from session logs and memory files — do not fabricate metrics
+- Use only data from transcripts, session logs and memory files, and never fabricate metrics
 - When calculating rates, show both ratio and raw numbers
 - Round percentages to whole numbers
 - If a section has fewer than 3 data points, note this and skip statistical claims

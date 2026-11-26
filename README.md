@@ -132,7 +132,7 @@ Every remaining command in `~/.claude/commands/`.
 | **build-pdf** | `/build-pdf` | User-only. Build a PDF from ordered markdown sections via the `md2pdf` CLI and a `report.yaml` manifest |
 | **export-prompts** | `/export-prompts` | Python: export AI agent prompt history (Droid + Claude Code sessions) to markdown, by date or range |
 | **link-sweep** | `/link-sweep` | One target per invocation of the federation link audit; designed to run under `/loop` |
-| **pr-tokens** | `/pr-tokens` | Python: format the current branch's token usage as a PR-description snippet (see `guidelines/pr-token-tracking.md`) |
+| **pr-tokens** | `~/.claude/commands/pr-tokens [--pr N]` | Python: the current branch's Claude Code token usage as a PR-description snippet, by model, read from the session transcripts through `bin/transcripts.py` |
 | **punch** | `/punch` | User-only. Drive the local `punch` time tracker (start/stop/status/log); project-aware, syncs to hasami via the time-push agent. Renamed from `/b` on 2026-08-14; `b` remains a symlink |
 | **review-pr** | `/review-pr` | User-only, forked. PR code review: bugs, security, missing tests, style; works with PR numbers or branches |
 
@@ -164,7 +164,6 @@ Four stay plain guidelines, read when something points at them: `central-ops-kno
 | **glossary.md** | Terms that mean something specific here — seeded from real collisions, anti-meanings, segmented like memory |
 | **golang.md** | Rule. JSON response safety (no fmt.Fprintf), gosec patterns, G104 triage |
 | **markdown-formatting.md** | Rule (`rules/markdown.md`). Blank lines around lists, headings and fences, plus the prose checklist |
-| **pr-token-tracking.md** | Include AI token usage in PR descriptions, read from the branch-keyed ledger |
 | **project-setup.md** | Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling |
 | **memory.md** | Recording durable non-obvious context — one dated fact per line, no personal data, decay and promotion rules |
 | **prose-style.md** | Anti-AI-smell rules for narrative writing: punctuation, sentence variation, transitions, word choice |
@@ -250,8 +249,6 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
 | **SessionStart** | `account-mismatch-warn.sh` | Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) does not match the logged-in oauth account. Advisory only; silent on match; needs `jq`. |
 | **PostToolUse** | `prose-check.py` | After a Markdown write, checks the mechanical prose rules: the dash budget `max(2, lines/40)`, the corrective frame on added lines, and bold density. Judges only what the write added, and returns findings to the model (exit 2). A file containing `prose-check: off` is skipped. |
 | **Stop** | `session-end-reminder.sh` | Stop fires after every reply, so this speaks once per session: it reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) when neither has been run today. Also reminds about `/lint-action-items` when an outline-format `ACTION_ITEMS.md` has items past the 7-day prune window. |
-
-**Not currently registered:** `hooks/log-session-tokens`, a `SessionEnd` hook appending token usage to `~/.factory/token-ledger.json` keyed by `project:branch`. It is the ledger writer that `guidelines/pr-token-tracking.md` and `/pr-tokens` read from — both are inert until it is wired into `settings.json`.
 
 **`settings.json` is deliberately gitignored** (per-host and account state), so a fresh clone has the hook *scripts* but no registration. Register them after cloning or the hooks silently never fire.
 
@@ -376,10 +373,20 @@ Deterministic shell checks under `bin/`, no model tokens. Each has a suite in `t
 - `bin/doctrine.sh check|sync` - propagate marker-delimited doctrine blocks from this repo to the
   downstream `dot-*` repos listed in `doctrine/targets.conf`. dot-claude is primary; downstream
   copies are replaced from it and are never a source.
+- `bin/transcripts.py tokens|usage` - reads Claude Code's session transcripts in every config dir
+  on the host: token usage for one branch (behind `pr-tokens`), and per-session commands, skills
+  and tokens for a window (behind `/mine-sessions`). No model tokens.
 - `bin/check-glossary.sh`, `bin/check-conflict-log.sh`, `bin/check-public-memory.sh`,
   `bin/memory-scope.sh` - the individual tiers.
 
 ## Changelog
+
+- 2026-11-26: Token and usage numbers come from Claude Code's own transcripts.
+  `bin/transcripts.py` sums a branch's tokens by model across every config dir on the host and
+  reports per-session commands, skills and tokens for a window. `pr-tokens` and `/mine-sessions`
+  read it. The `log-session-tokens` hook, which read Droid's session files into a ledger that
+  never existed on Studio, and the `pr-token-tracking` skill are retired; the PR rule is one
+  step in `git-workflow`.
 
 - 2026-11-26: The safety hook asks before a commit or push on a default branch, so a repo that
   commits to main by design is one approval away and every other repo gets a branch. It blocks

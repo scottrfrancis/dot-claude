@@ -54,7 +54,10 @@ Optional footer: Fixes #123, BREAKING CHANGE: ...
 
 1. Open PR with `gh pr create --fill` (or `gh pr create --title "<type>: <desc>" --body "..."`).
 2. PR title **must** use Conventional Commits format.
-3. Merge with **squash** (`gh pr merge --squash --delete-branch`).
+3. End the description with the output of `python3 ~/.claude/commands/pr-tokens`, the branch's
+   Claude Code token usage read from the session transcripts. Once the PR exists,
+   `pr-tokens --pr <number>` also counts sessions that drove it from another directory.
+4. Merge with **squash** (`gh pr merge --squash --delete-branch`).
 
 ## Stacked PRs — prefer to avoid; when unavoidable, agent handles merge
 

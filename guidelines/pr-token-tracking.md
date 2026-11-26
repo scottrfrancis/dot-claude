@@ -1,1 +1,0 @@
-../skills/pr-token-tracking/SKILL.md
