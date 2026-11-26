@@ -1,1 +1,1 @@
-../skills/typescript/SKILL.md
+../rules/typescript.md

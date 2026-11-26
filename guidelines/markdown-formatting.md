@@ -1,1 +1,1 @@
-../skills/markdown-formatting/SKILL.md
+../rules/markdown.md

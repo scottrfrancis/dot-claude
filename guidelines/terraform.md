@@ -1,1 +1,1 @@
-../skills/terraform/SKILL.md
+../rules/terraform.md

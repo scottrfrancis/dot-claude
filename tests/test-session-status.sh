@@ -213,19 +213,27 @@ rm -rf "$PROJ/.claude"
 # --- hook registration ------------------------------------------------------
 # settings.json is gitignored and per host, so a fresh clone or a new host registers nothing.
 SET="$WORK/settings.json"
-printf '{"hooks":{"SessionStart":[{"hooks":[{"command":"~/.claude/hooks/session-status.sh"}]}],"PreToolUse":[{"hooks":[{"command":"~/.claude/hooks/pre-tool-safety.sh"}]}],"Stop":[{"hooks":[{"command":"~/.claude/hooks/session-end-reminder.sh"}]}],"PostToolUse":[{"hooks":[{"command":"python3 ~/.claude/hooks/prose-check.py"}]}],"X":[{"hooks":[{"command":"python3 ~/.claude/hooks/skill-gate.py"}]}]}}' > "$SET"
-out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET" status)"
-empty "hooks: a settings.json registering all three hooks is not mentioned" "$out"
+HH="$WORK/hh"; mkdir -p "$HH/.claude/hooks"   # a home where every registered script exists
+for h in session-status.sh pre-tool-safety.sh session-end-reminder.sh prose-check.py; do : > "$HH/.claude/hooks/$h"; done
+printf '{"hooks":{"SessionStart":[{"hooks":[{"command":"~/.claude/hooks/session-status.sh"}]}],"PreToolUse":[{"hooks":[{"command":"~/.claude/hooks/pre-tool-safety.sh"}]}],"Stop":[{"hooks":[{"command":"~/.claude/hooks/session-end-reminder.sh"}]}],"PostToolUse":[{"hooks":[{"command":"python3 ~/.claude/hooks/prose-check.py"}]}]}}' > "$SET"
+out="$(cd "$WORK" && HOME="$HH" SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET" status)"
+empty "hooks: a settings.json registering every core hook is not mentioned" "$out"
 
 sed 's/pre-tool-safety/something-else/' "$SET" > "$SET.2"
-out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.2" status)"
+out="$(cd "$WORK" && HOME="$HH" SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.2" status)"
 has "hooks: a missing registration is named" "$out" "pre-tool-safety.sh"
-sed 's/skill-gate/other-gate/' "$SET" > "$SET.4"
-out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.4" status)"
-has "hooks: the skill gate counts as a core hook" "$out" "skill-gate.py"
+lacks "hooks: the retired skill gate is not asked for" "$out" "skill-gate"
+
+# A registered script that is gone fails on every event: `python3 gone.py` exits 2, which in
+# PreToolUse blocks every tool call. ~ is the hook shell's HOME, a profile's own on Studio.
+mkdir -p "$WORK/h3/.claude/hooks" && : > "$WORK/h3/.claude/hooks/here.sh"
+sed 's|"Stop":|"X":[{"hooks":[{"command":"python3 ~/.claude/hooks/skill-gate.py"},{"command":"~/.claude/hooks/here.sh"}]}],"Stop":|' "$SET" > "$SET.4"
+out="$(cd "$WORK" && HOME="$WORK/h3" SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.4" status)"
+has "hooks: a registered script that does not exist is named" "$out" "skill-gate.py, which does not exist"
+lacks "hooks: a registered script that exists is not" "$out" "here.sh"
 
 sed 's/session-status\.sh/load-handoff-context.sh/' "$SET" > "$SET.3"
-out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.3" status)"
+out="$(cd "$WORK" && HOME="$HH" SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$SET.3" status)"
 has "hooks: the old SessionStart name is flagged for re-registration" "$out" "load-handoff-context.sh"
 
 out="$(cd "$WORK" && SESSION_STATUS_DOTC=none SESSION_STATUS_SETTINGS="$WORK/absent.json" status)"
@@ -261,7 +269,17 @@ out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$CFG" status)"
 lacks "skills: a fully linked profile is not mentioned" "$out" "skills:"
 out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$DOTC" status)"
 lacks "skills: dot-claude itself as the config dir needs no links" "$out" "skills:"
-rm -rf "$DOTC/skills" "$CFG"
+
+# The path-scoped rules load from the config dir's rules/, linked whole.
+mkdir -p "$DOTC/rules" && : > "$DOTC/rules/python.md"
+out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$CFG" status)"
+has "rules: a profile without rules/ is told what to run" "$out" "rules: $CFG has no rules/"
+ln -s "$DOTC/rules" "$CFG/rules"
+out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$CFG" status)"
+lacks "rules: a linked rules/ is not mentioned" "$out" "rules:"
+out="$(cd "$WORK" && SESSION_STATUS_CONFIG_DIR="$DOTC" status)"
+lacks "rules: dot-claude itself needs no link" "$out" "rules:"
+rm -rf "$DOTC/skills" "$DOTC/rules" "$CFG"
 
 # --- hook mode --------------------------------------------------------------
 hookjson() { printf '{"session_id":"s1","hook_event_name":"SessionStart","source":"%s","cwd":"%s"}' "$1" "$2"; }

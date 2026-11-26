@@ -1,1 +1,1 @@
-../skills/golang/SKILL.md
+../rules/golang.md
