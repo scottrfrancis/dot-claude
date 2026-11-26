@@ -15,10 +15,17 @@ therefore segmented, narrowest last:
 
 | File | Scope | Committed? |
 |---|---|---|
-| `memory/MEMORY.md` | universal — true regardless of who the work is for | **yes, and public** |
+| `memory/MEMORY.md` | universal: true on every host, whoever the work is for. CLAUDE.md imports it into every session | **yes, and public** |
 | `memory/local/MEMORY.md` | personal, across all of Scott's work | no — gitignored |
 | `memory/local/<segment>/MEMORY.md` | one client or account | no — gitignored |
 | `<project>/.claude/memory/MEMORY.md` | one project | in that project's repo |
+| `~/.claude/projects/<key>/memory/*.md` | one project, this host only | no: Claude Code's built-in store, loaded and written automatically |
+
+Built-in memory is where most project facts land, because Claude Code writes it as it works.
+It is one file per fact, with `metadata.verified: YYYY-MM-DD` beside `type`. The key is the
+project path with every non-alphanumeric replaced by `-`. It is not synced between hosts: a
+fact learned on Studio is invisible on hasami. Anything another host needs is promoted, to
+`memory/MEMORY.md` if it is universal or to `okf-knowledge` if it is about the ops estate.
 
 The segment is resolved by `bin/memory-scope.sh`, which uses the same rule as
 `scripts/account-context.sh`: a `.account-context` marker found by walking up from the
@@ -84,6 +91,9 @@ worse than a missing one because it gets acted on.
 
 - `bin/conformance.sh` reports facts older than `MEMORY_STALE_DAYS` (default 180) and any
   fact carrying no date. The report surfaces at session start.
+- It also checks the current project's built-in memory. A file's date is its
+  `metadata.verified`, or its mtime when it has none: that store is not in git, so mtime is
+  a real last-write time there.
 - Re-verify a flagged fact and update its date, or retire it.
 - Retiring moves the line to a `## Retired` section, struck through, with the date and one
   clause on why. Deleting it outright is also fine; the section exists so that a stale copy
