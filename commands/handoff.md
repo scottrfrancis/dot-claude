@@ -18,24 +18,18 @@ Generate a continuation prompt capturing current session state for the next sess
 
 Arguments provided: $ARGUMENTS
 
-## Dot-Repo Sync Check (`~/.claude`)
+## Status Check
 
-Before generating the handoff, verify the global Claude Code config at `~/.claude` is in sync with its GitHub origin. This catches stale or uncommitted config that the next session should know about.
+Run the status probe outside the sandbox (it fetches):
 
 ```bash
-git -C ~/.claude fetch origin
-git -C ~/.claude rev-list --count HEAD..origin/main   # behind
-git -C ~/.claude rev-list --count origin/main..HEAD   # ahead
-git -C ~/.claude status --porcelain
+S="$HOME/.claude/bin/session-status.sh"; [ -x "$S" ] || S=/Volumes/workspace/dot-claude/bin/session-status.sh
+"$S" --fetch
 ```
 
-Alert the user prominently if out of sync, and note the state in the `## Blockers / Risks` section of the handoff if drift is detected:
-
-- **Behind**: "⚠ ~/.claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C ~/.claude pull`."
-- **Ahead**: "~/.claude has {N} unpushed commits — consider pushing to back up your config."
-- **Dirty**: "~/.claude has uncommitted changes."
-
-Skip silently if `~/.claude` has no remote or the fetch fails.
+Copy any drift line and any open timer into `## Blockers / Risks`, so the next session sees them:
+for an open timer, "TR-NNN still running, `/punch stop` to close it". If the probe printed nothing,
+there is nothing to copy.
 
 ## Generate Continuation Prompt
 
@@ -73,30 +67,6 @@ files_changed: <count of uncommitted changed files>
 ```
 
 The YAML frontmatter is required — it identifies the source tool so any receiving tool (Cursor, Copilot, Droid) knows where the handoff came from.
-
-## Time Tracking (opportunistic)
-
-If the local `punch` time tracker is installed and a timer is still open, note it
-in `## Blockers / Risks` so the next session (or the user) closes it. **Skip
-silently if `punch` is absent** — but only claim absence when `$P` is genuinely
-empty, not when the home lookup failed (see `/punch`).
-
-```bash
-P="$(command -v punch 2>/dev/null || command -v b 2>/dev/null)"
-if [ -z "$P" ]; then
-  U="$(id -un 2>/dev/null || echo "${USER:-}")"
-  RH="$( { getent passwd "$U" | cut -d: -f6; } 2>/dev/null )"        # Linux
-  [ -z "$RH" ] && RH="$( { dscl . -read "/Users/$U" NFSHomeDirectory | awk '{print $2}'; } 2>/dev/null )"  # macOS
-  for c in "$RH/bin/punch" "$RH/.local/bin/punch" "$RH/bin/b" "$RH/.local/bin/b"; do
-    [ -z "$P" ] && [ -x "$c" ] && P="$c"
-  done
-fi
-# `punch` answers `list-open`; the older `b` capture CLI answers `open`.
-[ -n "$P" ] && { "$P" list-open 2>/dev/null || "$P" open; }
-```
-
-- **Open timer** → add to Blockers / Risks: "⏱ TR-NNN still running since HH:MM — `/punch stop`."
-- **`list-open` rejected, `open` answered** → `$P` is the older `b` capture CLI, not `punch`. Report what it printed; do not call the tracker absent.
 
 ## Reminder
 

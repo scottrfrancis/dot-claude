@@ -76,7 +76,16 @@ if [ "$SEGMENT_ONLY" -eq 1 ]; then
 fi
 
 # --- emit the applicable files, narrowest last ---------------------------
-emit() { [ -f "$1" ] && printf '%s\n' "$1"; return 0; }
+# Each physical file once. From the login home, the project tier <home>/.claude/memory is the
+# universal file reached by a second path.
+SEEN=" "
+emit() {
+  [ -f "$1" ] || return 0
+  local p; p="$(cd -P "$(dirname "$1")" 2>/dev/null && pwd -P)/$(basename "$1")"
+  case "$SEEN" in *" $p "*) return 0 ;; esac
+  SEEN="$SEEN$p "
+  printf '%s\n' "$1"
+}
 
 case "$KIND" in
   memory)   dir="memory";   file="MEMORY.md" ;;

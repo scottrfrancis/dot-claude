@@ -15,18 +15,16 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - current branch and status
 - suggestions to pull, push, create or delete branches
 
-## Session Safety (CRITICAL)
+## Session Safety
 
-**ALWAYS follow ~/.claude/guidelines/session-safety.md** when working on hardware development systems. Multiple Claude sessions accessing NPU/GPU devices simultaneously causes device contention, resource leakage, and complete context loss requiring system restart.
-
-**Before every session**: Run session cleanup, verify device availability, and ensure exclusive hardware access.
+[Session safety](./guidelines/session-safety.md) applies only to a dedicated NPU/GPU box whose project CLAUDE.md opts in. Never run `session-cleanup` anywhere else: it kills every Claude process on the machine, this session included.
 
 ## Active Guidelines
 
 - [Shell Script Best Practices](./guidelines/shell-scripts.md) - Directory management, error handling, and portability
 - [Conventional Commits](./guidelines/conventional-commits.md) - Standardized commit message format
 - [README Documentation](./guidelines/readme-documentation.md) - Organizing project documentation with README as central hub
-- [Session Safety](./guidelines/session-safety.md) - **CRITICAL** - Prevent session hangs and context loss on hardware systems
+- [Session Safety](./guidelines/session-safety.md) - Opt-in, dedicated NPU/GPU boxes only: device contention between sessions
 - [AI Systems Engineering Patterns](./guidelines/ai-patterns.md) - LLM integration patterns: caching, routing, guardrails, RAG
 - [Tool Delegation for LLM Cron Skills](./guidelines/ai-cron-tool-delegation.md) - When a cron skill must produce a number, build a deterministic helper and wire it via cron payload — not via SKILL.md or AGENTS.md
 - [Project Setup](./guidelines/project-setup.md) - Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling
@@ -82,7 +80,7 @@ REMIND the user to consider the appropriate branching strategy when starting a s
 - `~/.claude/commands/link-sweep.md` - One target per invocation of the federation link audit; designed to run under `/loop`
 - `~/.claude/commands/export-prompts` - Python: export AI agent prompt history (Droid + Claude Code sessions) to markdown, by date or range
 - `~/.claude/commands/pr-tokens` - Python: format the current branch's token usage as a PR-description snippet (see `guidelines/pr-token-tracking.md`)
-- `~/.claude/commands/session-cleanup` - Bash: kill zombie Claude processes before a session (see `guidelines/session-safety.md`)
+- `~/.claude/commands/session-cleanup` - Bash, NPU/GPU box only: kills every Claude process; refuses without `--kill-all-claude` (see `guidelines/session-safety.md`)
 - `~/.claude/commands/validate-hw-env` - Bash: verify exclusive device access before hardware testing; fails when competing sessions are detected
 
 ### Spec-Driven Development (SDLC) — harvested from the airgapped engagement fork
@@ -118,10 +116,10 @@ Deterministic shell checks under `bin/`, no model tokens. Each has a suite in `t
 
 Registered in `~/.claude/settings.json`, these fire for every project automatically:
 
-- **SessionStart** → `~/.claude/hooks/load-handoff-context.sh` — Auto-injects the most recent `handoff-*.md` as context on new session startup; searches `session-logs/`, `.claude/session-logs/`, `.factory/logs/`, then `~/.claude/session-logs/` (skips files >7 days old)
+- **SessionStart** → `~/.claude/hooks/session-status.sh`: runs `bin/session-status.sh --hook` on startup and clear: points at repo drift, fresh handoffs (never reads or moves them; `/pickup` does), an open `punch` timer, unregistered hooks, conformance items, and the project's own `.claude/session-start.sh`. Silent when nothing needs attention. `load-handoff-context.sh` is a deprecated alias
 - **SessionStart** → `~/.claude/hooks/account-mismatch-warn.sh` — Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) doesn't match the logged-in oauth account. Advisory only; silent on match; needs `jq`
 - **PreToolUse** → `~/.claude/hooks/pre-tool-safety.sh` — Blocks destructive git operations (`reset --hard`, `push --force`, also behind global options such as `git -C <repo>`), recursive deletes, and writes to sensitive config files; prompts for confirmation. A force push passes unprompted only as `--force-with-lease=<ref>:<sha>` or with `--force-if-includes`
-- **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run; checks both `session-logs/` and `.claude/session-logs/`. Also: if the cwd has an outline-format `ACTION_ITEMS.md` (see Catalyst-RCM's `lint-action-items` skill), reminds about `/lint-action-items` when items are past the 7-day prune window — reminder-only by design, no standing cron
+- **Stop** → `~/.claude/hooks/session-end-reminder.sh` — Once per session (Stop fires after every reply), reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) if not already run; checks both `session-logs/` and `.claude/session-logs/`. Also: if the cwd has an outline-format `ACTION_ITEMS.md` (see Catalyst-RCM's `lint-action-items` skill), reminds about `/lint-action-items` when items are past the 7-day prune window — reminder-only by design, no standing cron
 
 - **SessionStart / SessionEnd / PostToolUse** (`Bash|EnterWorktree|ExitWorktree`) → `~/.claude/hooks/herdr-follow-worktree.sh` — Inside herdr only (`HERDR_ENV=1`): opens each new git worktree of the session's repo as a herdr workspace without stealing focus, and closes it when the worktree is removed. Skips subagent worktrees (lock reason `claude agent …`). Silent, always exits 0; needs `git` and `python3`
 
@@ -130,7 +128,6 @@ Project-local hooks in `.claude/settings.local.json` layer on top of these.
 Shipped by this repo but **not currently registered** either (same reason -- `settings.json` is
 gitignored, so registration is per-host):
 
-- `~/.claude/hooks/conformance-report.sh` - surfaces `bin/conformance.sh` output at session start
 - `~/.claude/hooks/pre-compact-memorialize.sh` - prompts `/memorialize` before context is compacted
 
 Also present but **not currently registered**: `~/.claude/hooks/log-session-tokens` — a `SessionEnd` hook that appends token usage to `~/.factory/token-ledger.json` keyed by `project:branch`. It is the ledger writer that `guidelines/pr-token-tracking.md` and `/pr-tokens` read from, so those two are inert until it is wired into `settings.json`.

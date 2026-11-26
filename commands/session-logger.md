@@ -22,24 +22,18 @@ Review the conversation history to identify what was accomplished. Also check gi
 
 Arguments provided: $ARGUMENTS
 
-## Dot-Repo Sync Check (`~/.claude`)
+## Status Check
 
-As part of end-of-session hygiene, verify the global Claude Code config at `~/.claude` is in sync with its GitHub origin. This is consistent with `/lets-go`, `/pickup`, and `/handoff`.
+Run the status probe outside the sandbox (it fetches):
 
 ```bash
-git -C ~/.claude fetch origin
-git -C ~/.claude rev-list --count HEAD..origin/main   # behind
-git -C ~/.claude rev-list --count origin/main..HEAD   # ahead
-git -C ~/.claude status --porcelain
+S="$HOME/.claude/bin/session-status.sh"; [ -x "$S" ] || S=/Volumes/workspace/dot-claude/bin/session-status.sh
+"$S" --fetch
 ```
 
-Alert the user prominently if out of sync, and note the state in the `## Session Effectiveness` section under `Process friction` if drift is detected:
-
-- **Behind**: "⚠ ~/.claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C ~/.claude pull`."
-- **Ahead**: "~/.claude has {N} unpushed commits — consider pushing to back up your config."
-- **Dirty**: "~/.claude has uncommitted changes."
-
-Skip silently if `~/.claude` has no remote or the fetch fails.
+Note any drift line under `Process friction` in `## Session Effectiveness`. If it shows an open
+timer, remind the user to `/punch stop`; never stop it yourself. For the session's tracked time,
+`punch yesterday` (or `b today` on the older CLI) summarises closed entries.
 
 ## Link to Previous Session
 
@@ -131,32 +125,6 @@ Include a `## Session Effectiveness` section:
 - **Blockers encountered** — Obstacles that slowed progress or remain unresolved
 - **Process friction** — Points where the workflow felt inefficient
 - **Carry-forward items** — Specific tasks for the next session
-
-## Time Tracking (opportunistic)
-
-If the local `punch` time tracker is installed, check for an open timer and fold
-the session's tracked time into the log. **Skip silently if `punch` is absent** —
-but only claim absence when `$P` is genuinely empty, not when the home lookup
-failed (see `/punch` for why that distinction cost a correction on 2026-08-14).
-
-```bash
-P="$(command -v punch 2>/dev/null || command -v b 2>/dev/null)"
-if [ -z "$P" ]; then
-  U="$(id -un 2>/dev/null || echo "${USER:-}")"
-  RH="$( { getent passwd "$U" | cut -d: -f6; } 2>/dev/null )"        # Linux
-  [ -z "$RH" ] && RH="$( { dscl . -read "/Users/$U" NFSHomeDirectory | awk '{print $2}'; } 2>/dev/null )"  # macOS
-  for c in "$RH/bin/punch" "$RH/.local/bin/punch" "$RH/bin/b" "$RH/.local/bin/b"; do
-    [ -z "$P" ] && [ -x "$c" ] && P="$c"
-  done
-fi
-# `punch` answers `list-open` and `yesterday`; the older `b` capture CLI answers
-# `open` and `today` instead.
-[ -n "$P" ] && { { "$P" list-open 2>/dev/null && "$P" yesterday 2>/dev/null; } || { "$P" open; "$P" today; }; }
-```
-
-- **A timer is still open** → remind: "⏱ TR-NNN is still running — `/punch stop` to close it." (Don't stop it automatically.)
-- Note total tracked time for this session in the `## Session Effectiveness` section when a relevant entry exists.
-- **`list-open` rejected, `open` answered** → `$P` is the older `b` capture CLI, not `punch`. Report what it printed; do not call the tracker absent.
 
 ## Reminder
 

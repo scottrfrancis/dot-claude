@@ -19,7 +19,7 @@ gl()  { { printf '# Glossary\n\n| Term | Meaning | Anti-meanings |\n|---|---|---
 good() { gl "$2"; [ "$(rc)" = 0 ] && ok "accepts $1" || bad "accepts $1" "$(out)"; }
 poor() { gl "$2"; [ "$(rc)" = 1 ] && ok "rejects $1" || bad "rejects $1" "accepted: $2"; }
 
-WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/test-glossary.XXXXXX")"; trap 'rm -rf "$WORK"' EXIT
 
 echo "test-glossary.sh"
 if [ ! -x "$CHECK" ]; then

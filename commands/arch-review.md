@@ -1,6 +1,6 @@
 ---
 description: "Performs a comprehensive Principal Architect review including quality gates, security, and development practices"
-allowed-tools: ["Bash", "Read", "Write", "Glob", "Grep", "LS", "WebFetch", "TodoWrite"]
+allowed-tools: ["Bash", "Read", "Write", "Glob", "Grep", "WebFetch"]
 ---
 
 # Principal Architect Review

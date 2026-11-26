@@ -13,7 +13,7 @@ ok()  { PASS=$((PASS+1)); printf '  ok   %s\n' "$1"; }
 bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; [ $# -gt 1 ] && printf '       %s\n' "$2"; return 0; }
 check_rc() { [ "$2" = "$3" ] && ok "$1" || bad "$1" "expected exit $3, got $2"; }
 
-WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/test-conflict-log.XXXXXX")"; trap 'rm -rf "$WORK"' EXIT
 
 header() { cat <<'EOF'
 # Runtime Conflict Log

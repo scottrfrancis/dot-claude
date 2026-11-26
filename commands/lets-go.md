@@ -1,296 +1,45 @@
 ---
 description: set initial context for a working session
 argument-hint: [role with task]
-allowed-tools: Write, Bash, Read, LS, Grep, Glob, TodoWrite, Git, Gh
+allowed-tools: Bash, Read, Grep, Glob
 ---
 
 as $ARGUMENTS
 
-## Load Handoff Context
+1. Run the status probe outside the sandbox. It fetches, and the sandbox blocks both the fetch
+   and the time tracker's database.
 
-The SessionStart hook auto-injects handoff context, but verify it loaded and check for cross-tool handoffs:
+   ```bash
+   S="$HOME/.claude/bin/session-status.sh"; [ -x "$S" ] || S=/Volumes/workspace/dot-claude/bin/session-status.sh
+   "$S" --fetch
+   ```
 
-1. Look for the most recent `handoff-*.md` file in these locations (check all, take newest):
-   - `session-logs/` (shared cross-tool location)
-   - `.claude/session-logs/` (Claude Code legacy location)
-   - `.factory/logs/` (Droid legacy location)
-   - **Workspace-wide fallback** — when cwd is *not* a git repo (e.g. launched from `~`), the
-     paths above miss handoffs written into each project's `session-logs/`. Also scan:
-     ```bash
-     CUTOFF=$(date -d '7 days ago' +%F 2>/dev/null || date -v-7d +%F)
-     find /Volumes/workspace -maxdepth 3 -path '*/session-logs/handoff-????-??-??-*.md' 2>/dev/null \
-       | while IFS= read -r f; do
-           fd=$(basename "$f"); fd=${fd#handoff-}; fd=${fd:0:10}
-           [ "$fd" \< "$CUTOFF" ] || echo "$fd  $f"
-         done | sort -r | head -8
-     # Freshness comes from the date in the FILENAME, never mtime -- git rewrites mtime, so a
-     # checkout makes every archived handoff look new. This scan used to use `-mtime -7` and
-     # surfaced five 2026-07-06..08 Catalyst handoffs as "recent" on 2026-08-20.
-     ```
-     If several candidates across different repos, list the top few (repo + timestamp) and ask
-     which to resume rather than assuming the newest — or just note them and continue.
-2. If found and less than 7 days old, read it and incorporate as session context
-3. If the file has YAML frontmatter with a `tool:` field, note the source (e.g., "Continuing from a Cursor session")
-4. Report: "Loaded handoff context from [filename] ([tool])" or "No recent handoff found"
+   It prints only what needs attention, and nothing when all is well. How to act on each line:
 
-## Review Project Documentation
+   - **Drift on a default branch.** Local-only commits: suggest `git pull --rebase`, then a push.
+     Behind only and clean: offer `git pull --ff-only`. Ask before pushing a default branch, every
+     time, and never reset.
+   - **`fetch FAILED`.** Say the sync state is unknown. Never report it as in sync.
+   - **Off the default branch.** Name the branch in the branch reminder.
+   - **Handoffs.** When one is from the last two days and belongs to this repo, offer `/pickup`
+     and wait for the answer. Otherwise mention them. Read one only through `/pickup`, or when the
+     user picks it; parallel sessions in the same repo must not take each other's handoffs.
+   - **`timer: none open`** on billable project work: suggest `/punch start` once. Never start or
+     stop a timer yourself.
+   - **Hooks, conformance, action items.** Mention once. Offer `/mine-sessions` or
+     `/lint-action-items`; they spend tokens, so never run them unprompted.
 
-I'll review the project documentation including:
-
-- README
-- ARCHITECTURE.md (if present)
-- CONTRIBUTING.md (if present)
-- docs/
-- plans/
-- TODO
-- recent commits
-
-Arguments provided: $ARGUMENTS
-
-## Hook Health Check
-
-Run this before anything else. Check that all three global safety hooks are installed and executable:
-
-```bash
-for f in load-handoff-context.sh pre-tool-safety.sh session-end-reminder.sh; do
-  test -x ~/.claude/hooks/$f && echo "OK: $f" || echo "MISSING/NOT-EXECUTABLE: $f"
-done
-grep -q '"SessionStart"' ~/.claude/settings.json && echo "OK: SessionStart" || echo "MISSING: SessionStart in settings.json"
-grep -q '"PreToolUse"' ~/.claude/settings.json && echo "OK: PreToolUse" || echo "MISSING: PreToolUse in settings.json"
-grep -q '"Stop"' ~/.claude/settings.json && echo "OK: Stop" || echo "MISSING: Stop in settings.json"
-```
-
-- **All OK** → include `Hooks: ✓ all installed` in the Ready Output.
-- **Any missing** → display a prominent warning block before proceeding:
-
-```
-⚠️  HOOK SETUP NEEDED
-[list each missing item]
-
-To fix:
-- Re-clone dotfiles or copy hook scripts to ~/.claude/hooks/
-- chmod +x ~/.claude/hooks/*.sh
-- Ensure ~/.claude/settings.json registers SessionStart, PreToolUse, and Stop hooks
-```
-
-This is advisory only — continue the session regardless.
-
-## Git Sync Protocol
-
-### Dot-Repo Sync Check (dot-claude)
-
-Run this check first, before any project-specific work. Consistent with `/pickup`, `/handoff`, and `/session-logger`.
-
-⚠️ **Do not use `~/.claude` or `$HOME/.claude` for this.** On profile-based setups `$HOME` is
-profile-scoped (e.g. `/Users/<you>/.claude-profiles/<profile>`), so `$HOME/.claude` is a
-**different real directory** from the dot-repo — with near-identical contents, because most
-subdirectories are symlinked into the real one. Probing it returns "not a git repository",
-which reads as "there is no dot-repo here" and silently skips this entire check. That happened
-on 2026-08-26, and the session went on to spend hours editing global config believing it was
-unversioned.
-
-```bash
-# 1. Resolve the REAL dot-repo. First candidate containing a .git wins.
-DOTC=""
-for c in /Volumes/workspace/dot-claude "$(readlink -f "$HOME/.claude" 2>/dev/null)" \
-         "/Users/$(id -un)/.claude" "$HOME/.claude"; do
-  [ -n "$c" ] && [ -d "$c/.git" ] && DOTC="$c" && break
-done
-if [ -z "$DOTC" ]; then echo "dot-claude repo not found — skipping"; else
-
-# 2. git over ssh needs the REAL home, or it looks for keys under the profile dir and
-#    fails with: no such identity: <profile>/.ssh/id_rsa
-REALHOME="/Users/$(id -un)"
-
-# 3. Fetch, and CHECK IT WORKED. Counts after a failed fetch are stale refs.
-if HOME="$REALHOME" git -C "$DOTC" fetch origin 2>&1 \
-     | grep -qiE "no such identity|could not read|permission denied|fatal"; then
-  echo "⚠ dot-claude fetch FAILED — ahead/behind would be stale; NOT reporting sync state"
-else
-  echo "dot-claude: $DOTC"
-  echo "  behind: $(git -C "$DOTC" rev-list --count HEAD..origin/main)"
-  echo "  ahead:  $(git -C "$DOTC" rev-list --count origin/main..HEAD)"
-fi
-git -C "$DOTC" status --porcelain
-fi
-```
-
-Alert the user prominently if out of sync:
-
-- **Behind**: "⚠ dot-claude is {N} commits behind origin — your global config/commands may be stale. Consider `git -C {DOTC} pull`."
-- **Ahead**: "dot-claude has {N} unpushed commits — consider pushing to back up your config."
-- **Dirty**: "dot-claude has uncommitted changes."
-
-**Never report "in sync" from a fetch that failed.** A fetch error leaves the remote-tracking
-refs untouched, so `rev-list` cheerfully prints `0` and `0` — an answer that looks like success
-and means nothing. Say the fetch failed instead. Skip silently *only* when no dot-repo is found
-at all.
-
-### Other Dot-Repos (Opportunistic)
-
-The user may run sessions from other tools (Cursor, Droid, Copilot) on this machine. If any of those dot-repos are discoverable, run the same `fetch / rev-list / status` pattern against them and report drift with the same behind/ahead/dirty wording. **Skip silently for any repo not installed on this machine** — do not emit errors.
-
-- **dot-droid**: check only if `$HOME/.factory` is a symlink to a git repo. Resolve `readlink -f $HOME/.factory` and take its parent; confirm `.git` exists there.
-- **dot-copilot**: check only if a `.github/copilot-instructions.md` (or any `.github/instructions/*.instructions.md`) symlink exists in the current project. Resolve it and walk up until `.git` is found.
-- **dot-cursor**: check only if `$DOT_CURSOR_DIR` is set, or if any of `$HOME/workspace/dot-cursor`, `$HOME/dot-cursor`, `/Volumes/workspace/dot-cursor` has a `.git` directory.
-
-### Project repo
-
-Run these checks in order:
-
-1. `git fetch origin` — update remote tracking refs
-2. Determine current branch and its upstream tracking branch
-3. If no upstream: report "Branch {name} has no upstream tracking — local only"
-4. If upstream exists, compute:
-   - Behind count: `git rev-list --count HEAD..origin/{branch}`
-   - Ahead count: `git rev-list --count origin/{branch}..HEAD`
-5. Report state clearly:
-   - **In sync**: "Branch {name} is up to date with origin"
-   - **Behind only**: "Branch {name} is {N} commits behind origin — recommend `git pull`"
-   - **Ahead only**: "Branch {name} is {N} commits ahead — {N} unpushed commits"
-   - **Diverged**: "Branch {name} has diverged — {N} ahead, {M} behind — recommend pull + rebase or merge"
-6. Check for uncommitted changes (`git status --porcelain`)
-   - If dirty + behind: warn "Uncommitted changes AND behind origin — stash first, then pull"
-   - If clean + behind: offer to pull automatically
-7. If on default branch (main/master) with uncommitted changes: suggest creating a feature branch
-
-### Nested repos and automation drift
-
-A project can hold other repos (submodules, client and wiki clones in subfolders), and background
-jobs commit into some of them without pushing. AILab's `tools/bump-kb-pointer.sh` (launchd
-`ai.ailab.kb-refresh`, every two hours) commits the corp KB pointer on local `main` and never
-pushes, while hasami pushes digests to origin `main`. On 2026-11-14 that left AILab `main` 2 ahead
-and 4 behind for a day before anyone noticed. The refresher also records nothing while AILab is off
-`main`. The project-repo check above sees only the current branch of the top repo, so it missed
-both.
-
-Check the project repo and every repo one level down. Run it unsandboxed: the sandbox denies writes
-to AILab's `.git`, so a sandboxed fetch fails, and counts after a failed fetch are stale.
-
-```bash
-REALHOME="/Users/$(id -un)"; [ -d "$REALHOME" ] || REALHOME="$HOME"
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
-[ -n "$ROOT" ] && { echo "$ROOT"; find "$ROOT" -mindepth 2 -maxdepth 2 -name .git 2>/dev/null | sed 's#/\.git$##'; } |
-while IFS= read -r r; do
-  name="$(basename "$r")"
-  git -C "$r" remote get-url origin >/dev/null 2>&1 || { echo "$name: no origin remote, local only"; continue; }
-  def="$(git -C "$r" symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null)"; def="${def#origin/}"; def="${def:-main}"
-  if ! HOME="$REALHOME" git -C "$r" fetch -q origin 2>/dev/null; then
-    echo "$name: fetch FAILED, not reporting sync state"; continue
-  fi
-  br="$(git -C "$r" branch --show-current)"
-  ahead="$(git -C "$r" rev-list --count "origin/$def..$def" 2>/dev/null || echo '?')"
-  behind="$(git -C "$r" rev-list --count "$def..origin/$def" 2>/dev/null || echo '?')"
-  dirty="$(git -C "$r" status --porcelain --ignore-submodules=dirty 2>/dev/null | grep -c .)"
-  echo "$name: on ${br:-detached HEAD}; local $def ahead $ahead, behind $behind; $dirty uncommitted"
-  if [ "$ahead" != 0 ] && [ "$ahead" != '?' ]; then
-    git -C "$r" log --format="    local-only on $def: %h %s" "origin/$def..$def" | head -5
-  fi
-done
-true
-```
-
-The counts compare the local default branch with origin's, whatever branch is checked out, so a
-repo sitting on a feature branch still shows drift on its `main`. Report one line per repo that
-needs attention, and stay quiet about the rest:
-
-- **Local-only commits on the default branch** (ahead > 0): name them. If they are automation
-  commits such as `chore(kb): bump corp KB pointer`, suggest `git pull --rebase` and then a push,
-  and ask before pushing the default branch. Pushing `main` needs the user's go-ahead every time.
-- **Diverged** (ahead and behind): the same, rebase first. Never reset.
-- **Behind only, clean**: offer `git pull --ff-only`.
-- **Off the default branch**: say which branch. For AILab, add that the KB refresher records nothing
-  until it is back on `main`.
-- **Fetch failed**: say so, and give no counts.
-- **No origin remote**: say it is local only, once.
-
-## Project Auto-Checks (opportunistic, cheap)
-
-Run only if the corresponding project tooling exists; **skip silently otherwise**. These are token-cheap freshness checks, never LLM ingestion.
-
-- **Conformance probe** — run `~/.claude/bin/conformance.sh --project . --quiet`. It is
-  deterministic and costs no tokens. It reports conflicts still awaiting a decision and
-  whether `/mine-sessions` is overdue. Surface anything it prints in the Ready Output;
-  say nothing when it is silent. Do not run `/mine-sessions` unprompted — it spends
-  tokens; offer it.
-
-- **Gemini meeting transcripts** — if `tools/pull-gemini-notes.sh` exists in the project, run the `fetch-meeting-notes` skill (or the script directly:
-  `GOOGLE_WORKSPACE_CLI_CONFIG_DIR=$HOME/.config/gws/ail tools/pull-gemini-notes.sh Catalyst`).
-  This pulls any new "Notes by Gemini" Docs from Drive (free — no model tokens). Report newly pulled transcripts in the Ready Output. If new files landed, **suggest** `/harvest-action-items` (do not auto-run — it spends tokens). If `gws auth status` shows expired/no auth, note it briefly and continue. Setup/troubleshooting: the project's `tools/SETUP-gemini-notes.md`.
-
-- **Action-items pruning** — if `ACTION_ITEMS.md` exists at the project root and contains an outline-format `## Open / Active` section (see Catalyst-RCM's `lint-action-items` skill for the format), run:
-  ```bash
-  grep -A2 -E "^#### AI-[0-9]+ · (done|dropped) ·" ACTION_ITEMS.md | grep -oE "since [0-9]{4}-[0-9]{2}-[0-9]{2}" | awk '{print $2}' | while read -r d; do
-    se=$(date -j -f "%Y-%m-%d" "$d" +%s 2>/dev/null) || continue
-    days=$(( ($(date +%s) - se) / 86400 ))
-    [ "$days" -gt 7 ] && echo "$d ($days days)"
-  done
-  ```
-  Free — no model tokens. If any dates print, note the count in the Ready Output ("N item(s) past the 7-day prune window") and **suggest** `/lint-action-items` (do not auto-run). No standing cron for this — deliberate, per user preference (2026-08-09): reminder-only at session start/end, not scheduled automation. The `Stop` hook (`session-end-reminder.sh`) carries the matching session-end reminder.
-
-- **Local dev stack health** — if the project has a runner script exposing a `status` verb
-  (e.g. Catalyst-RCM's `tools/run-dashboard.sh`), run it and report the result. Free — no model
-  tokens. **Report the configuration, not just the ports.** "Something is listening" is the
-  weakest possible reading of health, and it is the one that misleads: on 2026-08-14 the Client
-  Dashboard was up, serving pages, passing every port check, and failing every chat query with
-  `could not resolve credentials from session`, because the runner set `LLM_PROVIDER=bedrock`
-  without `AWS_PROFILE` and `~/.aws` has no `[default]`. Credentials resolve lazily inside the
-  first LLM call, so nothing surfaced until a human typed a question.
-
-  The three things worth a line each in the Ready Output:
-
-  - **Age and commit** — a server older than the branch tip serves stale code and silently
-    invalidates anything that talks to it over HTTP.
-  - **Provider + credentials** — which LLM provider the *running process* has (read it off the
-    pid, not from the current shell — they drift), and whether its credentials actually resolve.
-  - **Sidecar services** — MCP servers the runner does not itself start. A missing calculator MCP
-    doesn't fail; it changes the answers, which is worse.
-
-  If the check reports a problem, say so plainly in the Ready Output rather than burying it, and
-  offer the restart. Do not auto-restart — a running server may be mid-test.
-
-## Time Tracking Check (opportunistic)
-
-If the local `punch` time tracker is installed, surface its state so billable work
-gets clocked. **Skip silently if `punch` is not present on this device.** See the
-`/punch` command and [[beaufort-time-tracking]] for the full surface.
-
-```bash
-P="$(command -v punch 2>/dev/null || command -v b 2>/dev/null)"
-if [ -z "$P" ]; then
-  U="$(id -un 2>/dev/null || echo "${USER:-}")"
-  RH="$( { getent passwd "$U" | cut -d: -f6; } 2>/dev/null )"        # Linux
-  [ -z "$RH" ] && RH="$( { dscl . -read "/Users/$U" NFSHomeDirectory | awk '{print $2}'; } 2>/dev/null )"  # macOS
-  for c in "$RH/bin/punch" "$RH/.local/bin/punch" "$RH/bin/b" "$RH/.local/bin/b"; do
-    [ -z "$P" ] && [ -x "$c" ] && P="$c"
-  done
-fi
-# `punch` answers `list-open`. On hosts where `b` is the older capture CLI
-# rather than a symlink to punch, the verb is `open`; the fallback covers it.
-[ -n "$P" ] && { "$P" list-open 2>/dev/null || "$P" open; }
-```
-
-- **A timer is open** → note it in the Ready Output: "⏱ tracking: TR-NNN customer/project (elapsed Xm)". Don't start another.
-- **No open timer** + this looks like billable project work → nudge once, advisory: "No active timer — `/punch start` to clock this session." Do not auto-start.
-- **`punch` absent** → say nothing.
-- **`list-open` rejected, `open` answered** → `$P` is the older `b` capture CLI, not
-  `punch`. Report what it printed. Do not call the tracker absent: on 2026-10-15 a session
-  on hasami did exactly that because the probe only knew the `punch` verb.
-
-**Only claim it's absent when `$P` is genuinely empty.** The old version of this
-check used the macOS-only `dscl`, which returns empty under a sandbox and made
-`$RH/bin/b` resolve to `/bin/b` — so on 2026-08-14 a session reported the tracker
-missing on a host where it was installed and on PATH, and that wrong claim reached
-two committed documents. If `command -v` found it, it is installed.
-
-## Ready Output
-
-I will confirm when I am ready with a simple "i am ready to claude" and a very short, high-level plan.
-
-output-style: brief, bulleted points
-Structure the "ready" response with clear sections:
-
-- Current Status (git, branch, sync state with origin — e.g., "master: 2 behind origin, clean — pull recommended"), plus one line for each nested repo the drift check flagged
-- Session Context (role, recent work)
-- Project Context (from README, ARCHITECTURE.md, recent session logs)
-- Suggested Next Steps (based on TODOs, open issues, uncommitted changes)
+2. Take the role in the arguments.
+3. Read the project's README, and its CLAUDE.md or AGENTS.md if present. Read other docs when the
+   task needs them.
+4. Find where work left off. Each of these is cheap; skip any that does not exist.
+   - `git log --oneline -8` on the current branch.
+   - The newest session log in `session-logs/` (or the legacy `.claude/session-logs/`), skipping
+     `handoff-*` and `mine-report-*` files: read its summary and next steps only.
+   - Open items in `TODO*`, `plans/` or `ACTION_ITEMS.md` at the project root.
+5. Reply "i am ready to claude", then brief bullets:
+   - Current state: branch, sync, and anything the probe flagged.
+   - Recent work: what the commits and the newest session log say was last done.
+   - Task: the task as understood from the arguments.
+   - Suggested next steps: from the session log's next steps, open items and uncommitted
+     changes, then a short plan.
