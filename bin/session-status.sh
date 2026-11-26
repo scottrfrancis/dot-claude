@@ -225,9 +225,13 @@ if [ "$SETTINGS" != none ]; then
     fi
     grep -q 'hooks/pre-tool-safety\.sh' "$SETTINGS" || missing+=("pre-tool-safety.sh (PreToolUse)")
     grep -q 'hooks/session-end-reminder\.sh' "$SETTINGS" || missing+=("session-end-reminder.sh (Stop)")
-    grep -q 'hooks/skill-gate\.py' "$SETTINGS" || missing+=("skill-gate.py (PreToolUse)")
     grep -q 'hooks/prose-check\.py' "$SETTINGS" || missing+=("prose-check.py (PostToolUse)")
     [ "${#missing[@]}" -gt 0 ] && emit "hooks: not registered in $SETTINGS: $(join ',' "${missing[@]}" | sed 's/,/, /g')"
+    # A registered script that is gone fails on every event it is registered for, and
+    # `python3 gone.py` exits 2, which in PreToolUse blocks every tool call.
+    while IFS= read -r h; do
+      [ -e "$HOME/${h#\~/}" ] || emit "hooks: $SETTINGS registers $h, which does not exist; remove that entry"
+    done < <(grep -oE '[~]/\.claude/hooks/[A-Za-z0-9._-]+' "$SETTINGS" | sort -u)
   fi
 fi
 
@@ -262,6 +266,10 @@ if [ -n "$DOTC" ] && [ -d "$DOTC/skills" ] && [ "$(phys "$CFG")" != "$DOTC" ]; t
   done
   [ "$unlinked" -gt 0 ] && \
     emit "skills: $unlinked of $total dot-claude skills are not linked into $CFG, so they never load here; run $DOTC/bin/link-config.sh --apply"
+fi
+# The path-scoped rules load from the config dir's rules/, which link-config links whole.
+if [ -n "$DOTC" ] && [ -d "$DOTC/rules" ] && [ "$(phys "$CFG")" != "$DOTC" ] && [ ! -d "$CFG/rules" ]; then
+  emit "rules: $CFG has no rules/, so the file-type rules never load here; run $DOTC/bin/link-config.sh --apply"
 fi
 
 # --- time tracker -----------------------------------------------------------

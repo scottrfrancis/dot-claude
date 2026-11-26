@@ -1,1 +1,0 @@
-../skills/karpathy-principles/SKILL.md
