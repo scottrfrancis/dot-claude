@@ -2,6 +2,8 @@
 description: Review project documentation for accuracy, DRY, clarity, and new-member accessibility; commit on a docs branch
 argument-hint: (no arguments needed)
 allowed-tools: Read, Bash, Glob, Grep, Write, Edit
+disable-model-invocation: true
+context: fork
 ---
 
 Audit and improve this project's documentation, then commit changes on a dedicated branch.

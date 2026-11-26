@@ -1,6 +1,6 @@
 ---
 name: security-hardening
-description: "Defence-in-depth patterns from real breach analysis: auth, tenant isolation, secrets, input handling, a breach-driven audit method. Use when building, reviewing or auditing a web application or API that handles sensitive data."
+description: "Use when building, reviewing or auditing a web app or API that handles sensitive data: auth, tenant isolation, secrets and input handling, drawn from real breaches."
 user-invocable: false
 ---
 

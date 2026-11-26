@@ -2,6 +2,7 @@
 description: Drive the local punch time tracker (start/stop/status/log) for this session
 argument-hint: [start|stop|status|log ...] (no args = status)
 allowed-tools: Bash
+disable-model-invocation: true
 ---
 
 # /punch — local time tracking

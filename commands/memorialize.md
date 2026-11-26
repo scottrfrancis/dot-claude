@@ -2,6 +2,7 @@
 description: Close out a thread — promote what's durable, then confirm it's safe to clear
 argument-hint: [topic, if the thread covered more than one]
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+disable-model-invocation: true
 ---
 
 # Memorialize

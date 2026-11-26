@@ -1,6 +1,6 @@
 ---
 name: ingest-hygiene
-description: "Five rules from two disclosures through automated mail ingest: track bodies not attachments, audit reality not version markers, ask what a control would have seen, no fail-open default, done means on the remote's default branch. Use when building anything that writes outside content into git unattended."
+description: "Use when building anything that writes outside content into git unattended, such as mail or feed ingest: five rules from two real disclosures, including no fail-open default."
 user-invocable: false
 ---
 

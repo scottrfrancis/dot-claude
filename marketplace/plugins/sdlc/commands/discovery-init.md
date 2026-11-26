@@ -1,3 +1,7 @@
+---
+description: "Scaffold a Spec-Driven Development project: artifact templates for discovery, design and construction, a glossary, a constitution and the traceability chain"
+---
+
 # Discovery Project Initialization
 
 Scaffold a new Spec-Driven Development (SDD) project with the full artifact structure for discovery, design, and construction phases.

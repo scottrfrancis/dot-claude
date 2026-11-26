@@ -1,3 +1,7 @@
+---
+description: "One target of the federation link audit per run, from okf-knowledge inbox/link-audit; built to run under /loop"
+---
+
 # Link Sweep — one iteration of the federation link audit
 
 Work exactly **one target** of the link audit per invocation (designed to run under

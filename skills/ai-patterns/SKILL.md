@@ -1,6 +1,6 @@
 ---
 name: ai-patterns
-description: "LLM integration patterns from AI Systems Engineering Patterns: caching, routing, guardrails, RAG, evaluation. Use when designing, building or reviewing a feature that calls an LLM."
+description: "Use when designing, building or reviewing a feature that calls an LLM: caching, routing, guardrails, RAG and evaluation patterns."
 user-invocable: false
 ---
 
