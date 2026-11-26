@@ -1,1 +1,1 @@
-../skills/python/SKILL.md
+../rules/python.md

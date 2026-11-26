@@ -50,6 +50,11 @@ Hooks         ←  validate quality    ←  data enforcement
 │   ├── pre-tool-safety.sh       # PreToolUse: block destructive git/rm/config writes
 │   └── session-end-reminder.sh  # Stop: remind once per session about /session-logger and /handoff
 │
+├── rules/                       # Path-scoped rules: load when Claude touches a matching file
+│   ├── python.md, typescript.md, golang.md, shell.md, docker.md, terraform.md
+│   ├── markdown.md              # Formatting plus the prose checklist
+│   └── testing.md, ci.md, diagrams.md, adr.md   # Point at the skill for that work
+│
 ├── guidelines/                  # Reusable development standards
 │   ├── shell-scripts.md         # Bash best practices: error handling, portability
 │   ├── conventional-commits.md  # Git commit message format and types
@@ -59,7 +64,6 @@ Hooks         ←  validate quality    ←  data enforcement
 │   ├── project-setup.md         # Tiered checklist for bootstrapping new projects
 │   ├── shell-escaping.md        # Shell quoting, TTY handling, VS Code compatibility
 │   ├── C4-diagramming.md        # C4 Model PlantUML organization
-│   ├── markdown-formatting.md   # Spacing and list formatting standards
 │   ├── prose-style.md           # Anti-AI-smell rules: punctuation, sentence variation, word choice
 │   ├── prototype-hygiene.md     # Ship clean: config over code, stable docs, PRs over branches
 │   └── security-hardening.md    # Defense-in-depth patterns grounded in breach analysis
@@ -141,7 +145,7 @@ Every remaining command in `~/.claude/commands/`.
 
 ## Guidelines Reference
 
-Topic guidelines are skills: each lives in `skills/<name>/SKILL.md`, and `guidelines/<name>.md` is a symlink to it, so every path below still resolves. Claude Code lists each skill by its description and loads it when the work matches. `hooks/skill-gate.py` makes that reliable for the file types it knows: the first `.py`, `.sh`, Markdown, Dockerfile (and so on) write of a session, and the first commit or push, wait until the governing skill is loaded. Skill names are lowercase, so `C4-diagramming.md` is the `c4-diagramming` skill and `2x2-status-report.md` is `status-report-2x2`.
+Topic guidelines are skills or rules. A skill lives in `skills/<name>/SKILL.md`, and Claude Code lists it by its description and loads it when the work matches. A rule lives in `rules/<name>.md` and loads when Claude reads, writes or edits a file its `paths:` match (see Rules below). `guidelines/<name>.md` is a symlink to whichever it became, so every path below still resolves. Skill names are lowercase, so `C4-diagramming.md` is the `c4-diagramming` skill and `2x2-status-report.md` is `status-report-2x2`.
 
 Five stay plain guidelines, read when something points at them: `central-ops-knowledge`, `beaufort-todo-announcements` and `environments-and-llm-spend` (homelab doctrine), `session-safety` (opt-in, one kind of host) and `memory`.
 
@@ -157,39 +161,56 @@ Five stay plain guidelines, read when something points at them: `central-ops-kno
 | **ci-local-parity.md** | Run exact CI commands locally before pushing; install all scanners; budget for pre-existing issues |
 | **conventional-commits.md** | Standardized commit message format |
 | **data-diode-list-control.md** | Black/white/gray list pattern for one-way egress boundaries (scrub/allow/pending-promotable); the gray list discovers unknowns before they leak |
-| **docker.md** | Multi-stage builds, security, layer optimization |
+| **docker.md** | Rule. Multi-stage builds, security, layer optimization |
 | **docx-conversion.md** | python-docx over pandoc; color palette, typography, hyperlinks |
 | **git-workflow.md** | Branch + PR discipline; never commit/push main; stacked-PR handling |
 | **glossary.md** | Terms that mean something specific here — seeded from real collisions, anti-meanings, segmented like memory |
-| **golang.md** | JSON response safety (no fmt.Fprintf), gosec patterns, G104 triage |
-| **karpathy-principles.md** | Deltas not already covered: surface assumptions before implementing; match existing style; mention don't delete pre-existing dead code; read before you write |
-| **markdown-formatting.md** | Spacing rules for generated Markdown: blank lines around lists, paragraph separation, consistent bullet markers |
+| **golang.md** | Rule. JSON response safety (no fmt.Fprintf), gosec patterns, G104 triage |
+| **markdown-formatting.md** | Rule (`rules/markdown.md`). Blank lines around lists, headings and fences, plus the prose checklist |
 | **pr-token-tracking.md** | Include AI token usage in PR descriptions, read from the branch-keyed ledger |
 | **project-setup.md** | Tiered checklist for bootstrapping new projects with hooks, memory, and session tooling |
 | **memory.md** | Recording durable non-obvious context — one dated fact per line, no personal data, decay and promotion rules |
 | **prose-style.md** | Anti-AI-smell rules for narrative writing: punctuation, sentence variation, transitions, word choice |
 | **prototype-hygiene.md** | Ship clean from day one: config over code, stable docs over stale state, PRs over branches |
-| **python.md** | Type hints, error handling, testing patterns |
+| **python.md** | Rule. Type hints, error handling, imports, pytest |
 | **readme-documentation.md** | Organizing project documentation with README as central hub |
 | **rule-conflict-protocol.md** | Two instructions or two codebase patterns requiring incompatible things — stop, log to `logs/rule-conflict-log.md`, present at least three options |
 | **security-hardening.md** | Defense-in-depth patterns grounded in real-world breach analysis |
 | **session-safety.md** | Opt-in, dedicated NPU/GPU boxes only: device contention between sessions |
 | **shell-escaping.md** | Complex shell commands — quoting rules, heredocs, VS Code terminal escaping |
 | **shell-scripts.md** | Directory management, error handling, and portability |
-| **terraform.md** | Module structure, state management, security |
+| **terraform.md** | Rule. Module structure, state management, security |
 | **testing.md** | Test pyramid, mocking, CI integration, framework-specific notes |
-| **typescript.md** | Strict types, functional components, error boundaries |
+| **typescript.md** | Rule. Strict types, functional components, error boundaries |
 
 ## Skills
 
 Global skills live in `skills/<name>/SKILL.md`. The topic guidelines above are skills too, hidden from the `/` menu with `user-invocable: false`.
 
-Claude Code loads skills from the active config dir: `~/.claude`, or `$CLAUDE_CONFIG_DIR`. A profile config dir (`~/.claude-profiles/<p>/.claude`, `~/.claude-ailab`) symlinks parts of this repo but not `skills/`, so no repo skill loads there until it is linked. `bin/link-config.sh` adds one link per skill, plus `bin/`, to every config dir whose `CLAUDE.md` links here. It is a dry run unless given `--apply`, and it never replaces what it did not create. Re-run it after adding or removing a skill. `bin/session-status.sh` reports a config dir with missing links.
+Claude Code loads skills from the active config dir: `~/.claude`, or `$CLAUDE_CONFIG_DIR`. A profile config dir (`~/.claude-profiles/<p>/.claude`, `~/.claude-ailab`) symlinks parts of this repo but not `skills/`, so no repo skill loads there until it is linked. `bin/link-config.sh` adds one link per skill, plus `bin/` and `rules/`, to every config dir whose `CLAUDE.md` links here. It is a dry run unless given `--apply`, and it never replaces what it did not create. Re-run it after adding or removing a skill. `bin/session-status.sh` reports a config dir with missing links.
 
 | Skill | Purpose |
 | ----- | ------- |
 | **explain-diff-html** | Rich, interactive HTML explanation of a code change, diff, branch, or PR |
 | **explain-diff-md** | The same as a single self-contained Markdown file (fits the wiki / OKF knowledge base) |
+
+## Rules
+
+Each file in `rules/` opens with a `paths:` list of globs, and Claude Code loads it when Claude reads, writes or edits a matching file, including one it is creating. Globs match from the session's working directory, and each starts with `**/` so it matches at any depth. A rule whose frontmatter fails to parse loads in every session instead, so `tests/test-rules.sh` checks the frontmatter strictly, checks that each file type maps to exactly the rules it should, and keeps each rule under 1KB (2KB for Markdown).
+
+| Rule | Loads for | Holds |
+| ---- | --------- | ----- |
+| `python.md` | `*.py`, `*.pyi` | Type hints, exceptions, imports, pytest |
+| `typescript.md` | `*.ts`, `*.tsx`, `*.mts`, `*.cts` | Strict types, `Result` errors, async, React |
+| `golang.md` | `*.go`, `go.mod` | JSON responses, gosec, G104 triage |
+| `shell.md` | `*.sh`, `*.bash` | Script skeleton and the macOS portability traps |
+| `docker.md` | Dockerfiles, compose files, `.dockerignore` | Image and compose standards |
+| `terraform.md` | `*.tf`, `*.tfvars` | Layout, state, security, naming |
+| `markdown.md` | `*.md`, `*.mdx` | The prose checklist and Markdown spacing |
+| `testing.md` | test files and `tests/` | Points at the `testing` skill; red first, the mutation check |
+| `ci.md` | `.github/workflows/` | Points at `ci-local-parity` |
+| `diagrams.md` | `*.puml`, `*.plantuml` | Points at `c4-diagramming` and `architecture-diagrams` |
+| `adr.md` | `docs/decisions/`, `ADR-*.md` | Points at the `adr` skill |
 
 ## Onboarding Guides
 
@@ -212,7 +233,7 @@ To set up a homelab host:
 1. Clone this repo to `~/.claude`, or link it there.
 2. Create `host.md` in the checkout itself: `printf '@~/.claude/doctrine/homelab.md\n' > <checkout>/host.md`. On a host with swapped-HOME profiles, `~/.claude` inside a profile is the profile's own directory, so a file written there reaches only that profile.
 3. Register the hooks (see Hook Registration Pattern below), and set `"cleanupPeriodDays": 90` in `settings.json` so transcripts last long enough for `/mine-sessions` and usage reviews.
-4. On a host with profiles, run `<checkout>/bin/link-config.sh`, then again with `--apply`. Use the full path: a profile has no `~/.claude/bin` until link-config has run. It links `host.md`, `doctrine/`, `memory/`, `bin/` and every skill into each profile.
+4. On a host with profiles, run `<checkout>/bin/link-config.sh`, then again with `--apply`. Use the full path: a profile has no `~/.claude/bin` until link-config has run. It links `host.md`, `doctrine/`, `memory/`, `bin/`, `rules/` and every skill into each profile.
 5. Start a session. The status block should be silent, and `/memory` should list `host.md` and `doctrine/homelab.md`.
 
 ## Hooks System
@@ -230,7 +251,6 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
 | **PreToolUse** | `pre-tool-safety.sh` | Blocks (exit 2) destructive operations: `git reset --hard`, `git push --force`, `git worktree remove --force`, `rm -rf`, and redirects to sensitive config files. Prompts for user confirmation before proceeding. |
 | **PreCompact** | `pre-compact-memorialize.sh` | Snapshots branch, outstanding conformance items and uncommitted files before context is compacted, and steers what the summary preserves. Advisory. |
 | **SessionStart** | `account-mismatch-warn.sh` | Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) does not match the logged-in oauth account. Advisory only; silent on match; needs `jq`. |
-| **PreToolUse** | `skill-gate.py` | Holds the first write of a governed file type (`.py`, `.go`, `.ts`, `.sh`, `.tf`, Dockerfile, tests, Markdown, workflows, `.puml`, ADRs), and the first `git commit` or `push`, until the governing skill is loaded through the Skill tool or a Read of its `SKILL.md`. Asks at most twice per skill per session. Off with `CLAUDE_SKILL_GATE=off` or a project `.claude/skill-gate-off`. |
 | **PostToolUse** | `prose-check.py` | After a Markdown write, checks the mechanical prose rules: the dash budget `max(2, lines/40)`, the corrective frame on added lines, and bold density. Judges only what the write added, and returns findings to the model (exit 2). A file containing `prose-check: off` is skipped. |
 | **Stop** | `session-end-reminder.sh` | Stop fires after every reply, so this speaks once per session: it reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) when neither has been run today. Also reminds about `/lint-action-items` when an outline-format `ACTION_ITEMS.md` has items past the 7-day prune window. |
 
@@ -266,9 +286,7 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
     ],
     "PreToolUse": [
       { "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "~/.claude/hooks/pre-tool-safety.sh", "timeout": 10 }] },
-      { "matcher": "Write|Edit|MultiEdit|Bash|Read|Skill",
-        "hooks": [{ "type": "command", "command": "python3 ~/.claude/hooks/skill-gate.py", "timeout": 10 }] }
+        "hooks": [{ "type": "command", "command": "~/.claude/hooks/pre-tool-safety.sh", "timeout": 10 }] }
     ],
     "PostToolUse": [
       { "matcher": "Write|Edit|MultiEdit",
@@ -365,6 +383,14 @@ Deterministic shell checks under `bin/`, no model tokens. Each has a suite in `t
   `bin/memory-scope.sh` - the individual tiers.
 
 ## Changelog
+
+- 2026-11-26: Path-scoped rules replace the skill gate. Eleven files in `rules/` load when
+  Claude touches a matching file: the Python, TypeScript, Go, Docker, Terraform and Markdown
+  skills became rules, a shell rule took the portability facts from `memory/MEMORY.md`, and four
+  short rules point test, workflow, diagram and ADR files at their skills. `hooks/skill-gate.py`
+  and the `karpathy-principles` skill are retired, and the commit format is two lines in
+  CLAUDE.md. `bin/session-status.sh` names a profile without `rules/` and any registered hook
+  script that does not exist.
 
 - 2026-11-25: Port the findings of a laptop fork's audit. CLAUDE.md drops from 27KB to about 4KB of
   rules: homelab rules and the central ops block move to `doctrine/homelab.md`, imported through a

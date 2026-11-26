@@ -1,1 +1,1 @@
-../skills/docker/SKILL.md
+../rules/docker.md
