@@ -21,8 +21,9 @@
 #        github.com[:/]scottrfrancis/...  →  ScooterSoft / personal Claude Max
 #        anything else / no remote        →  [other] / [no-remote]
 #
-# Detection for the ACTUAL (paying) account reads ~/.claude.json
-# oauthAccount.organizationName and organizationType. When expected !=
+# Detection for the ACTUAL (paying) account reads oauthAccount.organizationName
+# and organizationType from Claude Code's global config: $CLAUDE_CONFIG_DIR/.claude.json
+# when that is set (the claude-profile launcher sets it), else ~/.claude.json. When expected !=
 # actual, the tag is replaced with a loud inverse-red mismatch banner so
 # the wrong-account-paying state can't be missed.
 #
@@ -91,13 +92,14 @@ else
   esac
 fi
 
-# --- Resolve ACTUAL (logged-in) account code from ~/.claude.json ---
+# --- Resolve ACTUAL (logged-in) account code from Claude Code's global config ---
 # Conservative mapping; unknowns fall through to "actual_other".
 actual=""
 actual_label=""
-if [ -f "$HOME/.claude.json" ] && command -v jq >/dev/null 2>&1; then
-  org_name=$(jq -r '.oauthAccount.organizationName // ""' "$HOME/.claude.json" 2>/dev/null)
-  org_type=$(jq -r '.oauthAccount.organizationType // ""' "$HOME/.claude.json" 2>/dev/null)
+cfg="${CLAUDE_CONFIG_DIR:-$HOME}/.claude.json"
+if [ -f "$cfg" ] && command -v jq >/dev/null 2>&1; then
+  org_name=$(jq -r '.oauthAccount.organizationName // ""' "$cfg" 2>/dev/null)
+  org_type=$(jq -r '.oauthAccount.organizationType // ""' "$cfg" 2>/dev/null)
   case "$org_name" in
     BrightSign|Brightsign|brightsign)
       actual="bs"; actual_label="BrightSign" ;;

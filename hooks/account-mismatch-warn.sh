@@ -4,7 +4,9 @@
 #
 # Cwd-expected detection mirrors ~/.claude/scripts/account-context.sh:
 # .account-context marker beats git remote.
-# Actual-account detection reads ~/.claude.json oauthAccount.
+# Actual-account detection reads oauthAccount from Claude Code's global config:
+# $CLAUDE_CONFIG_DIR/.claude.json when that is set (the claude-profile launcher sets
+# it), else ~/.claude.json.
 # Emits a one-line additionalContext warning on mismatch; silent otherwise.
 
 set -euo pipefail
@@ -51,11 +53,12 @@ fi
 # Ambiguous expected → no warning to emit
 case "$expected" in ss|bs|al) ;; *) exit 0 ;; esac
 
-# --- Actual (from ~/.claude.json) ---
-[ -f "$HOME/.claude.json" ] || exit 0
-org_name=$(jq -r '.oauthAccount.organizationName // ""' "$HOME/.claude.json" 2>/dev/null)
-org_type=$(jq -r '.oauthAccount.organizationType // ""' "$HOME/.claude.json" 2>/dev/null)
-email=$(jq -r '.oauthAccount.emailAddress // ""' "$HOME/.claude.json" 2>/dev/null)
+# --- Actual (from Claude Code's global config) ---
+CFG="${CLAUDE_CONFIG_DIR:-$HOME}/.claude.json"
+[ -f "$CFG" ] || exit 0
+org_name=$(jq -r '.oauthAccount.organizationName // ""' "$CFG" 2>/dev/null)
+org_type=$(jq -r '.oauthAccount.organizationType // ""' "$CFG" 2>/dev/null)
+email=$(jq -r '.oauthAccount.emailAddress // ""' "$CFG" 2>/dev/null)
 
 actual=""
 actual_label=""
