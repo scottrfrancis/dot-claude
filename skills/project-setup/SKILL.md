@@ -1,6 +1,6 @@
 ---
 name: project-setup
-description: "Tiered checklist for bootstrapping a project with hooks, memory and session tooling, matched to its size. Use when starting a new repo or adding Claude Code tooling to one."
+description: "Use when starting a new repo or adding Claude Code tooling to one: a tiered checklist of hooks, memory and session tooling, matched to the project's size."
 user-invocable: false
 ---
 

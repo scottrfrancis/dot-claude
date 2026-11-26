@@ -1,6 +1,6 @@
 ---
 name: architecture-diagrams
-description: "AWS reference-diagram conventions: numbered flow, icon and colour rules, boundaries, a critique rubric, GCP and multi-cloud adaptation. Use when drawing, generating or critiquing an architecture or solution diagram."
+description: "Use when drawing, generating or critiquing an architecture or solution diagram: AWS reference conventions, numbered flow, icons, boundaries, a critique rubric."
 user-invocable: false
 ---
 

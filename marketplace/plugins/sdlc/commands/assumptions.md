@@ -1,7 +1,12 @@
+---
+description: "Capture or update a hypothesis-driven assumption (if true, if false, fallback) in ASSUMPTIONS-TRACKER.md"
+argument-hint: "[assumption to capture]"
+---
+
 # Assumption Tracker
 
-**Arguments:** text after `/assumptions` is the assumption to capture
-(e.g. `/assumptions the vendor API returns results in under 200ms`).
+**Arguments:** text after `/sdlc:assumptions` is the assumption to capture
+(e.g. `/sdlc:assumptions the vendor API returns results in under 200ms`).
 
 ## When to Use
 
@@ -72,7 +77,7 @@ Scan existing assumptions for:
 
 ## Example
 
-Input: `/assumptions the third-party pricing API responds in under 200ms at p95`
+Input: `/sdlc:assumptions the third-party pricing API responds in under 200ms at p95`
 
 Output appended to tracker:
 

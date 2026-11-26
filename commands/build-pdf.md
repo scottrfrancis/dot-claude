@@ -2,6 +2,7 @@
 description: Build a PDF from markdown sections using md2pdf and report.yaml
 argument-hint: [path/to/report.yaml]
 allowed-tools: Bash, Read, Glob
+disable-model-invocation: true
 ---
 
 Build a PDF from ordered markdown sections using the `md2pdf` CLI tool.

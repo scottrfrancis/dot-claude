@@ -1,6 +1,6 @@
 ---
 name: docx-conversion
-description: "Markdown to Word with python-docx rather than pandoc: colour palette, typography, hyperlinks. Use when producing a .docx from Markdown or writing a converter script."
+description: "Use when producing a .docx from Markdown or writing a converter script: python-docx over pandoc, colour palette, typography, hyperlinks."
 user-invocable: false
 ---
 

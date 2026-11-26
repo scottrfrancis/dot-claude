@@ -1,6 +1,6 @@
 ---
 name: ci-local-parity
-description: "Run the exact CI commands locally before pushing, install every scanner the workflow uses, and budget for pre-existing failures. Use when adding or changing a CI workflow, or before pushing a branch whose CI runs linters or scanners."
+description: "Use when adding or changing a CI workflow, or before pushing a branch whose CI runs linters or scanners: run CI's exact commands locally and budget for old failures."
 user-invocable: false
 ---
 

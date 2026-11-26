@@ -1,6 +1,6 @@
 ---
 name: verification-layers
-description: "The layers between tests passing and the system doing the thing (code, image, deploy artefact, running system), checks that cannot fail, detector fixtures from real output. Use when verifying a fix or a deploy, or deciding what proves a change works."
+description: "Use when verifying a fix or a deploy, or deciding what proves a change works: the layers from passing tests to the running system, checks that cannot fail, real fixtures."
 user-invocable: false
 ---
 
