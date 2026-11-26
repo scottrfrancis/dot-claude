@@ -24,8 +24,8 @@ The cycle, repeated for each behaviour:
 
 Keep cycles to minutes. One failing test at a time keeps each step small enough to reason about,
 and a long cycle means the increment is too big to land in one go, so split it. A test written
-after the code it covers has never been seen to fail: apply the mutation check below before
-trusting it, and say in review that it came second.
+after the code it covers does not count as test-first, because it has never been seen to fail:
+apply the mutation check below before trusting it, and flag in review that it came second.
 
 A test that is hard to write usually means the design is coupled or the behaviour is
 under-specified. Fix that first.
