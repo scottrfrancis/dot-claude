@@ -138,7 +138,9 @@ hasnt "with BSD find and stat, quiet right after a mine report" "$(bsd_run)" "/m
 # frontmatter; without one, its mtime stands in (this store is not in git, so nothing
 # rewrites mtime wholesale the way a checkout does).
 reset
-KEY="$(printf '%s' "$WORK/p" | sed 's/[^A-Za-z0-9]/-/g')"
+# Derive the key from the normalised path, as the probe and Claude Code do: macOS $TMPDIR ends
+# in "/", so "$WORK/p" can hold "//", which would give a different key.
+KEY="$(cd "$WORK/p" && pwd | sed 's/[^A-Za-z0-9]/-/g')"
 MEM="$WORK/auto/$KEY/memory"; mkdir -p "$MEM"
 mem() { # $1 file, $2 verified date or "", $3 type (default project; "none" omits it)
   { printf -- '---\nname: %s\ndescription: x\nmetadata:\n' "$1"
