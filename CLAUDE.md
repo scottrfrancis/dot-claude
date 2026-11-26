@@ -50,9 +50,9 @@ across two sentences.
 
 ## Safety
 
-Session safety (`guidelines/session-safety.md`) applies only to a dedicated NPU/GPU box whose
-project CLAUDE.md opts in. Never run `session-cleanup` anywhere else: it kills every Claude
-process on the machine, this session included.
+Never kill Claude processes by pattern (`pkill -f claude`, `killall claude`): every session on
+the host matches, this one included, and the safety hook blocks it. NPU/GPU session safety and
+its cleanup script live in the one project that needs them.
 
 <!-- design-patterns: begin -->
 ## Design-pattern discipline

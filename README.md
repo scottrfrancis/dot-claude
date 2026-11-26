@@ -59,7 +59,6 @@ Hooks         ←  validate quality    ←  data enforcement
 │   ├── shell-scripts.md         # Bash best practices: error handling, portability
 │   ├── conventional-commits.md  # Git commit message format and types
 │   ├── readme-documentation.md  # README-centric documentation patterns
-│   ├── session-safety.md        # Hardware system session isolation (CRITICAL)
 │   ├── ai-patterns.md           # LLM integration: caching, routing, RAG, guardrails
 │   ├── project-setup.md         # Tiered checklist for bootstrapping new projects
 │   ├── shell-escaping.md        # Shell quoting, TTY handling, VS Code compatibility
@@ -81,8 +80,6 @@ Hooks         ←  validate quality    ←  data enforcement
 │   ├── commit-manual            # Conventional commit helper
 │   ├── autocommit.md            # AI-powered commit message generator
 │   ├── checkpoint-progress      # WIP commit and session state saver
-│   ├── session-cleanup          # NPU/GPU box only: kills every Claude process (--kill-all-claude)
-│   ├── validate-hw-env          # Hardware environment pre-check
 │   └── extract-adr              # Convert logged decisions to ADRs
 │
 ├── marketplace/                 # Local plugin marketplace, served in place
@@ -124,8 +121,6 @@ Commands marked user-only run when typed and are left out of the model's listing
 | Command | Invocation | Purpose |
 | ------- | --------- | ------- |
 | **checkpoint-progress** | `/checkpoint-progress <root> <message>` | Create WIP commit and log session state |
-| **session-cleanup** | `session-cleanup --kill-all-claude` | Dedicated NPU/GPU box only. Kills every Claude process on the machine, then cleans device handles and shared memory. Refuses without the flag |
-| **validate-hw-env** | `/validate-hw-env` | Pre-check hardware environment safety before testing |
 
 ### Also Available
 
@@ -149,7 +144,7 @@ The seven Spec-Driven Development commands (`discovery-init`, `interview-to-spec
 
 Topic guidelines are skills or rules. A skill lives in `skills/<name>/SKILL.md`, and Claude Code lists it by its description and loads it when the work matches. A rule lives in `rules/<name>.md` and loads when Claude reads, writes or edits a file its `paths:` match (see Rules below). `guidelines/<name>.md` is a symlink to whichever it became, so every path below still resolves. Skill names are lowercase, so `C4-diagramming.md` is the `c4-diagramming` skill and `2x2-status-report.md` is `status-report-2x2`.
 
-Five stay plain guidelines, read when something points at them: `central-ops-knowledge`, `beaufort-todo-announcements` and `environments-and-llm-spend` (homelab doctrine), `session-safety` (opt-in, one kind of host) and `memory`.
+Four stay plain guidelines, read when something points at them: `central-ops-knowledge`, `beaufort-todo-announcements` and `environments-and-llm-spend` (homelab doctrine), and `memory`. NPU/GPU session safety, with `session-cleanup` and `validate-hw-env`, lives in the one project that uses it.
 
 | Guideline | When to Apply |
 | --------- | ------------ |
@@ -178,7 +173,6 @@ Five stay plain guidelines, read when something points at them: `central-ops-kno
 | **readme-documentation.md** | Organizing project documentation with README as central hub |
 | **rule-conflict-protocol.md** | Two instructions or two codebase patterns requiring incompatible things — stop, log to `logs/rule-conflict-log.md`, present at least three options |
 | **security-hardening.md** | Defense-in-depth patterns grounded in real-world breach analysis |
-| **session-safety.md** | Opt-in, dedicated NPU/GPU boxes only: device contention between sessions |
 | **shell-escaping.md** | Complex shell commands — quoting rules, heredocs, VS Code terminal escaping |
 | **shell-scripts.md** | Directory management, error handling, and portability |
 | **terraform.md** | Rule. Module structure, state management, security |
@@ -251,7 +245,7 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
 | Event | Hook | What It Does |
 | ----- | ---- | ------------ |
 | **SessionStart** | `session-status.sh` | Runs `bin/session-status.sh --hook` on `startup` and `clear`. Points at what needs attention and is silent otherwise: drift on dot-claude, the downstream dot-repos, the project and its nested repos (no fetch); handoffs from the last 7 days, without reading or moving them; an open `punch` timer; hooks missing from `settings.json`; overdue conformance items; stale `ACTION_ITEMS.md` entries; and the output of an executable `.claude/session-start.sh` in the project. `load-handoff-context.sh` is a deprecated alias for it. |
-| **PreToolUse** | `pre-tool-safety.sh` | Blocks (exit 2) destructive operations: `git reset --hard`, `git push --force`, `git worktree remove --force`, `rm -rf`, and redirects to sensitive config files. Prompts for user confirmation before proceeding. |
+| **PreToolUse** | `pre-tool-safety.sh` | Blocks (exit 2) destructive operations: `git reset --hard`, an unguarded `git push --force`, `git worktree remove --force`, `rm -rf`, redirects to sensitive config files, killing processes that match `claude`, and `session-cleanup` without its flag. Asks the user (a permission prompt) before a commit or push on a repo's default branch (`origin/HEAD`, else `main` or `master`), and before `session-cleanup --kill-all-claude`. |
 | **PreCompact** | `pre-compact-memorialize.sh` | Snapshots branch, outstanding conformance items and uncommitted files before context is compacted, and steers what the summary preserves. Advisory. |
 | **SessionStart** | `account-mismatch-warn.sh` | Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) does not match the logged-in oauth account. Advisory only; silent on match; needs `jq`. |
 | **PostToolUse** | `prose-check.py` | After a Markdown write, checks the mechanical prose rules: the dash budget `max(2, lines/40)`, the corrective frame on added lines, and bold density. Judges only what the write added, and returns findings to the model (exit 2). A file containing `prose-check: off` is skipped. |
@@ -386,6 +380,12 @@ Deterministic shell checks under `bin/`, no model tokens. Each has a suite in `t
   `bin/memory-scope.sh` - the individual tiers.
 
 ## Changelog
+
+- 2026-11-26: The safety hook asks before a commit or push on a default branch, so a repo that
+  commits to main by design is one approval away and every other repo gets a branch. It blocks
+  killing processes that match `claude` and an unflagged `session-cleanup`, and asks before a
+  flagged one. The hardware session-safety guideline, `session-cleanup` and `validate-hw-env`
+  moved to the one project that uses them.
 
 - 2026-11-26: The skill listing gets smaller. Nine commands only Scott starts are user-only,
   five reviews run forked, every skill description is at most 200 characters and leads with
