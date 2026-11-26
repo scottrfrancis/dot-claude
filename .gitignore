@@ -76,3 +76,6 @@ scripts/release/out/
 
 # Installed and overwritten by herdr; per-machine integration, not authored here
 hooks/herdr-agent-state.sh
+
+# Python bytecode (CI and local py_compile of hooks/*.py)
+__pycache__/
