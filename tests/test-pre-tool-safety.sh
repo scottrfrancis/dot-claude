@@ -93,6 +93,26 @@ blocks 'pgrep -f claude | xargs -r kill -9'
 allows 'pkill -f my-dev-server'
 allows 'pgrep -fl claude'
 allows 'ps aux | grep claude'
+blocks 'pkill -f "claude --resume"'
+blocks "pkill -f 'node.*claude'"
+blocks 'pkill -u scott -f claude'
+blocks '/usr/bin/pkill claude'
+blocks 'sudo killall Claude'
+blocks 'kill $(pgrep -f claude)'
+# A targeted kill whose path or name merely contains "claude" is fine; the sandbox's temp
+# directory is /tmp/claude-<uid>, so every scratch server lives under one.
+allows 'pkill -f /private/tmp/claude-502/x/server.py'
+allows 'pkill -f /Volumes/workspace/dot-claude/tools/server.sh'
+allows 'pkill -f claude-mem-worker'
+allows 'echo pkill claude'
+
+# A long command (a heredoc body, a generated script) must not skip the checks.
+long="$(printf 'git push --force origin main\n'; seq 1 20000)"
+blocks_long() { local rc; rc=$(verdict "$long"); [ "$rc" = 2 ] && ok "blocks:  a force push followed by 20000 lines" || bad "blocks:  a force push followed by 20000 lines" "got $rc"; }
+blocks_long
+# Only the message is dropped before the checks, not everything after the first -m.
+blocks 'python3 -m pytest && git push --force'
+allows 'git commit -m "note: rm -rf is risky'
 
 # session-cleanup kills every Claude process on the machine. It refuses without its flag;
 # with the flag the user decides.
@@ -135,7 +155,20 @@ asks   'git push origin feat/x:main'
 asks   'git push origin HEAD:refs/heads/main'
 asks   'git push --all'
 
+allows 'git push --tags'
+allows 'git push origin --tags'
+asks   'git commit -m x && git push origin HEAD:main'
+
+HERE="$WORK/c2"
+allows 'git push --tags'
+blocks 'git commit -m x && pkill -f claude'   # a block in one segment beats an ask in another
+allows "export X=1 && cd $WORK/c && git commit -m x"
+HERE="$WORK/c"
+asks   "source /dev/null; cd $WORK/c2 && git commit -m x"
+
 HERE="$WORK/plain"
+asks   "cd $WORK && git -C c2 commit -m x"
+asks   "git -c user.name=x -C $WORK/c2 commit -m x"
 asks   "git -C $WORK/c2 commit -m x"
 allows "git -C $WORK/c commit -m x"
 asks   "cd $WORK/c2 && git commit -m x"
