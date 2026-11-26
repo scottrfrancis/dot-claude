@@ -140,8 +140,9 @@ hasnt "with BSD find and stat, quiet right after a mine report" "$(bsd_run)" "/m
 reset
 KEY="$(printf '%s' "$WORK/p" | sed 's/[^A-Za-z0-9]/-/g')"
 MEM="$WORK/auto/$KEY/memory"; mkdir -p "$MEM"
-mem() { # $1 file, $2 verified date or ""
-  { printf -- '---\nname: %s\ndescription: x\nmetadata:\n  type: project\n' "$1"
+mem() { # $1 file, $2 verified date or "", $3 type (default project; "none" omits it)
+  { printf -- '---\nname: %s\ndescription: x\nmetadata:\n' "$1"
+    [ "${3:-project}" = none ] || printf '  type: %s\n' "${3:-project}"
     [ -n "$2" ] && printf '  verified: %s\n' "$2"
     printf -- '---\n\nA fact.\n'; } > "$MEM/$1.md"
 }
@@ -158,6 +159,19 @@ touch "$MEM/undated.md"
 hasnt "an undated file written recently is not flagged" "$(arun)" "built-in memory"
 printf -- '- [x](x.md) — index\n' > "$MEM/MEMORY.md"; touch -t 202001010000 "$MEM/MEMORY.md"
 hasnt "the MEMORY.md index is not a fact" "$(arun)" "built-in memory"
+
+# Feedback and user memories hold Scott's corrections and preferences. Age does not make them
+# false, and a model told to verify-or-delete what it cannot verify deletes it. On Studio, 13 of
+# the 18 Catalyst-RCM files this check first flagged were feedback.
+mem corr 2020-01-02 feedback; touch -t 202001010000 "$MEM/corr.md"
+hasnt "an old feedback memory is not flagged" "$(arun)" "built-in memory"
+mem pref 2020-01-02 user; touch -t 202001010000 "$MEM/pref.md"
+hasnt "an old user memory is not flagged" "$(arun)" "built-in memory"
+mem ref 2020-01-02 reference
+has "an old reference memory is flagged" "$(arun)" "1 built-in memory file(s)"
+mem untyped 2020-01-02 none
+has "an old memory with no type is flagged" "$(arun)" "2 built-in memory file(s)"
+hasnt "the finding never suggests deleting a memory" "$(arun)" "delete"
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
