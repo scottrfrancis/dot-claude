@@ -4,13 +4,15 @@
 #
 # dot-claude is primary. Every block lives, authoritatively, between
 #   <!-- <block>: begin -->  and  <!-- <block>: end -->
-# in the primary file, doctrine/homelab.md, which homelab hosts import through host.md. Downstream copies are replaced from it; they are never a source.
+# in exactly one primary file: CLAUDE.md for universal doctrine, which loads on every host, or
+# doctrine/homelab.md for homelab doctrine, which homelab hosts import through host.md. Downstream
+# copies are replaced from it; they are never a source. A block in two primaries is an error.
 #
 #   doctrine.sh check   report every target that differs, is missing the block, or
 #                       carries malformed markers; exit 1 if any finding
-#   doctrine.sh sync    rewrite each target's block from the primary
+#   doctrine.sh sync    rewrite each target's block from its primary
 #
-#   --primary FILE      default: <repo-root>/doctrine/homelab.md
+#   --primary FILE      repeatable; default: <repo-root>/CLAUDE.md and doctrine/homelab.md
 #   --targets FILE      default: <repo-root>/doctrine/targets.conf
 #
 # Target paths resolve relative to the current directory, which is expected to be the
@@ -20,24 +22,27 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-PRIMARY="$REPO_ROOT/doctrine/homelab.md"
+PRIMARIES=()
 TARGETS="$REPO_ROOT/doctrine/targets.conf"
 MODE=""
 
-usage() { sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; }
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --primary) PRIMARY="$2"; shift 2 ;;
+    --primary) PRIMARIES+=("$2"); shift 2 ;;
     --targets) TARGETS="$2"; shift 2 ;;
     check|sync) MODE="$1"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'doctrine.sh: unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
 done
+[ "${#PRIMARIES[@]}" -gt 0 ] || PRIMARIES=("$REPO_ROOT/CLAUDE.md" "$REPO_ROOT/doctrine/homelab.md")
 
 [ -n "$MODE" ]     || { printf 'doctrine.sh: expected "check" or "sync"\n' >&2; exit 2; }
-[ -f "$PRIMARY" ]  || { printf 'doctrine.sh: primary not found: %s\n' "$PRIMARY" >&2; exit 2; }
+for p in "${PRIMARIES[@]}"; do
+  [ -f "$p" ] || { printf 'doctrine.sh: primary not found: %s\n' "$p" >&2; exit 2; }
+done
 [ -f "$TARGETS" ]  || { printf 'doctrine.sh: targets file not found: %s\n' "$TARGETS" >&2; exit 2; }
 
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/doctrine.XXXXXX")"
@@ -91,6 +96,17 @@ replace() {
   if cmp -s "$file" "$out"; then rm -f "$out"; else mv "$out" "$file"; fi
 }
 
+# Print the one primary that carries BLOCK. None, or more than one, is a setup error.
+primary_for() {
+  local p found=()
+  for p in "${PRIMARIES[@]}"; do has_block "$p" "$1" && found+=("$p"); done
+  case "${#found[@]}" in
+    1) printf '%s\n' "${found[0]}" ;;
+    0) printf 'block "%s" not found in any primary: %s\n' "$1" "${PRIMARIES[*]}" >&2; return 2 ;;
+    *) printf 'block "%s" found in more than one primary: %s\n' "$1" "${found[*]}" >&2; return 2 ;;
+  esac
+}
+
 findings=0
 synced=0
 
@@ -105,11 +121,9 @@ while IFS= read -r line; do
   if [ ! -f "$path" ]; then
     printf '%s: file not found\n' "$path"; findings=$((findings+1)); continue
   fi
-  if ! has_block "$PRIMARY" "$block"; then
-    printf 'primary %s: block "%s" not found\n' "$PRIMARY" "$block" >&2; exit 2
-  fi
+  if ! primary="$(primary_for "$block")"; then exit 2; fi
 
-  extract "$PRIMARY" "$block" > "$TMP/primary.body"
+  extract "$primary" "$block" > "$TMP/primary.body"
 
   if ! has_block "$path" "$block"; then
     if [ "$MODE" = check ]; then
@@ -143,7 +157,7 @@ done < "$TARGETS"
 
 if [ "$MODE" = check ]; then
   [ "$findings" -eq 0 ] || { printf '\n%d finding(s).\n' "$findings"; exit 1; }
-  printf 'All doctrine blocks in sync with %s\n' "$PRIMARY"
+  printf 'All doctrine blocks in sync with %s\n' "${PRIMARIES[*]}"
 else
   [ "$findings" -eq 0 ] || exit 1
   printf '%d block(s) synced.\n' "$synced"

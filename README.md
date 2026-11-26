@@ -205,14 +205,14 @@ CLAUDE.md holds the rules that apply everywhere. What a host adds comes from `~/
 @~/.claude/doctrine/homelab.md
 ```
 
-That file carries the LLM spend gate, environments, time tracking, Beaufort announcements, and the two doctrine blocks that `bin/doctrine.sh` copies to the downstream dot-repos. A host outside the homelab leaves `host.md` empty. Claude Code skips a missing import silently, so `bin/session-status.sh` reports a missing `host.md`, and any import in it that does not resolve.
+That file carries the homelab names (the local model and the dev host), time tracking, Beaufort announcements, and the central ops knowledge block. The rules that must hold everywhere stay in CLAUDE.md: paid models and prod promotion only on request, and the design-pattern block. `bin/doctrine.sh` copies both doctrine blocks to the downstream dot-repos, each from whichever of the two files carries it. A host outside the homelab leaves `host.md` empty. Claude Code skips a missing import silently, so `bin/session-status.sh` reports a missing `host.md`, and any import in it that does not resolve.
 
 To set up a homelab host:
 
 1. Clone this repo to `~/.claude`, or link it there.
-2. Run `printf '@~/.claude/doctrine/homelab.md\n' > ~/.claude/host.md`.
-3. Register the hooks (see Hook Registration Pattern below).
-4. On a host with profiles, run `~/.claude/bin/link-config.sh`, then again with `--apply`. It links `host.md`, `doctrine/`, `memory/`, `bin/` and every skill into each profile.
+2. Create `host.md` in the checkout itself: `printf '@~/.claude/doctrine/homelab.md\n' > <checkout>/host.md`. On a host with swapped-HOME profiles, `~/.claude` inside a profile is the profile's own directory, so a file written there reaches only that profile.
+3. Register the hooks (see Hook Registration Pattern below), and set `"cleanupPeriodDays": 90` in `settings.json` so transcripts last long enough for `/mine-sessions` and usage reviews.
+4. On a host with profiles, run `<checkout>/bin/link-config.sh`, then again with `--apply`. Use the full path: a profile has no `~/.claude/bin` until link-config has run. It links `host.md`, `doctrine/`, `memory/`, `bin/` and every skill into each profile.
 5. Start a session. The status block should be silent, and `/memory` should list `host.md` and `doctrine/homelab.md`.
 
 ## Hooks System
@@ -366,10 +366,11 @@ Deterministic shell checks under `bin/`, no model tokens. Each has a suite in `t
 
 ## Changelog
 
-- 2026-11-25: Port the findings of a laptop fork's audit. CLAUDE.md drops from 27KB to about 3KB of
-  rules: homelab rules and both doctrine blocks move to `doctrine/homelab.md`, imported through a
-  gitignored per-host `host.md`, and the command index, hooks, tooling and this changelog live
-  here. `memory/MEMORY.md` is pruned to facts recorded nowhere else and imported, so it loads.
+- 2026-11-25: Port the findings of a laptop fork's audit. CLAUDE.md drops from 27KB to about 4KB of
+  rules: homelab rules and the central ops block move to `doctrine/homelab.md`, imported through a
+  gitignored per-host `host.md`, while the paid-model and prod rules and the design-pattern block
+  stay in CLAUDE.md so no host can lose them. The command index, hooks, tooling and this
+  changelog live here. `memory/MEMORY.md` is pruned to facts recorded nowhere else and imported, so it loads.
   Absolute wording (REQUIRED, CRITICAL, "you do not have another exception") becomes rules with
   reasons. Earlier in the same port: `bin/session-status.sh` replaced the duplicated session
   probes, handoffs became pointers, `session-cleanup` stopped killing every session, and 31
