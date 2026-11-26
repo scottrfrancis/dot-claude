@@ -1,6 +1,6 @@
 ---
 name: prototype-hygiene
-description: "Ship clean from day one: deployment details in config not code, stable docs over stale state, PRs over branches, fail loud. Use when building a prototype, a first version, or anything meant to be reused or genericised."
+description: "Use when building a prototype, a first version, or anything meant for reuse: deployment details in config, stable docs over stale state, PRs over branches, fail loud."
 user-invocable: false
 ---
 

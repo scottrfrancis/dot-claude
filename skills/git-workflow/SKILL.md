@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: "Branch and PR discipline: never commit or push main, branch naming, squash merges, the stacked-PR merge sequence, self-merge policy. Use before any git commit, push, branch creation or pull request."
+description: "Use before a git commit, push, branch or pull request: never commit or push a default branch, branch naming, squash merges, the stacked-PR merge sequence, self-merge policy."
 user-invocable: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: ai-cron-tool-delegation
-description: "When a recurring LLM task must produce a number (count, sum, total, percentage, money), compute it in a deterministic helper wired through the cron payload, never in SKILL.md or AGENTS.md prose. Use when building or debugging a scheduled LLM job that reports figures."
+description: "Use when a scheduled LLM job must report a number (a count, sum, percentage or amount): compute it in a deterministic helper wired through the cron payload, never in prompt prose."
 user-invocable: false
 ---
 

@@ -1,3 +1,8 @@
+---
+description: "Turn raw interview notes into a readout, pain points, assumptions, FR-### requirements, Gherkin scenarios and glossary updates"
+argument-hint: "[path to interview notes]"
+---
+
 # Interview-to-Spec Pipeline
 
 Transform raw interview notes into structured discovery artifacts: readout document, pain points, assumptions, requirements (FR-###), Gherkin scenarios, and glossary updates.

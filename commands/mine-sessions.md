@@ -2,6 +2,8 @@
 description: Analyze session logs for patterns, metrics, and process improvements
 argument-hint: [days:N] [save]
 allowed-tools: Read, Bash, Write, Glob, Grep
+disable-model-invocation: true
+context: fork
 ---
 
 # Mine Session Logs

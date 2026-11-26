@@ -1,7 +1,12 @@
+---
+description: "Draft Gherkin acceptance scenarios from a requirement description or an FR-### id"
+argument-hint: "[requirement or FR-###]"
+---
+
 # Gherkin Scenario Generator
 
-**Arguments:** text after `/gherkin` is a requirement description or an `FR-###`
-ID (e.g. `/gherkin FR-5.14: users can export a report as CSV`).
+**Arguments:** text after `/sdlc:gherkin` is a requirement description or an `FR-###`
+ID (e.g. `/sdlc:gherkin FR-5.14: users can export a report as CSV`).
 
 ## When to Use
 
@@ -107,5 +112,5 @@ Then a file appears in the Downloads folder
 ## Example Invocation
 
 ```
-/gherkin FR-5.14: the report detail panel shows record counts by type with a status breakdown
+/sdlc:gherkin FR-5.14: the report detail panel shows record counts by type with a status breakdown
 ```

@@ -1,6 +1,6 @@
 ---
 name: glossary
-description: "One term, one meaning: glossary/GLOSSARY.md is the shared vocabulary, segmented like memory and checked by bin/check-glossary.sh. Use when introducing a term of art, naming a concept, or editing a glossary."
+description: "Use when introducing a term of art, naming a concept, or editing glossary/GLOSSARY.md, the shared vocabulary that bin/check-glossary.sh checks."
 user-invocable: false
 ---
 

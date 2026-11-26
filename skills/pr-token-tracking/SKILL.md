@@ -1,6 +1,6 @@
 ---
 name: pr-token-tracking
-description: "Include AI token usage in pull request descriptions, read from the branch-keyed ledger with /pr-tokens. Use when creating or editing a pull request description."
+description: "Use when creating or editing a pull request description: append the branch's AI token usage from /pr-tokens."
 user-invocable: false
 ---
 

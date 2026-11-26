@@ -1,0 +1,12 @@
+{
+  "name": "dot-claude",
+  "owner": { "name": "dot-claude" },
+  "description": "Optional plugins from the dot-claude base config, served in place from the checkout",
+  "plugins": [
+    {
+      "name": "sdlc",
+      "source": "./plugins/sdlc",
+      "description": "Spec-Driven Development commands: discovery scaffold, interview-to-spec, Gherkin, assumptions, traceability, constitution, design review"
+    }
+  ]
+}

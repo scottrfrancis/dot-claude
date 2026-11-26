@@ -1,6 +1,6 @@
 ---
 name: shell-scripts
-description: "Bash script standards: script-directory detection, strict mode, error handling, cleanup traps, portability across macOS and Linux. Use when writing, editing or reviewing a shell script."
+description: "Use when writing, editing or reviewing a shell script: directory detection, strict mode, error handling, cleanup traps, macOS and Linux portability."
 user-invocable: false
 ---
 

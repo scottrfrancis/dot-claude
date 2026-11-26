@@ -1,6 +1,6 @@
 ---
 name: c4-diagramming
-description: "PlantUML file organisation for C4 model diagrams: modular includes, C1/C2/C3 layout, boundary conflicts. Use when writing or editing .puml or .plantuml files, or C4 context, container or component diagrams."
+description: "Use when writing or editing .puml or .plantuml files, or C4 context, container or component diagrams: modular includes, C1 to C3 layout, boundary conflicts."
 user-invocable: false
 ---
 

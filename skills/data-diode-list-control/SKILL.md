@@ -1,6 +1,6 @@
 ---
 name: data-diode-list-control
-description: "Black, white and gray lists for a one-way egress boundary (public push, emailed bundle, client export): scrub, allow, and a pending gray list that finds unknowns before they leak. Use when designing a check on content leaving a trusted side."
+description: "Use when designing a check on content leaving a trusted side (a public push, an emailed bundle, a client export): black, white and gray lists that catch unknowns before they leak."
 user-invocable: false
 ---
 
