@@ -2,7 +2,8 @@
 # test-skills.sh — structural checks on skills/ and the guideline symlinks into it.
 #
 # Topic guidelines are skills, so Claude Code loads each one when its description matches the
-# work. guidelines/<name>.md stays as a symlink to the skill so commands, cross-references and
+# work, or path-scoped rules (rules/, checked by test-rules.sh), which load with a matching file.
+# guidelines/<name>.md stays as a symlink to the skill or rule so commands, cross-references and
 # downstream repos keep resolving. A skill whose frontmatter does not parse is silently never
 # offered, and a moved file's relative links break silently, so both are checked here.
 set -uo pipefail
@@ -67,20 +68,23 @@ check(not bad_fm, "every skill opens with YAML frontmatter", ", ".join(bad_fm))
 check(not bad_name, "every skill name is lowercase and matches its directory", ", ".join(bad_name))
 check(not bad_desc, "every description is present, and quoted where YAML needs it", ", ".join(bad_desc))
 
-plain, linked, wrong = set(), set(), []
+plain, linked, as_rule, wrong = set(), set(), set(), []
 for g in sorted((root / "guidelines").glob("*.md")):
     if g.is_symlink():
         target = g.resolve()
         if target.name == "SKILL.md" and target.parent.parent == (root / "skills").resolve():
             linked.add(g.stem)
+        elif target.parent == (root / "rules").resolve() and target.is_file():
+            as_rule.add(g.stem)
         else:
             wrong.append(f"{g.name} -> {target}")
     else:
         plain.add(g.stem)
-check(not wrong, "every guideline symlink resolves to a skill's SKILL.md", "; ".join(wrong))
+check(not wrong, "every guideline symlink resolves to a skill's SKILL.md or a rule", "; ".join(wrong))
 check(plain == KEPT, "exactly the homelab and opt-in guidelines stay plain files",
       f"plain but expected a skill: {sorted(plain - KEPT)}; expected plain: {sorted(KEPT - plain)}")
-check(len(linked) >= 31, "the topic guidelines are skills", f"{len(linked)} linked")
+check(len(linked) >= 24 and len(as_rule) >= 6, "the topic guidelines are skills or rules",
+      f"{len(linked)} skills, {len(as_rule)} rules")
 
 hidden = []
 for name in linked:

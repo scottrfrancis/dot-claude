@@ -15,6 +15,8 @@ things are the way they are.
   `/lets-go` fetches before reporting.
 - Never commit or push a default branch. When asked to push from one, suggest a branch first.
 - When Scott says a PR has merged, prompt him to pull and delete the merged branch.
+- Commit messages and PR titles follow Conventional Commits: `type(scope): summary`, in the
+  imperative and under 72 characters. The `conventional-commits` skill lists the types.
 
 ## Code
 

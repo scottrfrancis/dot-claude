@@ -17,13 +17,6 @@ This repo is public. No personal data, addresses, credentials or client detail.
 - Only `@path` imports in CLAUDE.md are loaded into context. A Markdown link there is just text, so anything meant to be in context is imported or made a skill [2026-11-25]
 - The global `settings.json` allow list holds broad patterns such as `Bash(git:*)`, never one-off commands; a project's approvals belong in its own `.claude/settings.local.json` [2026-11-25]
 
-## Shell portability
-
-- macOS `/usr/bin/mktemp -d` ignores `$TMPDIR`, so inside the Claude Code sandbox it fails. Pass a template: `mktemp -d "${TMPDIR:-/tmp}/name.XXXXXX"` [2026-11-25]
-- BSD `wc -l` pads its count with spaces: compare counts with `-eq`, never `=` [2026-11-25]
-- `grep -c` prints `0` and exits 1 when nothing matches, so `$(grep -c x f || echo 0)` yields two lines. Use `n=$(grep -c x f); n=${n:-0}` or `|| true` [2026-11-25]
-- Hooks: check `command -v jq` before using jq, and exit 0 without it; a hook must never fail a session [2026-11-25]
-
 ## Retired
 
 Facts removed because they were false. Kept briefly so a stale copy elsewhere is recognised.
