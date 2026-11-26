@@ -7,8 +7,8 @@ message.usage, and a streamed reply is several records with one message id, so e
 counted once. Transcripts last cleanupPeriodDays (the README sets 90).
 
   transcripts.py tokens [--repo DIR] [--branch B] [--pr N] [--format md|json]
-      Tokens for one branch of one repo: records whose gitBranch is B and whose cwd is inside
-      a worktree of the repo. --pr N also counts, in full, every session linked to PR N of the
+      Tokens for one branch of one repo: records whose gitBranch is B, in sessions that started
+      in a worktree of the repo. --pr N also counts, in full, every session linked to PR N of the
       repo's GitHub remote, which catches work driven from another directory.
   transcripts.py usage [--days N | --since YYYY-MM-DD] [--project DIR] [--format md|json]
       Sessions active in the window, the slash commands typed and the skills Claude invoked,
@@ -77,9 +77,11 @@ def records(files: list[Path], needle: str = ""):
                     if needle and needle not in line:
                         continue
                     try:
-                        yield f, json.loads(line)
+                        rec = json.loads(line)
                     except ValueError:
                         continue
+                    if isinstance(rec, dict):
+                        yield f, rec
         except OSError:
             continue
 
@@ -132,6 +134,14 @@ def github_slug(repo: str) -> str:
     return m.group(1) if m else ""
 
 
+def start_cwd(path: Path) -> str:
+    """The cwd of a session's first record that has one: the directory it started in."""
+    for _, rec in records([path], '"cwd"'):
+        if rec.get("cwd"):
+            return str(rec["cwd"])
+    return ""
+
+
 def inside(cwd: str, roots: list[str]) -> bool:
     return any(cwd == r or cwd.startswith(r.rstrip("/") + "/") for r in roots)
 
@@ -148,10 +158,17 @@ def tokens(args: argparse.Namespace) -> dict:
     keys = [key(r) for r in roots]
     own = [p for d in dirs for p in d.iterdir()
            if p.is_dir() and any(p.name == k or p.name.startswith(k + "-") for k in keys)]
+    # A session belongs to the repo when it started in one of its worktrees. Its records keep
+    # that directory's gitBranch even when the cwd moves (a scratchpad, a nested repo), so
+    # every record of a member session counts toward its branch.
+    files = []
+    for d in own:
+        for main in sorted(d.glob("*.jsonl")):
+            if inside(start_cwd(main), roots):
+                files += [main, *sorted((d / main.stem / "subagents").glob("*.jsonl"))]
     tally = Tally()
-    for _, rec in records(jsonl_under(own), '"usage"'):
-        if rec.get("type") == "assistant" and rec.get("gitBranch") == branch \
-                and inside(str(rec.get("cwd") or ""), roots):
+    for _, rec in records(files, '"usage"'):
+        if rec.get("type") == "assistant" and rec.get("gitBranch") == branch:
             tally.add(rec)
 
     shared: set[str] = set()
@@ -192,8 +209,8 @@ def human(n: int) -> str:
 def tokens_md(d: dict) -> str:
     if not d["sessions"]:
         return (f"No Claude Code transcript records for `{d['branch']}` in {d['repo']}. "
-                "Records count when a session's working directory is inside a worktree of the "
-                "repo on that branch; --pr N also counts sessions linked to the PR.")
+                "Records count from sessions that started in a worktree of the repo and were on "
+                "that branch; --pr N also counts sessions linked to the PR.")
     row = lambda name, c: "| " + " | ".join([name] + [human(c.get(f, 0)) for f, _ in FIELDS]) + " |"
     lines = ["<details>", "<summary>AI token usage</summary>", "",
              f"**Branch:** `{d['branch']}`" + (f" (PR #{d['pr']})" if d["pr"] else ""),
@@ -211,6 +228,22 @@ def tokens_md(d: dict) -> str:
     return "\n".join(lines)
 
 
+def modified_since(f: Path, since: datetime) -> bool:
+    """False for a file untouched since the window opened, or deleted mid-scan."""
+    try:
+        return f.stat().st_mtime >= since.timestamp()
+    except OSError:
+        return False
+
+
+def typed_text(content) -> str:
+    """What the user typed: string content or text blocks, never tool output."""
+    if isinstance(content, str):
+        return content
+    return "\n".join(b.get("text", "") for b in content or []
+                     if isinstance(b, dict) and b.get("type") == "text")
+
+
 def usage(args: argparse.Namespace) -> dict:
     if args.since:
         since = datetime.strptime(args.since, "%Y-%m-%d").replace(tzinfo=timezone.utc)
@@ -220,8 +253,7 @@ def usage(args: argparse.Namespace) -> dict:
     root = str(Path(args.project).resolve()) if args.project else ""
     active, cmds, skills = set(), defaultdict(set), defaultdict(set)
     per_project: dict[str, Tally] = defaultdict(Tally)
-    files = [f for f in jsonl_under(projects_dirs(args.projects_dir))
-             if f.stat().st_mtime >= since.timestamp()]   # untouched since: nothing in window
+    files = [f for f in jsonl_under(projects_dirs(args.projects_dir)) if modified_since(f, since)]
     for _, rec in records(files):
         if rec.get("type") not in ("user", "assistant") or str(rec.get("timestamp") or "") < cutoff:
             continue
@@ -233,8 +265,7 @@ def usage(args: argparse.Namespace) -> dict:
         msg = rec.get("message") or {}
         content = msg.get("content")
         if rec["type"] == "user" and not rec.get("isSidechain"):
-            text = content if isinstance(content, str) else json.dumps(content)
-            for c in COMMAND.findall(text):
+            for c in COMMAND.findall(typed_text(content)):
                 cmds[c].add(sid)
         elif rec["type"] == "assistant":
             per_project[cwd].add(rec)

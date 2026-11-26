@@ -57,7 +57,8 @@ def user(sid, cwd, branch, text, ts="2026-11-20T09:59:00.000Z"):
 
 def write(path, records):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(r, separators=(",", ":")) + "\n" for r in records))
+    path.write_text("".join((r if isinstance(r, str) else json.dumps(r, separators=(",", ":"))) + "\n"
+                            for r in records))   # a str is written as the raw line
 
 ss = home / ".claude-profiles" / "ss" / ".claude" / "projects"
 al = home / ".claude-profiles" / "al" / ".claude" / "projects"
@@ -67,7 +68,12 @@ write(ss / key(repo) / "s1.jsonl", [
     m1, m1,                                                   # one streamed reply, two records
     asst("m2", "s1", repo / "sub", "feat/x", "claude-sonnet-5-5", 1, 20, 0, 300),
     asst("m3", "s1", repo, "main", "claude-opus-5-5", 9999, 9999, 0, 0),       # another branch
-    asst("mx", "s1", other, "feat/x", "claude-opus-5-5", 7777, 7777, 0, 0),    # cd'd out of the repo
+    asst("mx", "s1", work / "scratch", "feat/x", "claude-opus-5-5", 0, 7, 0, 0),  # cwd left the repo
+    {"type": "user", "sessionId": "s1", "cwd": str(repo), "gitBranch": "feat/x",
+     "timestamp": "2026-11-20T10:02:00.000Z", "message": {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "t1",
+         "content": "grep found <command-name>/session-cleanup</command-name> in a log"}]}},
+    "null", 42, "not json",                                  # odd lines must not crash a scan
 ])
 write(ss / key(work / "repo-old") / "s7.jsonl", [       # a sibling whose key shares the prefix
     asst("my", "s7", work / "repo-old", "feat/x", "claude-opus-5-5", 6666, 6666, 0, 0)])
@@ -107,12 +113,13 @@ j()  { python3 -c 'import json,sys; d=json.load(sys.stdin); print(eval(sys.argv[
 # --- tokens for a branch ----------------------------------------------------
 out="$(tx tokens --repo "$R" --branch feat/x --format json)"
 eq "tokens: sessions that worked on the branch, across profiles" "$(printf '%s' "$out" | j 'sorted(d["sessions"])')" "['s1', 's5', 's6']"
-eq "tokens: a streamed reply counts once, subagents count" "$(printf '%s' "$out" | j 'd["total"]["output"]')" "450"
+eq "tokens: a streamed reply counts once, subagents count" "$(printf '%s' "$out" | j 'd["total"]["output"]')" "457"
 eq "tokens: cache reads are summed" "$(printf '%s' "$out" | j 'd["total"]["cache_read"]')" "5300"
 eq "tokens: split by model" "$(printf '%s' "$out" | j 'sorted(d["models"])')" "['claude-haiku-5-5', 'claude-opus-5-5', 'claude-sonnet-5-5']"
 lacks "tokens: another branch of the same repo is left out" "$out" "9999"
 lacks "tokens: the same branch name in another repo is left out" "$out" "8888"
-lacks "tokens: a record whose cwd left the repo is left out" "$out" "7777"
+eq "tokens: a record whose cwd left the repo still counts: gitBranch is the session's branch" \
+  "$(tx tokens --repo "$R" --branch feat/x --format json | j 'd["total"]["output"]')" "457"
 lacks "tokens: a sibling repo sharing the key prefix is left out" "$out" "6666"
 
 out="$(tx tokens --repo "$R" --branch feat/y --format json)"
@@ -142,6 +149,7 @@ out="$(tx usage --since 2026-11-01 --format json)"
 eq "usage: sessions in the window" "$(printf '%s' "$out" | j 'd["sessions"]')" "7"
 eq "usage: typed commands, by sessions using them" "$(printf '%s' "$out" | j 'd["commands"]')" "{'lets-go': 1, 'review-pr': 1}"
 eq "usage: skills Claude invoked" "$(printf '%s' "$out" | j 'd["skills"]')" "{'testing': 1}"
+lacks "usage: a command name inside tool output is not a typed command" "$out" "session-cleanup"
 out="$(tx usage --since 2026-08-01 --format json)"
 eq "usage: a wider window reaches older sessions" "$(printf '%s' "$out" | j 'd["commands"]["lets-go"]')" "2"
 out="$(tx usage --since 2026-11-01)"
