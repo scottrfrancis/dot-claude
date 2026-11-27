@@ -10,14 +10,14 @@
 #   1) Walk up from cwd looking for a `.account-context` file. If found,
 #      the first non-empty token in it is the answer:
 #        ailab        →  AI Lab team subscription          (cyan, [AL-Team])
-#        northwind   →  Northwind Enterprise sub         (red,  [BS-Enterprise])
+#        a client     →  that client's account, from accounts.local (red, [BS-Enterprise])
 #        scootersoft  →  ScooterSoft / personal Claude Max (green,[SS-Personal])
 #      The marker beats the git remote — use it for clients with mixed
 #      GitHub ownership (e.g., a workspace where some repos belong to the
 #      client, some to me, but billing is consistent).
 #
 #   2) If no marker is found, fall back to the git remote:
-#        github.com[:/]northwind/...     →  Northwind Enterprise
+#        a client org listed in accounts.local  →  that client's account
 #        github.com[:/]scottrfrancis/...  →  ScooterSoft / personal Claude Max
 #        anything else / no remote        →  [other] / [no-remote]
 #
@@ -30,6 +30,11 @@
 # Output is intentionally short — statuslines truncate aggressively.
 
 set -u
+
+# Clients come from this host's private table (bin/accounts-lookup.sh, reading the gitignored
+# accounts.local); the built-in cases below cover only my own accounts.
+LOOKUP="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd -P)/bin/accounts-lookup.sh"
+lookup() { if [ -x "$LOOKUP" ]; then "$LOOKUP" "$@"; fi; }
 
 # Pull cwd from the JSON Claude Code sends in. Fall back to $PWD if absent.
 payload=$(cat 2>/dev/null || true)
@@ -79,17 +84,22 @@ expected=""
 if [ -n "$marker" ]; then
   case "$marker" in
     ailab)               expected="al" ;;
-    northwind)          expected="bs" ;;
     scootersoft|personal) expected="ss" ;;
-    *)                   expected="marker:$marker" ;;
+    *)
+      row="$(lookup marker "$marker")"
+      if [ -n "$row" ]; then expected="${row%%$'\t'*}"; else expected="marker:$marker"; fi ;;
   esac
 else
-  case "$remote" in
-    *github.com[:/]northwind/*)    expected="bs" ;;
-    *github.com[:/]scottrfrancis/*) expected="ss" ;;
-    '')                              expected="none" ;;
-    *)                               expected="other" ;;
-  esac
+  row="$(lookup remote "$remote")"
+  if [ -n "$row" ]; then
+    expected="${row%%$'\t'*}"
+  else
+    case "$remote" in
+      *github.com[:/]scottrfrancis/*) expected="ss" ;;
+      '')                              expected="none" ;;
+      *)                               expected="other" ;;
+    esac
+  fi
 fi
 
 # --- Resolve ACTUAL (logged-in) account code from Claude Code's global config ---
@@ -100,22 +110,25 @@ cfg="${CLAUDE_CONFIG_DIR:-$HOME}/.claude.json"
 if [ -f "$cfg" ] && command -v jq >/dev/null 2>&1; then
   org_name=$(jq -r '.oauthAccount.organizationName // ""' "$cfg" 2>/dev/null)
   org_type=$(jq -r '.oauthAccount.organizationType // ""' "$cfg" 2>/dev/null)
-  case "$org_name" in
-    Northwind|Northwind|northwind)
-      actual="bs"; actual_label="Northwind" ;;
-    *"AI Lab"*|*"ailab"*|*"AILab"*)
-      actual="al"; actual_label="$org_name" ;;
-    "")
-      # No team org — assume personal Claude Max
-      actual="ss"; actual_label="Personal" ;;
-    *)
-      case "$org_type" in
-        claude_individual|claude_max|claude_pro|"")
-          actual="ss"; actual_label="${org_name:-Personal}" ;;
-        *)
-          actual="other"; actual_label="$org_name" ;;
-      esac ;;
-  esac
+  row="$(lookup org "$org_name")"
+  if [ -n "$row" ]; then
+    actual="${row%%$'\t'*}"; actual_label="${row##*$'\t'}"
+  else
+    case "$org_name" in
+      *"AI Lab"*|*"ailab"*|*"AILab"*)
+        actual="al"; actual_label="$org_name" ;;
+      "")
+        # No team org — assume personal Claude Max
+        actual="ss"; actual_label="Personal" ;;
+      *)
+        case "$org_type" in
+          claude_individual|claude_max|claude_pro|"")
+            actual="ss"; actual_label="${org_name:-Personal}" ;;
+          *)
+            actual="other"; actual_label="$org_name" ;;
+        esac ;;
+    esac
+  fi
 fi
 
 # --- Decide if we have an actionable mismatch ---

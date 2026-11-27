@@ -19,12 +19,12 @@ WORK="$(mktemp -d "${TMPDIR:-/tmp}/test-memory-scope.XXXXXX")"; trap 'rm -rf "$W
 
 setup() {
   rm -rf "$WORK"/h "$WORK"/p
-  mkdir -p "$WORK"/h/memory/local/ailab "$WORK"/h/memory/local/northwind \
+  mkdir -p "$WORK"/h/memory/local/ailab "$WORK"/h/memory/local/clientco \
            "$WORK"/h/memory/local/scootersoft "$WORK"/p/.claude/memory
   echo x > "$WORK"/h/memory/MEMORY.md
   echo x > "$WORK"/h/memory/local/MEMORY.md
   echo x > "$WORK"/h/memory/local/ailab/MEMORY.md
-  echo x > "$WORK"/h/memory/local/northwind/MEMORY.md
+  echo x > "$WORK"/h/memory/local/clientco/MEMORY.md
   echo x > "$WORK"/h/memory/local/scootersoft/MEMORY.md
   echo x > "$WORK"/p/.claude/memory/MEMORY.md
 }
@@ -51,28 +51,31 @@ has   "loads the universal segment"            "$out" "h/memory/MEMORY.md"
 has   "loads the private personal segment"     "$out" "local/MEMORY.md"
 has   "loads the matching client segment"      "$out" "local/ailab/MEMORY.md"
 has   "loads project memory"                   "$out" "p/.claude/memory/MEMORY.md"
-hasnt "NEVER loads a non-matching client"      "$out" "northwind"
+hasnt "NEVER loads a non-matching client"      "$out" "clientco"
 hasnt "NEVER loads another non-matching one"   "$out" "scootersoft"
 has   "reports the resolved segment"           "$(run --segment)" "ailab"
 
 # the marker is found by walking up, as account-context.sh does
-setup; echo northwind > "$WORK"/p/.account-context; mkdir -p "$WORK"/p/sub/deep
+setup; echo clientco > "$WORK"/p/.account-context; mkdir -p "$WORK"/p/sub/deep
 out="$("$SCOPE" --home "$WORK/h" --project "$WORK/p/sub/deep" 2>&1)"
-has   "walks up to find the marker"            "$out" "local/northwind/MEMORY.md"
+has   "walks up to find the marker"            "$out" "local/clientco/MEMORY.md"
 hasnt "still excludes the others"              "$out" "ailab"
 
 # --- git remote is the fallback ------------------------------------------
 setup; ( cd "$WORK"/p && git init -q . && git remote add origin https://github.com/scottrfrancis/x.git )
 has   "falls back to the git remote"           "$(run --segment)" "scootersoft"
 
-setup; ( cd "$WORK"/p && git init -q . && git remote add origin https://github.com/northwind/y.git )
-has   "maps a client remote to its segment"    "$(run --segment)" "northwind"
+# Client orgs are listed in the private table, <home>/accounts.local, never in this repo.
+setup; ( cd "$WORK"/p && git init -q . && git remote add origin https://github.com/clientco/y.git )
+has   "without the table, a client remote is unknown" "$(run --segment)" "unknown"
+printf 'remote  *github.com[:/]clientco/*  bs  clientco  Clientco Enterprise\n' > "$WORK"/h/accounts.local
+has   "maps a client remote to its segment through the table" "$(run --segment)" "clientco"
 
 # --- unknown context loads nothing client-specific -----------------------
 setup
 out="$(run)"
 hasnt "an unknown context loads no client memory (a)" "$out" "ailab"
-hasnt "an unknown context loads no client memory (b)" "$out" "northwind"
+hasnt "an unknown context loads no client memory (b)" "$out" "clientco"
 hasnt "an unknown context loads no client memory (c)" "$out" "scootersoft"
 has   "but still loads the universal segment"  "$out" "h/memory/MEMORY.md"
 
@@ -84,14 +87,14 @@ hasnt "skips a segment file that does not exist" "$(run)" "local/ailab"
 # A term can mean different things for different clients, which is the same reason facts
 # are segmented. One resolver serves both rather than two that can disagree.
 setup; echo ailab > "$WORK"/p/.account-context
-mkdir -p "$WORK"/h/glossary/local/ailab "$WORK"/h/glossary/local/northwind
+mkdir -p "$WORK"/h/glossary/local/ailab "$WORK"/h/glossary/local/clientco
 echo x > "$WORK"/h/glossary/GLOSSARY.md
 echo x > "$WORK"/h/glossary/local/ailab/GLOSSARY.md
-echo x > "$WORK"/h/glossary/local/northwind/GLOSSARY.md
+echo x > "$WORK"/h/glossary/local/clientco/GLOSSARY.md
 out="$(run --kind glossary)"
 has   "resolves the universal glossary"        "$out" "h/glossary/GLOSSARY.md"
 has   "resolves the matching client glossary"  "$out" "local/ailab/GLOSSARY.md"
-hasnt "NEVER resolves another client glossary" "$out" "northwind"
+hasnt "NEVER resolves another client glossary" "$out" "clientco"
 hasnt "does not mix memory into a glossary scope" "$out" "MEMORY.md"
 
 # Launched from the login home, the project tier is <home>/.claude/memory/MEMORY.md, which

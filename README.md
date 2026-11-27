@@ -246,7 +246,7 @@ Hooks are shell scripts that fire on specific Claude Code events. They operate a
 | **SessionStart** | `session-status.sh` | Runs `bin/session-status.sh --hook` on `startup` and `clear`. Points at what needs attention and is silent otherwise: drift on dot-claude, the downstream dot-repos, the project and its nested repos (no fetch); handoffs from the last 7 days, without reading or moving them; an open `punch` timer; what `bin/install.sh --check` finds in the session's config dir (missing links, `host.md`, the hooks plugin); overdue conformance items; stale `ACTION_ITEMS.md` entries; and the output of an executable `.claude/session-start.sh` in the project. `load-handoff-context.sh` is a deprecated alias for it. |
 | **PreToolUse** | `pre-tool-safety.sh` | Blocks (exit 2) destructive operations: `git reset --hard`, an unguarded `git push --force`, `git worktree remove --force`, `rm -rf`, redirects to sensitive config files, killing processes that match `claude`, and `session-cleanup` without its flag. Asks the user (a permission prompt) before a commit or push on a repo's default branch (`origin/HEAD`, else `main` or `master`), and before `session-cleanup --kill-all-claude`. |
 | **PreCompact** | `pre-compact-memorialize.sh` | Snapshots branch, outstanding conformance items and uncommitted files before context is compacted, and steers what the summary preserves. Advisory. |
-| **SessionStart** | `account-mismatch-warn.sh` | Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) does not match the logged-in oauth account. Advisory only; silent on match; needs `jq`. |
+| **SessionStart** | `account-mismatch-warn.sh` | Warns when the cwd's expected Claude account (`.account-context` marker, else git remote) does not match the logged-in oauth account. Clients come from the host's gitignored `accounts.local` (format in `accounts.local.example`), so no client name is in this repo. Advisory only; silent on match; needs `jq`. |
 | **PostToolUse** | `prose-check.py` | After a Markdown write, checks the mechanical prose rules: the dash budget `max(2, lines/40)`, the corrective frame on added lines, and bold density. Judges only what the write added, and returns findings to the model (exit 2). A file containing `prose-check: off` is skipped. |
 | **Stop** | `session-end-reminder.sh` | Stop fires after every reply, so this speaks once per session: it reminds about `/session-logger` (3+ files changed) and `/handoff` (5+ files changed) when neither has been run today. Also reminds about `/lint-action-items` when an outline-format `ACTION_ITEMS.md` has items past the 7-day prune window. |
 
@@ -378,6 +378,10 @@ Deterministic shell checks under `bin/`, no model tokens. Each has a suite in `t
 
 ## Changelog
 
+- 2026-11-27: Client names left the repo. The account check, the statusline and
+  `bin/memory-scope.sh` read clients from a gitignored `accounts.local` at the checkout root,
+  through `bin/accounts-lookup.sh`; the built-in cases cover only personal accounts. The
+  history of this repo and its siblings was rewritten to remove client names.
 - 2026-11-26: One installer sets a host up. `bin/install.sh`, grown from `link-config.sh` (kept
   as its old name), links each config dir, creates `host.md` from `--doctrine`, and enables the
   hooks plugin in each `settings.json`, removing the hand-written registrations it replaces.

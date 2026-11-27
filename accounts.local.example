@@ -1,0 +1,9 @@
+# accounts.local: this host's clients, for the account checks, the statusline and
+# memory-scope. Copy this file to accounts.local at the checkout root and list the real
+# clients there. Git ignores that copy, so client names stay out of this public repo.
+# Format and matching rules: bin/accounts-lookup.sh.
+#
+# kind    match                       account  segment   label
+marker    clientco                    bs       clientco  Clientco Enterprise
+remote    *github.com[:/]clientco/*   bs       clientco  Clientco Enterprise
+org       clientco                    bs       -         Clientco Enterprise

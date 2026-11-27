@@ -64,10 +64,20 @@ done
 # 2. Otherwise the git remote.
 if [ -z "$segment" ] && [ -d "$PROJECT" ]; then
   remote="$(git -C "$PROJECT" remote get-url origin 2>/dev/null || true)"
-  case "$remote" in
-    *github.com[:/]northwind/*)    segment="northwind" ;;
-    *github.com[:/]scottrfrancis/*) segment="scootersoft" ;;
-  esac
+  # A client's segment comes from this host's private table, <home>/accounts.local, which
+  # is gitignored so that client names stay out of this public repo.
+  row=""
+  if [ -x "$SCRIPT_DIR/accounts-lookup.sh" ]; then
+    row="$(DOT_CLAUDE_ACCOUNTS="$HOME_DIR/accounts.local" "$SCRIPT_DIR/accounts-lookup.sh" remote "$remote")"
+  fi
+  seg="$(printf '%s' "$row" | cut -f2)"
+  if [ -n "$row" ] && [ "$seg" != "-" ]; then
+    segment="$seg"
+  else
+    case "$remote" in
+      *github.com[:/]scottrfrancis/*) segment="scootersoft" ;;
+    esac
+  fi
 fi
 
 if [ "$SEGMENT_ONLY" -eq 1 ]; then

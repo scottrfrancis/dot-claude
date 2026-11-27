@@ -13,6 +13,11 @@ set -euo pipefail
 
 command -v jq >/dev/null 2>&1 || exit 0
 
+# Clients come from this host's private table (bin/accounts-lookup.sh, reading the gitignored
+# accounts.local); the built-in cases below cover only my own accounts.
+LOOKUP="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd -P)/bin/accounts-lookup.sh"
+lookup() { if [ -x "$LOOKUP" ]; then "$LOOKUP" "$@"; fi; }
+
 HOOK_INPUT=$(cat)
 SOURCE=$(echo "$HOOK_INPUT" | jq -r '.source // empty' 2>/dev/null)
 [ "$SOURCE" = "startup" ] || exit 0
@@ -40,14 +45,20 @@ expected_label=""
 if [ -n "$marker" ]; then
   case "$marker" in
     ailab)                expected="al"; expected_label="AI Lab Team" ;;
-    northwind)           expected="bs"; expected_label="Northwind Enterprise" ;;
     scootersoft|personal) expected="ss"; expected_label="ScooterSoft / Personal" ;;
+    *)
+      row="$(lookup marker "$marker")"
+      if [ -n "$row" ]; then expected="${row%%$'\t'*}"; expected_label="${row##*$'\t'}"; fi ;;
   esac
 else
-  case "$remote" in
-    *github.com[:/]northwind/*)    expected="bs"; expected_label="Northwind Enterprise" ;;
-    *github.com[:/]scottrfrancis/*) expected="ss"; expected_label="ScooterSoft / Personal" ;;
-  esac
+  row="$(lookup remote "$remote")"
+  if [ -n "$row" ]; then
+    expected="${row%%$'\t'*}"; expected_label="${row##*$'\t'}"
+  else
+    case "$remote" in
+      *github.com[:/]scottrfrancis/*) expected="ss"; expected_label="ScooterSoft / Personal" ;;
+    esac
+  fi
 fi
 
 # Ambiguous expected → no warning to emit
@@ -62,21 +73,24 @@ email=$(jq -r '.oauthAccount.emailAddress // ""' "$CFG" 2>/dev/null)
 
 actual=""
 actual_label=""
-case "$org_name" in
-  Northwind|Northwind|northwind)
-    actual="bs"; actual_label="Northwind Enterprise ($email)" ;;
-  *"AI Lab"*|*"ailab"*|*"AILab"*)
-    actual="al"; actual_label="$org_name ($email)" ;;
-  "")
-    actual="ss"; actual_label="Personal ($email)" ;;
-  *)
-    case "$org_type" in
-      claude_individual|claude_max|claude_pro|"")
-        actual="ss"; actual_label="${org_name:-Personal} ($email)" ;;
-      *)
-        exit 0 ;;
-    esac ;;
-esac
+row="$(lookup org "$org_name")"
+if [ -n "$row" ]; then
+  actual="${row%%$'\t'*}"; actual_label="${row##*$'\t'} ($email)"
+else
+  case "$org_name" in
+    *"AI Lab"*|*"ailab"*|*"AILab"*)
+      actual="al"; actual_label="$org_name ($email)" ;;
+    "")
+      actual="ss"; actual_label="Personal ($email)" ;;
+    *)
+      case "$org_type" in
+        claude_individual|claude_max|claude_pro|"")
+          actual="ss"; actual_label="${org_name:-Personal} ($email)" ;;
+        *)
+          exit 0 ;;
+      esac ;;
+  esac
+fi
 
 [ "$expected" = "$actual" ] && exit 0
 

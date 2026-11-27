@@ -98,5 +98,93 @@ case "$out" in
   *) bad "statusline: with CLAUDE_CONFIG_DIR unset, reads HOME" "$out" ;;
 esac
 
+# --- Clients come from the private table, accounts.local ---
+# This repo is public, so no client name lives in it. Each host lists its clients in a
+# gitignored accounts.local at the checkout root; DOT_CLAUDE_ACCOUNTS points both scripts at
+# a fixture table here.
+TABLE="$WORK/accounts.local"
+cat > "$TABLE" <<'EOF'
+# kind    match                      account  segment   label
+marker    clientco                   bs       clientco  Clientco Enterprise
+remote    *github.com[:/]clientco/*  bs       clientco  Clientco Enterprise
+org       clientco                   bs       -         Clientco Enterprise
+EOF
+account_file "$WORK/client" "Clientco" claude_enterprise
+mkdir -p "$WORK/cmark" "$WORK/cremote"; echo clientco > "$WORK/cmark/.account-context"
+git -C "$WORK/cremote" init -q && git -C "$WORK/cremote" remote add origin git@github.com:clientco/app.git
+
+hookc() { # $1 = cwd, $2 = CLAUDE_CONFIG_DIR, $3 = table; prints the hook's output
+  printf '{"source":"startup","cwd":"%s"}' "$1" \
+    | env HOME="$WORK/personal" CLAUDE_CONFIG_DIR="$2" DOT_CLAUDE_ACCOUNTS="$3" "$HOOK" 2>&1
+}
+statusc() { # same arguments; prints the statusline
+  printf '{"cwd":"%s"}' "$1" \
+    | env HOME="$WORK/personal" CLAUDE_CONFIG_DIR="$2" DOT_CLAUDE_ACCOUNTS="$3" "$STATUS" 2>&1
+}
+
+out="$(hookc "$WORK/cmark" "$WORK/client" "$TABLE")"
+case "$out" in
+  *MISMATCH*) bad "hook: a client marker from the table matches that client's login" "$out" ;;
+  *) ok "hook: a client marker from the table matches that client's login" ;;
+esac
+
+out="$(hookc "$WORK/cmark" "$WORK/personal" "$TABLE")"
+case "$out" in
+  *MISMATCH*"Clientco Enterprise"*) ok "hook: a client marker from the table warns on another login, with the table's label" ;;
+  *) bad "hook: a client marker from the table warns on another login, with the table's label" "$out" ;;
+esac
+
+out="$(hookc "$WORK/cremote" "$WORK/personal" "$TABLE")"
+case "$out" in
+  *MISMATCH*"Clientco Enterprise"*) ok "hook: a client remote from the table expects that client's account" ;;
+  *) bad "hook: a client remote from the table expects that client's account" "$out" ;;
+esac
+
+out="$(hookc "$WORK/cremote" "$WORK/personal" "$WORK/no-such-table")"
+case "$out" in
+  *MISMATCH*) bad "hook: without the table, a client remote is unknown and gives no warning" "$out" ;;
+  *) ok "hook: without the table, a client remote is unknown and gives no warning" ;;
+esac
+
+out="$(hookc "$WORK/project" "$WORK/client" "$TABLE")"
+case "$out" in
+  *MISMATCH*"Clientco Enterprise (t@example.com)"*) ok "hook: a client login found in the table is named in the warning" ;;
+  *) bad "hook: a client login found in the table is named in the warning" "$out" ;;
+esac
+
+LOOKUP="$SCRIPT_DIR/../bin/accounts-lookup.sh"
+out="$(DOT_CLAUDE_ACCOUNTS="$TABLE" "$LOOKUP" remote clientco)"
+[ -z "$out" ] && ok "lookup: a value matches only rules of its own kind" \
+  || bad "lookup: a value matches only rules of its own kind" "$out"
+out="$(DOT_CLAUDE_ACCOUNTS="$TABLE" "$LOOKUP" org CLIENTCO)"
+[ "$out" = "$(printf 'bs\t-\tClientco Enterprise')" ] && ok "lookup: prints account, segment and label for an org, ignoring case" \
+  || bad "lookup: prints account, segment and label for an org, ignoring case" "$out"
+
+printf 'org  ClientCo  bs  -  Mixed Case Rule\n' > "$WORK/mixed.local"
+out="$(DOT_CLAUDE_ACCOUNTS="$WORK/mixed.local" "$LOOKUP" org clientco)"
+case "$out" in
+  *"Mixed Case Rule"*) ok "lookup: a rule written in mixed case still matches" ;;
+  *) bad "lookup: a rule written in mixed case still matches" "$out" ;;
+esac
+
+out="$(statusc "$WORK/cmark" "$WORK/client" "$TABLE")"
+case "$out" in
+  *"AUTH MISMATCH"*) bad "statusline: a client marker from the table shows that client's tag" "$out" ;;
+  *"[BS-Enterprise]"*) ok "statusline: a client marker from the table shows that client's tag" ;;
+  *) bad "statusline: a client marker from the table shows that client's tag" "$out" ;;
+esac
+
+out="$(statusc "$WORK/project" "$WORK/client" "$TABLE")"
+case "$out" in
+  *"AUTH MISMATCH"*"Clientco Enterprise"*) ok "statusline: a client login found in the table is named in the mismatch" ;;
+  *) bad "statusline: a client login found in the table is named in the mismatch" "$out" ;;
+esac
+
+out="$(statusc "$WORK/cremote" "$WORK/personal" "$WORK/no-such-table")"
+case "$out" in
+  *"[other]"*) ok "statusline: without the table, a client remote shows as other" ;;
+  *) bad "statusline: without the table, a client remote shows as other" "$out" ;;
+esac
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

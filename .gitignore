@@ -85,3 +85,7 @@ __pycache__/
 
 # Per-host imports for CLAUDE.md (README, Hosts). Homelab hosts import doctrine/homelab.md.
 host.md
+
+# Per-host client table for the account checks and memory-scope (bin/accounts-lookup.sh).
+# Client names never go in this public repo; accounts.local.example shows the format.
+accounts.local
